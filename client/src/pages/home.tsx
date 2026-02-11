@@ -2,21 +2,37 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/home/hero";
 import { ProductCard } from "@/components/product/product-card";
-import { products, categories } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, ShieldCheck, Headphones } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck, Headphones, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest, seedDatabase } from "@/lib/api";
+import { useEffect } from "react";
 
 export default function Home() {
-  const featuredProducts = products.slice(0, 4);
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ["/api/products"],
+    queryFn: () => apiRequest("/api/products"),
+  });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: () => apiRequest("/api/categories"),
+  });
+
+  useEffect(() => {
+    seedDatabase().catch(() => {});
+  }, []);
+
+  const featuredProducts = (productsData || []).slice(0, 4);
+  const cats = categoriesData || [];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <Hero />
-      
+
       <main className="flex-1">
-        {/* Categories Section */}
         <section className="py-20 container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <h2 className="text-3xl font-black text-foreground">تصفح الأقسام</h2>
@@ -26,11 +42,11 @@ export default function Home() {
               </Button>
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {categories.map((cat) => (
+            {cats.map((cat: any) => (
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
-                <div className="group cursor-pointer flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
+                <div className="group cursor-pointer flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
                   <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10">
                     {cat.icon}
                   </div>
@@ -41,36 +57,39 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Products */}
         <section className="py-20 bg-secondary/5 relative overflow-hidden">
-           {/* Decorative bg elements */}
-           <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-           <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
+          <div className="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="text-primary font-bold tracking-wider text-sm uppercase mb-2 block">منتجات مختارة</span>
               <h2 className="text-4xl font-black text-foreground mb-4">الأكثر طلباً هذا الأسبوع</h2>
-              <p className="text-muted-foreground text-lg">تشكيلة مميزة من المنتجات التي نالت استحسان عملائنا، بجودة مضمونة وطعم لا يقاوم.</p>
+              <p className="text-muted-foreground text-lg">تشكيلة مميزة من المنتجات التي نالت استحسان عملائنا</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
+            {productsLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {featuredProducts.map((product: any) => (
+                  <ProductCard key={product.id} {...product} />
+                ))}
+              </div>
+            )}
 
             <div className="mt-16 text-center">
-               <Link href="/shop">
+              <Link href="/shop">
                 <Button size="lg" className="rounded-full px-8 h-12 text-lg font-bold shadow-lg shadow-primary/20">
                   تصفح كل المنتجات
                 </Button>
-               </Link>
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* Features/Benefits */}
         <section className="py-20 container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="flex flex-col items-center text-center p-8 rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow">
@@ -97,7 +116,7 @@ export default function Home() {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );
