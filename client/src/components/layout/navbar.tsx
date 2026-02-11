@@ -73,9 +73,11 @@ export function Navbar() {
           <Button variant="ghost" size="icon" className="hidden sm:flex hover:text-primary hover:bg-primary/5">
             <Globe className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:flex hover:text-primary hover:bg-primary/5">
-            <User className="h-5 w-5" />
-          </Button>
+          <Link href="/login">
+            <Button variant="ghost" size="icon" className="hidden sm:flex hover:text-primary hover:bg-primary/5">
+              <User className="h-5 w-5" />
+            </Button>
+          </Link>
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative hover:text-primary hover:bg-primary/5">
               <ShoppingCart className="h-5 w-5" />
