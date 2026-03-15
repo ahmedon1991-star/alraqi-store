@@ -90,6 +90,10 @@ export const adminSettings = pgTable("admin_settings", {
   phone: text("phone").notNull().default("+249912345678"),
   username: text("username").notNull().default("admin"),
   password: text("password").notNull().default("admin12345"),
+  address: text("address").notNull().default("الخرطوم، السودان - شارع النيل"),
+  facebook: text("facebook").notNull().default("https://facebook.com"),
+  instagram: text("instagram").notNull().default("https://instagram.com"),
+  twitter: text("twitter").notNull().default("https://twitter.com"),
   passwordToken: text("password_token"),
 });
 

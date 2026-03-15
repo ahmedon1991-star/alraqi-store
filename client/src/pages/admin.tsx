@@ -6,6 +6,11 @@ import {
   Boxes,
   Clock3,
   CreditCard,
+  Facebook,
+  Instagram,
+  Twitter,
+  MapPin,
+  Layers,
   Loader2,
   Package,
   Pencil,
@@ -150,8 +155,20 @@ export default function AdminPage() {
     enabled: authQuery.isSuccess,
   });
 
+  const categoriesQuery = useQuery<Array<{ id: string; name: string; icon: string | null }>>({
+    queryKey: ["/api/categories"],
+    queryFn: () => apiRequest("/api/categories"),
+  });
+
   const updateSettingsMutation = useMutation({
-    mutationFn: (settingsData: { email: string; phone: string }) =>
+    mutationFn: (settingsData: { 
+      email: string; 
+      phone: string;
+      address?: string;
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+    }) =>
       apiRequest("/api/admin/settings", {
         method: "POST",
         body: JSON.stringify(settingsData),
@@ -162,6 +179,37 @@ export default function AdminPage() {
       toast({
         title: "تم حفظ الإعدادات",
         description: "تم تحديث إعدادات الإدارة بنجاح.",
+      });
+    },
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (categoryData: { id: string; name: string; icon?: string }) =>
+      apiRequest("/api/admin/categories", {
+        method: "POST",
+        body: JSON.stringify(categoryData),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      toast({
+        title: "تمت إضافة القسم",
+        description: "أصبح القسم الجديد متاحاً الآن.",
+      });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest(`/api/admin/categories/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      toast({
+        title: "تم حذف القسم",
+        description: "تمت إزالة القسم بنجاح.",
       });
     },
   });
@@ -486,8 +534,9 @@ export default function AdminPage() {
         </section>
 
         <Tabs defaultValue="overview" className="w-full space-y-8">
-          <TabsList className="grid w-full grid-cols-3 rounded-xl h-14 bg-white/60 p-1 mb-8">
+          <TabsList className="grid w-full grid-cols-4 rounded-xl h-14 bg-white/60 p-1 mb-8">
             <TabsTrigger value="overview" className="rounded-lg text-lg font-bold">الرئيسية</TabsTrigger>
+            <TabsTrigger value="categories" className="rounded-lg text-lg font-bold">الأقسام</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg text-lg font-bold">الإعدادات</TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg text-lg font-bold">الأمان</TabsTrigger>
           </TabsList>
@@ -702,6 +751,10 @@ export default function AdminPage() {
                     updateSettingsMutation.mutate({
                       email: formData.get("email") as string,
                       phone: formData.get("phone") as string,
+                      address: formData.get("address") as string,
+                      facebook: formData.get("facebook") as string,
+                      instagram: formData.get("instagram") as string,
+                      twitter: formData.get("twitter") as string,
                     });
                   }}
                 >
@@ -730,6 +783,44 @@ export default function AdminPage() {
                       يُفضل كتابة الرقم بصيغة كود الدولة (مثال: 249 أو 20).
                     </p>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">عنوان المتجر</label>
+                    <Input
+                      name="address"
+                      defaultValue={settingsQuery.data?.address || "الخرطوم، السودان - شارع النيل"}
+                      required
+                      className="text-right"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">فيسبوك</label>
+                      <Input
+                        name="facebook"
+                        defaultValue={settingsQuery.data?.facebook || "https://facebook.com"}
+                        className="text-right"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">انستقرام</label>
+                      <Input
+                        name="instagram"
+                        defaultValue={settingsQuery.data?.instagram || "https://instagram.com"}
+                        className="text-right"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">تويتر / X</label>
+                      <Input
+                        name="twitter"
+                        defaultValue={settingsQuery.data?.twitter || "https://twitter.com"}
+                        className="text-right"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
                   <Button
                     type="submit"
                     className="w-full text-lg font-bold h-12"
@@ -738,6 +829,73 @@ export default function AdminPage() {
                     {updateSettingsMutation.isPending ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-6">
+            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-primary" />
+                  إدارة الأقسام
+                </CardTitle>
+                <CardDescription>أضف أقساماً جديدة للمنتجات لتسهيل تصفح المتجر.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form 
+                  className="grid grid-cols-1 gap-4 md:grid-cols-4 items-end mb-8"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    createCategoryMutation.mutate({
+                      id: formData.get("id") as string,
+                      name: formData.get("name") as string,
+                      icon: (formData.get("icon") as string) || undefined,
+                    });
+                    e.currentTarget.reset();
+                  }}
+                >
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">معرف القسم (إنجليزي)</label>
+                    <Input name="id" placeholder="honey-products" required className="text-right" dir="ltr" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">اسم القسم بالعربي</label>
+                    <Input name="name" placeholder="عسل ومنتجاته" required className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">رمز القسم (Icon)</label>
+                    <Input name="icon" placeholder="Sparkles" className="text-right" dir="ltr" />
+                  </div>
+                  <Button type="submit" className="h-11 font-bold" disabled={createCategoryMutation.isPending}>
+                    {createCategoryMutation.isPending ? "جارٍ الإضافة..." : "إضافة القسم"}
+                  </Button>
+                </form>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {categoriesQuery.data?.map((category) => (
+                    <div key={category.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                      <div>
+                        <p className="font-bold">{category.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{category.id}</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-full"
+                        onClick={() => {
+                          if (confirm("هل أنت متأكد من حذف هذا القسم؟")) {
+                            deleteCategoryMutation.mutate(category.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {categoriesQuery.isLoading && <div className="col-span-full py-8 text-center text-muted-foreground">جارٍ تحميل الأقسام...</div>}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

@@ -1,7 +1,22 @@
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
+import { Link } from "wouter";
 
 export function Footer() {
+  const { data: settings } = useQuery({
+    queryKey: ["/api/admin/settings"],
+    queryFn: () => apiRequest("/api/admin/settings"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: categories } = useQuery<Array<{ id: string; name: string }>>({
+    queryKey: ["/api/categories"],
+    queryFn: () => apiRequest("/api/categories"),
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <footer className="bg-white border-t mt-auto">
       <div className="container mx-auto px-4 py-16">
@@ -16,15 +31,27 @@ export function Footer() {
               منصتك الأولى لتسوق المنتجات السودانية الأصيلة. نجمع لك خيرات السودان في مكان واحد، بجودة عالية وتوصيل سريع.
             </p>
             <div className="flex gap-2 mt-2">
-              <Button size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
-                <Instagram className="h-5 w-5" />
-              </Button>
-              <Button size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
-                <Twitter className="h-5 w-5" />
-              </Button>
+              {settings?.facebook && (
+                <Button asChild size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
+                  <a href={settings.facebook} target="_blank" rel="noopener noreferrer">
+                    <Facebook className="h-5 w-5" />
+                  </a>
+                </Button>
+              )}
+              {settings?.instagram && (
+                <Button asChild size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
+                  <a href={settings.instagram} target="_blank" rel="noopener noreferrer">
+                    <Instagram className="h-5 w-5" />
+                  </a>
+                </Button>
+              )}
+              {settings?.twitter && (
+                <Button asChild size="icon" variant="ghost" className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10">
+                  <a href={settings.twitter} target="_blank" rel="noopener noreferrer">
+                    <Twitter className="h-5 w-5" />
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -44,11 +71,19 @@ export function Footer() {
           <div className="col-span-1">
             <h3 className="font-bold text-lg mb-6 text-foreground">تسوق حسب القسم</h3>
             <ul className="space-y-3 text-sm text-muted-foreground font-medium">
-              <li><a href="#" className="hover:text-primary transition-colors">التوابل والبهارات</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">الحبوب والبقوليات</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">الزيوت الطبيعية</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">التمور والحلويات</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">منتجات العناية</a></li>
+              {categories?.slice(0, 5).map((category) => (
+                <li key={category.id}>
+                  <Link href={`/?category=${category.id}`} className="hover:text-primary transition-colors">
+                    {category.name}
+                  </Link>
+                </li>
+              ))}
+              {(!categories || categories.length === 0) && (
+                <>
+                  <li><a href="#" className="hover:text-primary transition-colors">التوابل والبهارات</a></li>
+                  <li><a href="#" className="hover:text-primary transition-colors">الحبوب والبقوليات</a></li>
+                </>
+              )}
             </ul>
           </div>
 
@@ -58,15 +93,15 @@ export function Footer() {
             <ul className="space-y-4 text-sm text-muted-foreground font-medium">
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-primary" />
-                <span dir="ltr">+249 91 234 5678</span>
+                <span dir="ltr">{settings?.phone || "+249 91 234 5678"}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-primary" />
-                <span>info@alraqi-sudanese.com</span>
+                <span>{settings?.email || "info@alraqi-sudanese.com"}</span>
               </li>
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
-                <span>الخرطوم، السودان - شارع النيل</span>
+                <span>{settings?.address || "الخرطوم، السودان - شارع النيل"}</span>
               </li>
             </ul>
           </div>

@@ -443,9 +443,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/admin/settings", requireAdmin, async (req: Request, res: Response) => {
-    const { email, phone } = req.body as { email?: string; phone?: string };
-    const settings = await storage.updateAdminSettings({ email, phone });
+    const { email, phone, address, facebook, instagram, twitter } = req.body as { 
+      email?: string; 
+      phone?: string;
+      address?: string;
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+    };
+    const settings = await storage.updateAdminSettings({ 
+      email, 
+      phone, 
+      address, 
+      facebook, 
+      instagram, 
+      twitter 
+    });
     res.json(settings);
+  });
+
+  app.post("/api/admin/categories", requireAdmin, async (req: Request, res: Response) => {
+    const { id, name, icon } = req.body as { id: string; name: string; icon?: string };
+    if (!id || !name) {
+      return res.status(400).json({ message: "المعرف والاسم مطلوبان" });
+    }
+    const category = await storage.createCategory({ id, name, icon: icon || null });
+    res.json(category);
+  });
+
+  app.delete("/api/admin/categories/:id", requireAdmin, async (req: Request, res: Response) => {
+    await storage.deleteCategory(req.params.id);
+    res.sendStatus(200);
   });
 
   app.post("/api/admin/security", requireAdmin, async (req: Request, res: Response) => {

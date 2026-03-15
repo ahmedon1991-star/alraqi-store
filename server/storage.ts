@@ -58,6 +58,7 @@ export interface IStorage {
 
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
+  deleteCategory(id: string): Promise<void>;
 
   getCartItems(sessionId: string): Promise<CartItemWithProduct[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
@@ -215,6 +216,13 @@ export class DatabaseStorage implements IStorage {
 
     const [created] = await db.insert(categories).values(category).returning();
     return created;
+  }
+  async deleteCategory(id: string): Promise<void> {
+    if (!db) {
+      return;
+    }
+
+    await db.delete(categories).where(eq(categories.id, id));
   }
 
   async getCartItems(sessionId: string): Promise<CartItemWithProduct[]> {
@@ -505,6 +513,9 @@ export class MemoryStorage implements IStorage {
     this.categories.set(created.id, created);
     return created;
   }
+  async deleteCategory(id: string): Promise<void> {
+    this.categories.delete(id);
+  }
 
   async getCartItems(sessionId: string): Promise<CartItemWithProduct[]> {
     return Array.from(this.cartItems.values())
@@ -612,6 +623,10 @@ export class MemoryStorage implements IStorage {
         phone: "+249912345678",
         username: process.env.ADMIN_USERNAME || "admin",
         password: process.env.ADMIN_PASSWORD || "admin12345",
+        address: "الخرطوم، السودان - شارع النيل",
+        facebook: "https://facebook.com",
+        instagram: "https://instagram.com",
+        twitter: "https://twitter.com",
         passwordToken: null,
       };
     }
