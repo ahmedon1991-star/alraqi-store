@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
-import type { Category, InsertProduct, InsertUser, Order, Product, User } from "@shared/schema";
+import type { Category, InsertProduct, InsertUser, Order, Product, User, InsertAdminSettings } from "@shared/schema";
 import { storage } from "./storage";
 import { sendPasswordResetEmail } from "./email";
 
@@ -339,7 +339,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const resetLink = `http://localhost:5000/reset-password?token=${resetToken}&email=${user.email}`;
     
     // Attempt to send real email
-    const emailSent = await sendPasswordResetEmail(user.email, resetLink, user.name);
+    const emailSent = await sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم");
     
     if (emailSent) {
       console.log(`✅ Email sent to ${user.email}`);
@@ -472,7 +472,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.delete("/api/admin/categories/:id", requireAdmin, async (req: Request, res: Response) => {
-    await storage.deleteCategory(req.params.id);
+    await storage.deleteCategory(req.params.id as string);
     res.sendStatus(200);
   });
 
