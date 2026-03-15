@@ -28,8 +28,12 @@ export function getCustomerToken() {
   return localStorage.getItem(CUSTOMER_TOKEN_KEY);
 }
 
-export function setCustomerToken(token: string) {
-  localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+export function setCustomerToken(token: string | null) {
+  if (token === null) {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  } else {
+    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+  }
 }
 
 export function clearCustomerToken() {

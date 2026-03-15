@@ -6,16 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Search, Filter, SlidersHorizontal, Loader2 } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Loader2, Heart, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useWishlist } from "../hooks/use-wishlist";
 
 export default function Shop() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([100]);
+  const [showWishlistOnly, setShowWishlistOnly] = useState(false);
+  const { items: wishlistItems } = useWishlist();
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ["/api/products"],
@@ -30,6 +33,14 @@ export default function Shop() {
   const allProducts = productsData || [];
   const cats = categoriesData || [];
 
+  // Check URL params for wishlist filter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("wishlist") === "true") {
+      setShowWishlistOnly(true);
+    }
+  }, []);
+
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
     if (searchTerm) {
@@ -42,8 +53,12 @@ export default function Shop() {
     }
     const maxPrice = priceRange[0] * 100;
     filtered = filtered.filter((p: any) => p.price <= maxPrice);
+
+    if (showWishlistOnly) {
+      filtered = filtered.filter((p: any) => wishlistItems.includes(p.id));
+    }
     return filtered;
-  }, [allProducts, searchTerm, selectedCategories, priceRange]);
+  }, [allProducts, searchTerm, selectedCategories, priceRange, showWishlistOnly, wishlistItems]);
 
   function toggleCategory(catId: string) {
     setSelectedCategories(prev =>
@@ -63,6 +78,21 @@ export default function Shop() {
         />
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       </div>
+
+      <div className="space-y-4">
+        <div
+          className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${showWishlistOnly ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-border hover:border-primary/50"}`}
+          onClick={() => setShowWishlistOnly(!showWishlistOnly)}
+        >
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${showWishlistOnly ? "bg-red-100" : "bg-gray-100"}`}>
+            <Heart className={`h-4 w-4 ${showWishlistOnly ? "fill-red-600 text-red-600" : "text-gray-500"}`} />
+          </div>
+          <div className="flex-1 font-bold text-sm">
+            المفضلة فقط
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <h3 className="font-bold text-lg">الأقسام</h3>
         <div className="space-y-3">
@@ -132,7 +162,20 @@ export default function Shop() {
             <div className="flex items-center justify-between mb-8">
               <p className="text-muted-foreground font-medium">
                 عرض <span className="text-foreground font-bold" data-testid="text-product-count">{filteredProducts.length}</span> منتج
+                {showWishlistOnly && <span className="mr-1 text-red-600 font-bold">(المفضلة)</span>}
               </p>
+
+              {showWishlistOnly && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowWishlistOnly(false)}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  إلغاء تصفية المفضلة
+                </Button>
+              )}
             </div>
 
             {isLoading ? (

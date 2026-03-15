@@ -1,0 +1,26 @@
+{
+  "name": "الراقي للمنتجات السودانية",
+  "short_name": "الراقي",
+  "description": "وجهتك الأولى للمنتجات السودانية الأصيلة. تسوق التوابل، الأغذية، والمنتجات التقليدية بجودة عالية.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1b705c",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

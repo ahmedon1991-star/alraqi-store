@@ -11,6 +11,7 @@ import {
   Pencil,
   PlusCircle,
   Search,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Trash2,
@@ -161,6 +162,28 @@ export default function AdminPage() {
       toast({
         title: "تم حفظ الإعدادات",
         description: "تم تحديث إعدادات الإدارة بنجاح.",
+      });
+    },
+  });
+
+  const updateSecurityMutation = useMutation({
+    mutationFn: (securityData: { username?: string; password?: string; currentPassword?: string }) =>
+      apiRequest("/api/admin/security", {
+        method: "POST",
+        body: JSON.stringify(securityData),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      toast({
+        title: "تم تحديث بيانات الأمان",
+        description: "تمت العملية بنجاح. يرجى استخدام البيانات الجديدة في المرة القادمة.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "فشل التحديث",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
@@ -463,9 +486,10 @@ export default function AdminPage() {
         </section>
 
         <Tabs defaultValue="overview" className="w-full space-y-8">
-          <TabsList className="grid w-full grid-cols-2 rounded-xl h-14 bg-white/60 p-1 mb-8">
+          <TabsList className="grid w-full grid-cols-3 rounded-xl h-14 bg-white/60 p-1 mb-8">
             <TabsTrigger value="overview" className="rounded-lg text-lg font-bold">الرئيسية</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg text-lg font-bold">الإعدادات</TabsTrigger>
+            <TabsTrigger value="security" className="rounded-lg text-lg font-bold">الأمان</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8">
@@ -682,7 +706,7 @@ export default function AdminPage() {
                   }}
                 >
                   <div className="space-y-2">
-                    <label className="text-sm font-bold block text-right">البريد الإلكتروني (اسم المستخدم)</label>
+                    <label className="text-sm font-bold block text-right">البريد الإلكتروني للإشعارات</label>
                     <Input
                       name="email"
                       type="email"
@@ -712,6 +736,108 @@ export default function AdminPage() {
                     disabled={updateSettingsMutation.isPending}
                   >
                     {updateSettingsMutation.isPending ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-8">
+            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] max-w-2xl mx-auto">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                  <ShieldCheck className="h-7 w-7" />
+                </div>
+                <CardTitle>تعديل بيانات الدخول والأمان</CardTitle>
+                <CardDescription>
+                  تغيير اسم المستخدم أو كلمة المرور الخاصة بلوحة الإدارة. 
+                  <span className="block mt-1 font-bold text-rose-600">تنبيه: ستحتاج لتسجيل الدخول بالبيانات الجديدة فوراً.</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-5"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const newPass = formData.get("new_password") as string;
+                    const confirmPass = formData.get("confirm_password") as string;
+
+                    if (newPass && newPass !== confirmPass) {
+                      toast({
+                        title: "خطأ في التأكيد",
+                        description: "كلمتا المرور الجديدتان غير متطابقتين.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    updateSecurityMutation.mutate({
+                      username: (formData.get("username") as string) || undefined,
+                      password: newPass || undefined,
+                      currentPassword: formData.get("current_password") as string,
+                    });
+                    
+                    e.currentTarget.reset();
+                  }}
+                >
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">اسم المستخدم الجديد</label>
+                    <Input
+                      name="username"
+                      placeholder={settingsQuery.data?.username || "admin"}
+                      className="text-right"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">كلمة المرور الجديدة</label>
+                      <Input
+                        name="new_password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="text-right"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">تأكيد كلمة المرور</label>
+                      <Input
+                        name="confirm_password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="text-right"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-dashed pt-4">
+                    <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <label className="text-sm font-black block text-right text-primary">كلمة المرور الحالية (مطلوب للتأكيد)</label>
+                      <Input
+                        name="current_password"
+                        type="password"
+                        required
+                        className="text-right border-primary/30"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full text-base font-black h-12 shadow-lg shadow-primary/20"
+                    disabled={updateSecurityMutation.isPending}
+                  >
+                    {updateSecurityMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        جارٍ التحديث المشفر...
+                      </div>
+                    ) : "تحديث بيانات الأمان والقفل"}
                   </Button>
                 </form>
               </CardContent>

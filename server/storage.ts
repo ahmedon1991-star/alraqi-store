@@ -54,6 +54,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<Product | undefined>;
+  rateProduct(id: string, rating: number): Promise<Product | undefined>;
 
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
@@ -179,6 +180,24 @@ export class DatabaseStorage implements IStorage {
 
     const [deleted] = await db.delete(products).where(eq(products.id, id)).returning();
     return deleted;
+  }
+
+  async rateProduct(id: string, rating: number): Promise<Product | undefined> {
+    if (!db) return undefined;
+
+    const product = await this.getProductById(id);
+    if (!product) return undefined;
+
+    const currentRating = Number(product.rating) || 0;
+    const currentReviews = Number(product.reviews) || 0;
+
+    const newReviews = currentReviews + 1;
+    // Calculate new average
+    const newRating = ((currentRating * currentReviews) + rating) / newReviews;
+    const roundedRating = Math.round(newRating * 10) / 10; // Keep 1 decimal
+
+    const [updated] = await db.update(products).set({ rating: roundedRating, reviews: newReviews }).where(eq(products.id, id)).returning();
+    return updated;
   }
 
   async getCategories(): Promise<Category[]> {
@@ -458,6 +477,21 @@ export class MemoryStorage implements IStorage {
     return existing;
   }
 
+  async rateProduct(id: string, rating: number): Promise<Product | undefined> {
+    const existing = this.products.get(id);
+    if (!existing) return undefined;
+
+    const currentRating = Number(existing.rating) || 0;
+    const currentReviews = Number(existing.reviews) || 0;
+    const newReviews = currentReviews + 1;
+    const newRating = ((currentRating * currentReviews) + rating) / newReviews;
+    const roundedRating = Math.round(newRating * 10) / 10;
+
+    const updated = { ...existing, rating: roundedRating, reviews: newReviews };
+    this.products.set(id, updated);
+    return updated;
+  }
+
   async getCategories(): Promise<Category[]> {
     return Array.from(this.categories.values());
   }
@@ -575,7 +609,9 @@ export class MemoryStorage implements IStorage {
       this.adminSettings = {
         id: 1,
         email: "admin@example.com",
-        phone: "+1234567890",
+        phone: "+249912345678",
+        username: process.env.ADMIN_USERNAME || "admin",
+        password: process.env.ADMIN_PASSWORD || "admin12345",
         passwordToken: null,
       };
     }

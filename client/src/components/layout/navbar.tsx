@@ -1,4 +1,4 @@
-import { LogOut, Menu, Search, Shield, ShoppingCart, User } from "lucide-react";
+import { LogOut, Menu, Search, Shield, ShoppingCart, User, Heart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { useCartCount } from "@/hooks/use-cart";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth";
 import { getAdminToken } from "@/lib/api";
+import { useWishlist } from "../../hooks/use-wishlist";
 
 export function Navbar() {
   const [location] = useLocation();
   const cartCount = useCartCount();
+  const { count: wishlistCount } = useWishlist();
   const currentUserQuery = useCurrentUser();
   const logoutMutation = useLogout();
   const user = currentUserQuery.data;
@@ -105,7 +107,19 @@ export function Navbar() {
             </Link>
           )}
 
-
+          <Link href="/shop?wishlist=true">
+            <Button variant="ghost" size="icon" className="relative hover:bg-primary/5 hover:text-red-500">
+              <Heart className="h-5 w-5" />
+              {wishlistCount > 0 && (
+                <Badge
+                  className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-red-500 p-0 text-[10px] hover:bg-red-600"
+                  data-testid="badge-wishlist-count"
+                >
+                  {wishlistCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
 
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative hover:bg-primary/5 hover:text-primary">

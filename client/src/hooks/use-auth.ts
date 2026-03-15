@@ -5,9 +5,10 @@ import { queryClient } from "@/lib/queryClient";
 export type CustomerUser = {
   id: string;
   username: string;
-  name: string | null;
-  email: string | null;
-  avatar: string | null;
+  name?: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
   authProvider: string;
 };
 

@@ -87,7 +87,9 @@ export type Order = typeof orders.$inferSelect;
 export const adminSettings = pgTable("admin_settings", {
   id: integer("id").primaryKey().default(1),
   email: text("email").notNull().default("admin@example.com"),
-  phone: text("phone").notNull().default("+1234567890"),
+  phone: text("phone").notNull().default("+249912345678"),
+  username: text("username").notNull().default("admin"),
+  password: text("password").notNull().default("admin12345"),
   passwordToken: text("password_token"),
 });
 

@@ -5,16 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useWishlist } from "../hooks/use-wishlist";
 
 export default function ProductDetails() {
   const [, params] = useRoute("/product/:id");
   const [quantity, setQuantity] = useState(1);
   const addToCart = useAddToCart();
   const { toast } = useToast();
+  const { data: user } = useCurrentUser();
+  const [hoverRating, setHoverRating] = useState(0);
+  const { isInWishlist, toggleItem } = useWishlist();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
@@ -29,6 +35,21 @@ export default function ProductDetails() {
     }
     toast({ title: "تمت الإضافة", description: `${product.name} (${quantity}) أُضيف إلى السلة` });
   }
+
+  const rateMutation = useMutation({
+    mutationFn: (rating: number) =>
+      apiRequest(`/api/products/${product?.id}/rate`, {
+        method: "POST",
+        body: JSON.stringify({ rating }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products", params?.id] });
+      toast({ title: "شكراً لك!", description: "تم استلام تقييمك بنجاح." });
+    },
+    onError: () => {
+      toast({ title: "خطأ", description: "يجب تسجيل الدخول للتقييم", variant: "destructive" });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -114,6 +135,31 @@ export default function ProductDetails() {
               </div>
             </div>
 
+            <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm mt-2">
+              <h3 className="font-bold text-lg mb-3">قيم هذا المنتج</h3>
+              <div className="flex items-center gap-1 mb-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className="transition-transform hover:scale-110 focus:outline-none"
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    onClick={() => rateMutation.mutate(star)}
+                    disabled={rateMutation.isPending}
+                  >
+                    <Star
+                      className={`h-8 w-8 ${(hoverRating || 0) >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                        }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {user ? "اضغط على النجوم للتقييم" : "يجب عليك تسجيل الدخول لتتمكن من التقييم"}
+              </p>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t mt-auto">
               <div className="flex items-center justify-between bg-white border border-border rounded-full px-4 h-14 w-full sm:w-40">
                 <button
@@ -144,8 +190,13 @@ export default function ProductDetails() {
                 إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
               </Button>
 
-              <Button size="icon" variant="outline" className="h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-200 hover:bg-red-50">
-                <Heart className="h-6 w-6" />
+              <Button
+                size="icon"
+                variant="outline"
+                className={`h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-200 hover:bg-red-50 ${isInWishlist(product.id) ? "text-red-500 bg-red-50 border-red-200" : ""}`}
+                onClick={() => toggleItem(product.id, product.name)}
+              >
+                <Heart className={`h-6 w-6 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
               </Button>
             </div>
           </div>
