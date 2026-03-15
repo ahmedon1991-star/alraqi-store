@@ -2,6 +2,8 @@
     "recommendations": [
         "dart-code.flutter",
         "ritwickdey.liveserver",
-        "google.geminicodeassist"
+        "google.geminicodeassist",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github"
     ]
 }
