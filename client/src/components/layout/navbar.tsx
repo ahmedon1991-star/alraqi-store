@@ -1,18 +1,23 @@
-import { Globe, ShoppingCart, User, Search, Menu } from "lucide-react";
+import { LogOut, Menu, Search, Shield, ShoppingCart, User } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { useCartCount } from "@/hooks/use-cart";
+import { useCurrentUser, useLogout } from "@/hooks/use-auth";
+import { getAdminToken } from "@/lib/api";
 
 export function Navbar() {
   const [location] = useLocation();
   const cartCount = useCartCount();
+  const currentUserQuery = useCurrentUser();
+  const logoutMutation = useLogout();
+  const user = currentUserQuery.data;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
+      <div className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
         <div className="md:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -21,49 +26,95 @@ export function Navbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right">
-              <div className="flex flex-col gap-6 mt-10 font-bold text-lg">
-                <Link href="/" className="hover:text-primary transition-colors">الرئيسية</Link>
-                <Link href="/shop" className="hover:text-primary transition-colors">المنتجات</Link>
-                <div className="h-px bg-border my-2"></div>
-                <Link href="/cart" className="flex items-center gap-2">سلة المشتريات</Link>
-                <Link href="/login" className="flex items-center gap-2">تسجيل الدخول</Link>
+              <div className="mt-10 flex flex-col gap-6 text-lg font-bold">
+                <Link href="/" className="transition-colors hover:text-primary">
+                  الرئيسية
+                </Link>
+                <Link href="/shop" className="transition-colors hover:text-primary">
+                  المنتجات
+                </Link>
+                <Link href="/cart" className="flex items-center gap-2">
+                  سلة المشتريات
+                </Link>
+
+                {user ? (
+                  <button
+                    type="button"
+                    onClick={() => logoutMutation.mutate()}
+                    className="flex items-center gap-2 text-right text-rose-600"
+                  >
+                    تسجيل الخروج
+                  </button>
+                ) : (
+                  <Link href="/login" className="flex items-center gap-2">
+                    تسجيل الدخول
+                  </Link>
+                )}
               </div>
             </SheetContent>
           </Sheet>
         </div>
 
         <Link href="/">
-          <div className="flex flex-col items-center cursor-pointer">
-            <h1 className="text-2xl font-black text-primary tracking-tight">الراقي</h1>
-            <span className="text-xs text-muted-foreground tracking-widest font-bold">للمنتجات السودانية</span>
+          <div className="cursor-pointer text-center">
+            <h1 className="text-2xl font-black tracking-tight text-primary">الراقي</h1>
+            <span className="text-xs font-bold tracking-widest text-muted-foreground">للمنتجات السودانية</span>
           </div>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-          <Link href="/" className={`transition-colors hover:text-primary ${location === '/' ? 'text-primary font-bold' : ''}`}>الرئيسية</Link>
-          <Link href="/shop" className={`transition-colors hover:text-primary ${location.startsWith('/shop') ? 'text-primary font-bold' : ''}`}>المتجر</Link>
+        <div className="hidden items-center gap-8 text-sm font-medium md:flex">
+          <Link href="/" className={`transition-colors hover:text-primary ${location === "/" ? "font-bold text-primary" : ""}`}>
+            الرئيسية
+          </Link>
+          <Link href="/shop" className={`transition-colors hover:text-primary ${location.startsWith("/shop") ? "font-bold text-primary" : ""}`}>
+            المتجر
+          </Link>
+
         </div>
 
-        <div className="hidden lg:flex items-center relative max-w-sm w-full mx-4">
+        <div className="relative mx-4 hidden w-full max-w-sm items-center lg:flex">
           <Input
             type="search"
             placeholder="ابحث عن المنتجات..."
-            className="pl-4 pr-10 rounded-full bg-muted/30 focus-visible:ring-primary/20 border-primary/20"
+            className="rounded-full border-primary/20 bg-muted/30 pl-4 pr-10 focus-visible:ring-primary/20"
           />
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/login">
-            <Button variant="ghost" size="icon" className="hidden sm:flex hover:text-primary hover:bg-primary/5">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-bold text-foreground">{user.name || user.email || user.username}</p>
+                <p className="text-xs text-muted-foreground">{user.email || "حساب عميل"}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:flex hover:bg-primary/5 hover:text-primary"
+                onClick={() => logoutMutation.mutate()}
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </>
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost" size="icon" className="hidden sm:flex hover:bg-primary/5 hover:text-primary">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+
+
+
           <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative hover:text-primary hover:bg-primary/5">
+            <Button variant="ghost" size="icon" className="relative hover:bg-primary/5 hover:text-primary">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <Badge className="absolute -top-1 -left-1 h-5 w-5 p-0 flex items-center justify-center bg-primary text-[10px]" data-testid="badge-cart-count">
+                <Badge
+                  className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-primary p-0 text-[10px]"
+                  data-testid="badge-cart-count"
+                >
                   {cartCount}
                 </Badge>
               )}

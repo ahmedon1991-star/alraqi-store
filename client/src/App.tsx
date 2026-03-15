@@ -8,6 +8,9 @@ import Shop from "@/pages/shop";
 import ProductDetails from "@/pages/product-details";
 import Cart from "@/pages/cart";
 import AuthPage from "@/pages/auth";
+import AdminPage from "@/pages/admin";
+import AdminLoginPage from "@/pages/admin-login";
+import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 
 function Router() {
   return (
@@ -18,8 +21,11 @@ function Router() {
         <Route path="/product/:id" component={ProductDetails} />
         <Route path="/cart" component={Cart} />
         <Route path="/login" component={AuthPage} />
+        <Route path="/admin-login" component={AdminLoginPage} />
+        <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
+      <FloatingAdminButton />
     </div>
   );
 }

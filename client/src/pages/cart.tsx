@@ -3,12 +3,26 @@ import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, ArrowRight, Minus, Plus, Loader2, ShoppingCart } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useCart, useUpdateCartQuantity, useRemoveFromCart } from "@/hooks/use-cart";
+import { useCurrentUser } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Cart() {
-  const { data, isLoading } = useCart();
+  const { data, isLoading: isCartLoading } = useCart();
+  const { data: user, isLoading: isUserLoading } = useCurrentUser();
   const updateQuantity = useUpdateCartQuantity();
   const removeItem = useRemoveFromCart();
   const { toast } = useToast();
@@ -24,7 +38,45 @@ export default function Cart() {
     });
   }
 
-  if (isLoading) {
+  const [checkoutData, setCheckoutData] = useState({ name: "", phone: "", address: "" });
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [, setLocation] = useLocation();
+
+  const checkoutMutation = useMutation({
+    mutationFn: () =>
+      apiRequest("/api/orders", {
+        method: "POST",
+        body: JSON.stringify(checkoutData),
+      }),
+    onSuccess: async (data) => {
+      // Clear cart queries
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/cart/count"] });
+      
+      setIsCheckoutOpen(false);
+      toast({
+        title: "تم الطلب بنجاح",
+        description: "جاري تحويلك للواتساب لإتمام عملية الشراء...",
+      });
+      
+      if (data.whatsappUrl) {
+        // Open WhatsApp in new tab
+        window.open(data.whatsappUrl, "_blank");
+      }
+      
+      // Optionally redirect user to orders or home
+      setLocation("/");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "حدث خطأ",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  if (isCartLoading || isUserLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
@@ -121,9 +173,66 @@ export default function Cart() {
                 </div>
 
                 <div className="space-y-3">
-                  <Button className="w-full h-12 rounded-full font-bold text-lg shadow-lg hover:shadow-primary/20" data-testid="button-checkout">
-                    إتمام الشراء
-                  </Button>
+                  {user ? (
+                    <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full h-12 rounded-full font-bold text-lg shadow-lg hover:shadow-primary/20" data-testid="button-checkout">
+                          إتمام الشراء عبر واتساب
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader className="text-right">
+                          <DialogTitle>بيانات التوصيل</DialogTitle>
+                          <DialogDescription>
+                            يرجى إدخال بيانات التوصيل لإتمام الطلب وسيتم تحويلك للواتساب للتأكيد.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form 
+                          className="space-y-4 mt-4"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            checkoutMutation.mutate();
+                          }}
+                        >
+                          <Input
+                            placeholder="الاسم كاملًا"
+                            required
+                            value={checkoutData.name}
+                            onChange={e => setCheckoutData(prev => ({ ...prev, name: e.target.value }))}
+                            className="text-right"
+                          />
+                          <Input
+                            placeholder="رقم الهاتف (للتواصل)"
+                            required
+                            type="tel"
+                            value={checkoutData.phone}
+                            onChange={e => setCheckoutData(prev => ({ ...prev, phone: e.target.value }))}
+                            className="text-right"
+                          />
+                          <Input
+                            placeholder="العنوان بالتفصيل"
+                            required
+                            value={checkoutData.address}
+                            onChange={e => setCheckoutData(prev => ({ ...prev, address: e.target.value }))}
+                            className="text-right"
+                          />
+                          <Button
+                            type="submit"
+                            className="w-full h-12 text-lg font-bold"
+                            disabled={checkoutMutation.isPending}
+                          >
+                            {checkoutMutation.isPending ? "جاري المعالجة..." : "تأكيد واستمرار للواتساب"}
+                          </Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <Link href="/login">
+                      <Button className="w-full h-12 rounded-full font-bold text-lg shadow-lg hover:shadow-primary/20" data-testid="button-login-checkout">
+                        تسجيل الدخول لإتمام الشراء
+                      </Button>
+                    </Link>
+                  )}
                   <Link href="/shop">
                     <Button variant="outline" className="w-full h-12 rounded-full font-bold">
                       <ArrowRight className="h-4 w-4 ml-2" />

@@ -8,7 +8,11 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name"),
-  email: text("email"),
+  email: text("email").unique(),
+  phone: varchar("phone", { length: 20 }),
+  googleId: text("google_id").unique(),
+  avatar: text("avatar"),
+  authProvider: text("auth_provider").notNull().default("local"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -16,6 +20,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   name: true,
   email: true,
+  phone: true,
+  googleId: true,
+  avatar: true,
+  authProvider: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -63,6 +71,7 @@ export type CartItem = typeof cartItems.$inferSelect;
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: text("session_id").notNull(),
+  userId: varchar("user_id"),
   total: integer("total").notNull(),
   status: text("status").notNull().default("pending"),
   name: text("name"),
@@ -74,3 +83,14 @@ export const orders = pgTable("orders", {
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+export const adminSettings = pgTable("admin_settings", {
+  id: integer("id").primaryKey().default(1),
+  email: text("email").notNull().default("admin@example.com"),
+  phone: text("phone").notNull().default("+1234567890"),
+  passwordToken: text("password_token"),
+});
+
+export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true });
+export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
+export type AdminSettings = typeof adminSettings.$inferSelect;
