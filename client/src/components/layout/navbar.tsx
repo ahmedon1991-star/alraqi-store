@@ -40,13 +40,18 @@ export function Navbar() {
                 </Link>
 
                 {user ? (
-                  <button
-                    type="button"
-                    onClick={() => logoutMutation.mutate()}
-                    className="flex items-center gap-2 text-right text-rose-600"
-                  >
-                    تسجيل الخروج
-                  </button>
+                  <>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      مرحبا، {user.name || "العميل"}
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => logoutMutation.mutate()}
+                      className="flex items-center gap-2 text-right text-rose-600"
+                    >
+                      تسجيل الخروج
+                    </button>
+                  </>
                 ) : (
                   <Link href="/login" className="flex items-center gap-2">
                     تسجيل الدخول
@@ -86,18 +91,19 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
-              <div className="hidden text-right sm:block">
+              <Link href="/profile" className="hidden text-right sm:block cursor-pointer hover:opacity-80 transition-opacity">
                 <p className="text-sm font-bold text-foreground">{user.name || user.email || user.username}</p>
                 <p className="text-xs text-muted-foreground">{user.email || "حساب عميل"}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hidden sm:flex hover:bg-primary/5 hover:text-primary"
-                onClick={() => logoutMutation.mutate()}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
+              </Link>
+              <Link href="/profile">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden sm:flex hover:bg-primary/5 hover:text-primary"
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
             </>
           ) : (
             <Link href="/login">

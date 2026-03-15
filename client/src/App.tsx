@@ -8,6 +8,7 @@ import Shop from "@/pages/shop";
 import ProductDetails from "@/pages/product-details";
 import Cart from "@/pages/cart";
 import AuthPage from "@/pages/auth";
+import ProfilePage from "@/pages/profile";
 import ResetPasswordPage from "@/pages/reset-password";
 import AdminPage from "@/pages/admin";
 import AdminLoginPage from "@/pages/admin-login";
@@ -22,6 +23,7 @@ function Router() {
         <Route path="/product/:id" component={ProductDetails} />
         <Route path="/cart" component={Cart} />
         <Route path="/login" component={AuthPage} />
+        <Route path="/profile" component={ProfilePage} />
         <Route path="/reset-password" component={ResetPasswordPage} />
         <Route path="/admin-login" component={AdminLoginPage} />
         <Route path="/admin" component={AdminPage} />
