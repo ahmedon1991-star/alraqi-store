@@ -1,10 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import path from "path";
 
 const app = express();
+app.use(cors());
 const httpServer = createServer(app);
 
 declare module "http" {

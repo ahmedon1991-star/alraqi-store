@@ -68,7 +68,7 @@ function verifyPassword(password: string, storedHash: string) {
 
 function getSessionId(req: Request): string {
   const header = req.headers["x-session-id"];
-  let sid = Array.isArray(header) ? header[0] : header;
+  let sid = getSingleParam(header); 
   if (!sid) {
     sid = Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
@@ -164,9 +164,9 @@ async function verifyGoogleCredential(credential: string): Promise<GoogleTokenIn
 }
 
 function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertProduct> | null {
-  const { 
-    name, nameEn, description, price, image, category, 
-    rating, reviews, badge, inStock, sizes, measurements 
+  const {
+    name, nameEn, description, price, image, category,
+    rating, reviews, badge, inStock, sizes, measurements
   } = body;
 
   if (!name || typeof name !== "string") {
@@ -353,7 +353,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const user = await storage.getUserByEmail(email.trim().toLowerCase());
-    
+
     // For security, we usually return success even if user not found, 
     // but for debugging purposes we will check existence here.
     if (!user) {
@@ -364,14 +364,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const resetToken = createToken();
     // In a real app, you would save this token to the database with an expiration time
     // and send it via email.
-    
+
     const protocol = req.protocol;
     const host = req.get('host');
     const resetLink = `${protocol}://${host}/reset-password?token=${resetToken}&email=${user.email}`;
-    
+
     // Attempt to send real email
     const emailSent = await sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم");
-    
+
     if (emailSent) {
       console.log(`✅ Email sent to ${user.email}`);
     } else {
@@ -382,17 +382,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.log(`---------------------------------\n`);
     }
 
-    res.json({ 
-      success: true, 
-      message: "تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني (يرجى التحقق من الرسائل المهملة أيضاً)." 
+    res.json({
+      success: true,
+      message: "تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني (يرجى التحقق من الرسائل المهملة أيضاً)."
     });
   });
 
   app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
-    const { email, token, password } = req.body as { 
-      email?: string; 
-      token?: string; 
-      password?: string; 
+    const { email, token, password } = req.body as {
+      email?: string;
+      token?: string;
+      password?: string;
     };
 
     if (!email || !token || !password) {
@@ -430,7 +430,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     // First try database settings (could be hashed or plaintext if default)
     let authenticated = false;
-    
+
     // Check if it's the hashed password from DB
     if (username === storedUsername) {
       if (storedPassword.includes(':')) {
@@ -498,27 +498,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(bank);
   });
 
-  app.delete("/api/admin/banks/:id", requireAdmin, async (req, res) => {
-    await storage.deleteBank(req.params.id);
+  app.delete("/api/admin/banks/:id", requireAdmin, async (req: Request, res: Response) => {
+    await storage.deleteBank(getSingleParam(req.params.id));
     res.sendStatus(200);
   });
 
   app.post("/api/admin/settings", requireAdmin, async (req: Request, res: Response) => {
-    const { email, phone, address, facebook, instagram, twitter } = req.body as { 
-      email?: string; 
+    const { email, phone, address, facebook, instagram, twitter } = req.body as {
+      email?: string;
       phone?: string;
       address?: string;
       facebook?: string;
       instagram?: string;
       twitter?: string;
     };
-    const settings = await storage.updateAdminSettings({ 
-      email, 
-      phone, 
-      address, 
-      facebook, 
-      instagram, 
-      twitter 
+    const settings = await storage.updateAdminSettings({
+      email,
+      phone,
+      address,
+      facebook,
+      instagram,
+      twitter
     });
     res.json(settings);
   });
@@ -863,7 +863,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       `*${idx + 1}. ${item.name}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${(item.price).toLocaleString()} ج.س`
     ).join('%0A%0A');
 
-    const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
+    const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
 
     const message = `🌿 *الراقي للمنتجات السودانية*%0A🔖 *للتميز والفخامة*%0A%0A` +
       `━━━━━━━━━━━━━━━━━━%0A` +

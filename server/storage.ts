@@ -1,4 +1,7 @@
 import crypto from "node:crypto";
+import dotenv from "dotenv";
+dotenv.config();
+
 import {
   type User,
   type InsertUser,
@@ -37,9 +40,11 @@ function createId() {
 
 function createDatabase() {
   if (!process.env.DATABASE_URL) {
+    console.log("No DATABASE_URL found. Using MemoryStorage.");
     return null;
   }
-
+  
+  console.log("DATABASE_URL found. Connecting to PostgreSQL database.");
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
   return drizzle(pool);
 }
@@ -333,7 +338,7 @@ export class DatabaseStorage implements IStorage {
 
     const [created] = await db.insert(orders).values({
       ...order,
-      createdAt: order.createdAt || new Date(),
+      createdAt: new Date(),
     }).returning();
     return created;
   }
