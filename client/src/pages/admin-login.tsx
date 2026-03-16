@@ -57,18 +57,22 @@ export default function AdminLoginPage() {
       <Navbar />
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         {/* Modern Background Decorations */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(27,112,92,0.08),_transparent_40%),linear-gradient(180deg,_rgba(255,250,244,1),_rgba(247,244,238,1))]" />
-        <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] translate-x-1/4 -translate-y-1/4 rounded-full bg-primary/5 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 -z-10 h-[500px] w-[500px] -translate-x-1/4 translate-y-1/4 rounded-full bg-secondary/5 blur-[100px]" />
-
+        <div className="absolute inset-0 -z-10">
+          <img src="/images/hero-main.png" className="w-full h-full object-cover opacity-10" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
+        </div>
+        
         <Card className="w-full max-w-md border-white/80 bg-white/90 shadow-[0_32px_120px_rgba(27,112,92,0.1)] backdrop-blur-xl">
           <CardHeader className="space-y-4 pb-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
-              <LockKeyhole className="h-8 w-8" />
+            <div className="mx-auto flex flex-col items-center gap-4">
+              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain drop-shadow-sm mb-2" />
+              <div className="h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner hidden">
+                <LockKeyhole className="h-8 w-8" />
+              </div>
             </div>
             <div className="space-y-2">
               <CardTitle className="text-4xl font-black tracking-tight text-primary">دخول الإدارة</CardTitle>
-              <CardDescription className="text-base">
+              <CardDescription className="text-base font-bold">
                 مساحة آمنة لإدارة متجر الراقي
               </CardDescription>
             </div>

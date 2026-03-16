@@ -470,16 +470,34 @@ export default function AdminPage() {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Navbar />
-        <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <div className="flex flex-1 flex-col items-center justify-center gap-6">
+          <img src="/logo.png" alt="الراقي" className="h-24 w-auto animate-pulse object-contain" />
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="text-lg font-bold text-muted-foreground">جاري تحميل لوحة التحكم...</span>
+          </div>
         </div>
         <Footer />
       </div>
     );
   }
 
+  if (authQuery.isError) {
+    return null; // The useEffect will handle redirect
+  }
+
   if (!data) {
-    return null;
+    return (
+      <div className="flex min-h-screen flex-col bg-background text-center p-20">
+        <Navbar />
+        <h2 className="text-2xl font-bold text-rose-600">تعذر تحميل البيانات</h2>
+        <p className="mt-4">يرجى التحقق من اتصال قاعدة البيانات أو إعادة تسجيل الدخول.</p>
+        <Button className="mt-6 mx-auto w-fit" onClick={() => (window.location.href = "/admin-login")}>
+          العودة للتسجيل
+        </Button>
+        <Footer />
+      </div>
+    );
   }
 
   const summaryCards = [
@@ -510,10 +528,16 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(26,139,130,0.12),_transparent_28%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,244,238,0.96))]">
+    <div className="flex min-h-screen flex-col relative overflow-hidden bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(248,244,238,1))]">
+      {/* Branded Background Background */}
+      <div className="absolute inset-0 -z-10">
+        <img src="/images/hero-main.png" alt="الخلفية" className="w-full h-full object-cover opacity-[0.03]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-white" />
+      </div>
+
       <Navbar />
-      <main className="container mx-auto flex-1 px-4 py-10">
-        <section className="mb-10 overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 p-8 shadow-[0_20px_80px_rgba(69,44,16,0.08)] backdrop-blur">
+      <main className="container mx-auto flex-1 px-4 py-10 relative z-10">
+        <section className="mb-10 overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl flex items-center gap-6">
               <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain hidden sm:block drop-shadow-md" />
