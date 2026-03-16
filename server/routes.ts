@@ -4,6 +4,27 @@ import { type Server } from "http";
 import type { Category, InsertProduct, InsertUser, Order, Product, User, InsertAdminSettings } from "@shared/schema";
 import { storage } from "./storage";
 import { sendPasswordResetEmail } from "./email";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configure multer for file uploads
+const uploadDir = path.join(process.cwd(), "dist", "public", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const multerStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: multerStorage });
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
@@ -140,7 +161,10 @@ async function verifyGoogleCredential(credential: string): Promise<GoogleTokenIn
 }
 
 function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertProduct> | null {
-  const { name, nameEn, description, price, image, category, rating, reviews, badge, inStock } = body;
+  const { 
+    name, nameEn, description, price, image, category, 
+    rating, reviews, badge, inStock, sizes, measurements 
+  } = body;
 
   if (!name || typeof name !== "string") {
     return null;
@@ -165,6 +189,8 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
     reviews: typeof reviews === "number" ? reviews : 0,
     badge: typeof badge === "string" && badge.trim() ? badge : null,
     inStock: typeof inStock === "boolean" ? inStock : true,
+    sizes: typeof sizes === "string" && sizes.trim() ? sizes : null,
+    measurements: typeof measurements === "string" && measurements.trim() ? measurements : null,
   };
 }
 
@@ -440,6 +466,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/admin/settings", requireAdmin, async (_req: Request, res: Response) => {
     const settings = await storage.getAdminSettings();
     res.json(settings || { email: ADMIN_USERNAME, phone: "+249912345678", username: ADMIN_USERNAME });
+  });
+
+  app.post("/api/admin/upload", requireAdmin, upload.single("image"), (req: Request, res: Response) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "يرجى اختيار ملف لرفعه" });
+    }
+    const imageUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: imageUrl });
   });
 
   app.post("/api/admin/settings", requireAdmin, async (req: Request, res: Response) => {
@@ -742,25 +776,48 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const total = currentCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const shipping = 1500;
+    const itemsData = currentCartItems.map(item => ({
+      id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+      size: (item as any).size || null // Assuming size might be passed in some future cart update
+    }));
+
     const order = await storage.createOrder({
       sessionId,
       userId,
-      total: total + 1500, // +1500 presumably shipping cost
+      total: total + shipping,
       status: "pending",
       name,
       phone,
       address,
+      items: JSON.stringify(itemsData),
     });
 
     await storage.clearCart(sessionId);
 
-    // Generate WhatsApp URL
+    // Generate Professional WhatsApp Invoice
     const adminSettings = await storage.getAdminSettings();
-    const adminPhoneRaw = adminSettings?.phone || process.env.ADMIN_PHONE || "249912345678"; // Expected formats e.g., 249...
+    const adminPhoneRaw = adminSettings?.phone || process.env.ADMIN_PHONE || "249912345678";
     const sanitizedAdminPhone = adminPhoneRaw.replace(/[^0-9]/g, '');
 
-    const itemsText = currentCartItems.map(item => `- ${item.product.name} (x${item.quantity})`).join('%0A');
-    const message = `طلب جديد!%0Aالاسم: ${name}%0Aرقم التليفون: ${phone}%0Aالعنوان: ${address}%0Aالمبلغ الإجمالي: ${total + 1500} ج.س%0A%0Aالمنتجات:%0A${itemsText}`;
+    const itemsText = itemsData.map((item, idx) => 
+      `*${idx + 1}. ${item.name}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${item.price} ج.س`
+    ).join('%0A%0A');
+
+    const message = `✨ *فاتورة طلب جديدة - متجر الراقي* ✨%0A%0A` +
+      `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}%0A` +
+      `👤 *العميل:* ${name}%0A` +
+      `📞 *الهاتف:* ${phone}%0A` +
+      `📍 *العنوان:* ${address}%0A%0A` +
+      `📦 *المنتجات:*%0A${itemsText}%0A%0A` +
+      `--------------------------%0A` +
+      `💰 *المجموع:* ${total} ج.س%0A` +
+      `🚚 *التوصيل:* ${shipping} ج.س%0A` +
+      `✅ *الإجمالي النهائي: ${total + shipping} ج.س*%0A%0A` +
+      `شكراً لتسوقكم معنا! 🙏`;
 
     const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${message}`;
 

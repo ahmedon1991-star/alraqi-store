@@ -444,6 +444,8 @@ export class MemoryStorage implements IStorage {
       reviews: product.reviews ?? 0,
       badge: product.badge ?? null,
       inStock: product.inStock ?? true,
+      sizes: product.sizes ?? null,
+      measurements: product.measurements ?? null,
     };
     this.products.set(created.id, created);
     return created;
@@ -465,6 +467,8 @@ export class MemoryStorage implements IStorage {
       inStock: product.inStock ?? existing.inStock,
       rating: product.rating ?? existing.rating,
       reviews: product.reviews ?? existing.reviews,
+      sizes: product.sizes ?? existing.sizes,
+      measurements: product.measurements ?? existing.measurements,
     };
     this.products.set(id, updated);
     return updated;
@@ -590,6 +594,7 @@ export class MemoryStorage implements IStorage {
       name: order.name ?? null,
       phone: order.phone ?? null,
       address: order.address ?? null,
+      items: order.items ?? null,
       createdAt: new Date(),
     };
     this.orders.set(created.id, created);

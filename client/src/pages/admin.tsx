@@ -20,6 +20,9 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
+  FileText,
+  Upload,
+  Eye,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -62,6 +65,7 @@ type AdminOverview = {
     createdAt: string | null;
     phone: string | null;
     address: string | null;
+    items: string | null;
   }>;
   products: Array<{
     id: string;
@@ -73,6 +77,8 @@ type AdminOverview = {
     badge: string | null;
     image: string | null;
     description: string | null;
+    sizes: string | null;
+    measurements: string | null;
   }>;
   topCategories: Array<{
     id: string;
@@ -92,6 +98,8 @@ type ProductFormState = {
   badge: string;
   description: string;
   inStock: boolean;
+  sizes: string;
+  measurements: string;
 };
 
 const initialForm: ProductFormState = {
@@ -103,6 +111,8 @@ const initialForm: ProductFormState = {
   badge: "",
   description: "",
   inStock: true,
+  sizes: "",
+  measurements: "",
 };
 
 const statusLabels: Record<string, string> = {
@@ -136,6 +146,44 @@ export default function AdminPage() {
   const [productSearch, setProductSearch] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: "product" | "category") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "x-admin-token": localStorage.getItem("admin_token") || "",
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("فشل رفع الصورة");
+      
+      const data = await response.json();
+      if (target === "product") {
+        setForm(prev => ({ ...prev, image: data.url }));
+      } else {
+        // Handle category icon upload if needed, here we'll just return the URL
+        return data.url;
+      }
+      toast({ title: "تم رفع الصورة بنجاح" });
+    } catch (err: any) {
+      toast({ title: "خطأ في الرفع", description: err.message, variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const authQuery = useQuery({
     queryKey: ["/api/admin/me"],
@@ -271,6 +319,8 @@ export default function AdminPage() {
           badge: form.badge,
           description: form.description,
           inStock: form.inStock,
+          sizes: form.sizes,
+          measurements: form.measurements,
         }),
       }),
     onSuccess: () => {
@@ -344,7 +394,7 @@ export default function AdminPage() {
     setIsDialogOpen(true);
   }
 
-  function openEditDialog(product: AdminOverview["products"][number]) {
+  function openEditDialog(product: any) {
     setForm({
       id: product.id,
       name: product.name,
@@ -355,6 +405,8 @@ export default function AdminPage() {
       badge: product.badge || "",
       description: product.description || "",
       inStock: Boolean(product.inStock),
+      sizes: product.sizes || "",
+      measurements: product.measurements || "",
     });
     setIsDialogOpen(true);
   }
@@ -483,11 +535,37 @@ export default function AdminPage() {
                         onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
                         className="text-right"
                       />
+                      <div className="flex gap-2 md:col-span-2">
+                        <Input
+                          placeholder="رابط الصورة"
+                          value={form.image}
+                          onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
+                          className="text-right flex-1"
+                        />
+                        <div className="relative">
+                          <Button variant="outline" className="gap-2" disabled={isUploading}>
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            رفع صوره
+                          </Button>
+                          <input
+                            type="file"
+                            className="absolute inset-0 cursor-pointer opacity-0"
+                            onChange={(e) => handleImageUpload(e, "product")}
+                            accept="image/*"
+                          />
+                        </div>
+                      </div>
                       <Input
-                        placeholder="رابط الصورة"
-                        value={form.image}
-                        onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-                        className="text-right md:col-span-2"
+                        placeholder="الأحجام المتوفرة (مثال: S, M, L)"
+                        value={form.sizes}
+                        onChange={(e) => setForm((prev) => ({ ...prev, sizes: e.target.value }))}
+                        className="text-right"
+                      />
+                      <Input
+                        placeholder="المقاسات / الأوزان (مثال: 1كجم، 50سم)"
+                        value={form.measurements}
+                        onChange={(e) => setForm((prev) => ({ ...prev, measurements: e.target.value }))}
+                        className="text-right"
                       />
                       <Input
                         placeholder="شارة المنتج"
@@ -605,7 +683,8 @@ export default function AdminPage() {
                     <TableHead className="text-right">القيمة</TableHead>
                     <TableHead className="text-right">العنوان</TableHead>
                     <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">إجراء</TableHead>
+                    <TableHead className="text-right">التفاصيل</TableHead>
+                    <TableHead className="text-right">تعديل الحالة</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -625,6 +704,20 @@ export default function AdminPage() {
                       <TableCell className="text-right font-semibold">{formatPrice(order.total)}</TableCell>
                       <TableCell className="max-w-40 text-right text-sm text-muted-foreground">{order.address || "غير متوفر"}</TableCell>
                       <TableCell className="text-right text-muted-foreground">{formatAdminDate(order.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="gap-1 text-primary hover:bg-primary/5"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsOrderDialogOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                          عرض المحتوى
+                        </Button>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
                           <SelectTrigger className="w-36 text-right">
@@ -865,8 +958,27 @@ export default function AdminPage() {
                     <Input name="name" placeholder="عسل ومنتجاته" required className="text-right" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold block text-right">رمز القسم (Icon)</label>
-                    <Input name="icon" placeholder="Sparkles" className="text-right" dir="ltr" />
+                    <label className="text-sm font-bold block text-right">رمز القسم أو صوره</label>
+                    <div className="flex gap-2">
+                      <Input name="icon" id="cat-icon-input" placeholder="Sparkles أو رابط صوره" className="text-right flex-1" dir="ltr" />
+                      <div className="relative">
+                        <Button type="button" variant="outline" size="icon" disabled={isUploading}>
+                          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        </Button>
+                        <input
+                          type="file"
+                          className="absolute inset-0 cursor-pointer opacity-0"
+                          onChange={async (e) => {
+                            const url = await handleImageUpload(e, "category");
+                            if (url) {
+                              const input = document.getElementById('cat-icon-input') as HTMLInputElement;
+                              if (input) input.value = url;
+                            }
+                          }}
+                          accept="image/*"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <Button type="submit" className="h-11 font-bold" disabled={createCategoryMutation.isPending}>
                     {createCategoryMutation.isPending ? "جارٍ الإضافة..." : "إضافة القسم"}
@@ -1003,7 +1115,92 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Detailed Order Dialog */}
+      <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-md">
+          <DialogHeader className="text-right">
+            <DialogTitle className="flex items-center gap-2 justify-end">
+              <FileText className="h-5 w-5 text-primary" />
+              تفاصيل الطلب: {selectedOrder?.name}
+            </DialogTitle>
+            <DialogDescription className="text-right">
+              رقم الطلب: {selectedOrder?.id?.split('-')[0]} - بتاريخ {formatAdminDate(selectedOrder?.createdAt)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 overflow-y-auto max-h-[60vh] py-4 px-2 scrollbar-thin scrollbar-thumb-primary/20">
+            <div className="grid grid-cols-2 gap-4 text-right">
+              <div className="rounded-xl border border-border/50 bg-background/50 p-3">
+                <p className="text-xs text-muted-foreground mb-1">بيانات العميل</p>
+                <p className="font-bold">{selectedOrder?.name}</p>
+                <p className="text-sm">{selectedOrder?.phone}</p>
+              </div>
+              <div className="rounded-xl border border-border/50 bg-background/50 p-3">
+                <p className="text-xs text-muted-foreground mb-1">مكان التوصيل</p>
+                <p className="text-sm leading-relaxed">{selectedOrder?.address}</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/60 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-primary/5">
+                  <TableRow>
+                    <TableHead className="text-right font-bold">المنتج</TableHead>
+                    <TableHead className="text-center font-bold">الكمية</TableHead>
+                    <TableHead className="text-left font-bold">السعر</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(() => {
+                    try {
+                      const items = JSON.parse(selectedOrder?.items || '[]');
+                      if (!items || items.length === 0) return <TableRow><TableCell colSpan={3} className="text-center py-4">لا يوجد تفاصيل للمنتجات</TableCell></TableRow>;
+                      return items.map((item: any, idx: number) => (
+                        <TableRow key={idx}>
+                          <TableCell className="text-right">
+                            <span className="font-medium text-foreground">{item.name}</span>
+                          </TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-left font-bold">{formatPrice(item.price)}</TableCell>
+                        </TableRow>
+                      ));
+                    } catch (e) {
+                      return <TableRow><TableCell colSpan={3} className="text-center py-4">خطأ في قراءة بيانات المنتجات</TableCell></TableRow>;
+                    }
+                  })()}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex flex-col gap-2 rounded-2xl bg-primary/5 p-4 text-right">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-black text-primary">{formatPrice(selectedOrder?.total)}</span>
+                <span className="text-muted-foreground font-bold">إجمالي الفاتورة:</span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-start">
+            <Button onClick={() => setIsOrderDialogOpen(false)} className="w-full h-12 text-lg font-bold">إغلاق</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
+}
+
+function formatAdminDate(dateStr: string | null) {
+  if (!dateStr) return "غير متوفر";
+  try {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("ar-EG", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  } catch (e) {
+    return dateStr;
+  }
 }
