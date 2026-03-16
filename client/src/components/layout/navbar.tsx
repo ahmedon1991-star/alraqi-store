@@ -65,7 +65,7 @@ export function Navbar() {
         <Link href="/">
           <div className="cursor-pointer flex items-center">
             <img
-              src="/logo.png"
+              src="/logo.jpg"
               alt="الراقي"
               className="h-14 w-auto object-contain"
             />
