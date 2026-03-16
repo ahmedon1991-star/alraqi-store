@@ -770,6 +770,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "جميع الحقول مطلوبة" });
     }
 
+    // Server-side validation for "Real" data
+    if (name.trim().length < 3) {
+      return res.status(400).json({ message: "يرجى إدخال اسم حقيقي (3 أحرف على الأقل)" });
+    }
+
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    if (cleanPhone.length < 9) {
+      return res.status(400).json({ message: "يرجى إدخال رقم هاتف صحيح (9 أرقام على الأقل)" });
+    }
+
+    if (address.trim().length < 5) {
+      return res.status(400).json({ message: "يرجى إدخال عنوان واضح بالتفصيل" });
+    }
+
     const currentCartItems = await storage.getCartItems(sessionId);
     if (currentCartItems.length === 0) {
       return res.status(400).json({ message: "السلة فارغة" });

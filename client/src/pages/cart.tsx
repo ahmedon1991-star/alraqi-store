@@ -191,6 +191,24 @@ export default function Cart() {
                           className="space-y-4 mt-4"
                           onSubmit={(e) => {
                             e.preventDefault();
+                            
+                            // Client-side validation
+                            if (checkoutData.name.trim().length < 3) {
+                              toast({ title: "خطأ في البيانات", description: "يرجى إدخال اسم حقيقي", variant: "destructive" });
+                              return;
+                            }
+
+                            const cleanPhone = checkoutData.phone.replace(/[^0-9]/g, '');
+                            if (cleanPhone.length < 9) {
+                              toast({ title: "رقم الهاتف غير صحيح", description: "يرجى التأكد من كتابة رقم الهاتف بشكل صحيح", variant: "destructive" });
+                              return;
+                            }
+
+                            if (checkoutData.address.trim().length < 5) {
+                              toast({ title: "العنوان ناقص", description: "يرجى كتابة العنوان بالتفصيل لضمان وصول الطلب", variant: "destructive" });
+                              return;
+                            }
+
                             checkoutMutation.mutate();
                           }}
                         >
