@@ -157,7 +157,7 @@ export default function AuthPage() {
         <Card className="w-full max-w-xl border-white/70 bg-white/85 shadow-[0_24px_80px_rgba(69,44,16,0.12)] backdrop-blur">
           <CardHeader className="space-y-3 text-center">
             <div className="flex justify-center">
-              <img src="/logo.jpg" alt="الراقي" className="h-24 w-auto object-contain" />
+              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain" />
             </div>
             <CardTitle className="text-2xl font-black text-primary">تسجيل الدخول / إنشاء حساب</CardTitle>
             <CardDescription className="text-base font-medium">ابدأ تجربة تسوق فريدة للمنتجات السودانية الأصيلة</CardDescription>

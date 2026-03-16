@@ -35,7 +35,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
         style={{ animationDuration: "700ms" }}
       >
         <img
-          src="/logo.jpg"
+          src="/logo.png"
           alt="الراقي"
           className="w-52 h-auto object-contain drop-shadow-xl"
         />

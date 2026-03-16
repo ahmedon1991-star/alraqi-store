@@ -516,7 +516,7 @@ export default function AdminPage() {
         <section className="mb-10 overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 p-8 shadow-[0_20px_80px_rgba(69,44,16,0.08)] backdrop-blur">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl flex items-center gap-6">
-              <img src="/logo.jpg" alt="الراقي" className="h-24 w-auto object-contain hidden sm:block drop-shadow-md" />
+              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain hidden sm:block drop-shadow-md" />
               <div>
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
                   <Sparkles className="h-4 w-4" />
