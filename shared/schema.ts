@@ -13,6 +13,8 @@ export const users = pgTable("users", {
   googleId: text("google_id").unique(),
   avatar: text("avatar"),
   authProvider: text("auth_provider").notNull().default("local"),
+  createdAt: timestamp("created_at").defaultNow(),
+  lastActive: timestamp("last_active").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -80,12 +82,25 @@ export const orders = pgTable("orders", {
   phone: text("phone"),
   address: text("address"),
   items: text("items"), // Store JSON string of items: [{id, name, price, quantity, size}]
+  paymentMethod: text("payment_method").notNull().default("cod"), // "cod" or "bank"
+  bankId: varchar("bank_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+export const banks = pgTable("banks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bankName: text("bank_name").notNull(),
+  accountName: text("account_name").notNull(),
+  accountNumber: text("account_number").notNull(),
+});
+
+export const insertBankSchema = createInsertSchema(banks).omit({ id: true });
+export type InsertBank = z.infer<typeof insertBankSchema>;
+export type Bank = typeof banks.$inferSelect;
 
 export const adminSettings = pgTable("admin_settings", {
   id: integer("id").primaryKey().default(1),
@@ -103,3 +118,13 @@ export const adminSettings = pgTable("admin_settings", {
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true });
 export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
 export type AdminSettings = typeof adminSettings.$inferSelect;
+
+export const sessions = pgTable("sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: text("token").notNull().unique(),
+  userId: varchar("user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type Session = typeof sessions.$inferSelect;
+export type InsertSession = { token: string; userId: string };

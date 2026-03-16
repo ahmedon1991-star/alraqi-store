@@ -13,6 +13,8 @@ import ResetPasswordPage from "@/pages/reset-password";
 import AdminPage from "@/pages/admin";
 import AdminLoginPage from "@/pages/admin-login";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
+import { SplashScreen } from "@/components/SplashScreen";
+import { useState, useCallback } from "react";
 
 function Router() {
   return (
@@ -35,9 +37,13 @@ function Router() {
 }
 
 function App() {
+  const [splashDone, setSplashDone] = useState(false);
+  const handleSplashDone = useCallback(() => setSplashDone(true), []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
+      {!splashDone && <SplashScreen onDone={handleSplashDone} />}
       <Router />
     </QueryClientProvider>
   );

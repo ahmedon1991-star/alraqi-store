@@ -6,10 +6,6 @@ import {
   Boxes,
   Clock3,
   CreditCard,
-  Facebook,
-  Instagram,
-  Twitter,
-  MapPin,
   Layers,
   Loader2,
   Package,
@@ -23,6 +19,8 @@ import {
   FileText,
   Upload,
   Eye,
+  Users as UsersIcon,
+  Landmark,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -86,6 +84,24 @@ type AdminOverview = {
     icon: string | null;
     productCount: number;
   }>;
+};
+
+type Bank = {
+  id: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+};
+
+type Customer = {
+  id: string;
+  username: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  createdAt: string;
+  lastActive: string;
+  authProvider: string;
 };
 
 type ProductFormState = {
@@ -208,6 +224,18 @@ export default function AdminPage() {
     queryFn: () => apiRequest("/api/categories"),
   });
 
+  const banksQuery = useQuery<Bank[]>({
+    queryKey: ["/api/banks"],
+    queryFn: () => apiRequest("/api/banks"),
+    enabled: authQuery.isSuccess,
+  });
+
+  const customersQuery = useQuery<Customer[]>({
+    queryKey: ["/api/admin/users"],
+    queryFn: () => apiRequest("/api/admin/users"),
+    enabled: authQuery.isSuccess,
+  });
+
   const updateSettingsMutation = useMutation({
     mutationFn: (settingsData: { 
       email: string; 
@@ -228,6 +256,29 @@ export default function AdminPage() {
         title: "تم حفظ الإعدادات",
         description: "تم تحديث إعدادات الإدارة بنجاح.",
       });
+    },
+  });
+
+  const createBankMutation = useMutation({
+    mutationFn: (bankData: Partial<Bank>) =>
+      apiRequest("/api/admin/banks", {
+        method: "POST",
+        body: JSON.stringify(bankData),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banks"] });
+      toast({ title: "تم إضافة البنك بنجاح" });
+    },
+  });
+
+  const deleteBankMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiRequest(`/api/admin/banks/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/banks"] });
+      toast({ title: "تم حذف البنك" });
     },
   });
 
@@ -361,6 +412,10 @@ export default function AdminPage() {
 
   const data = overviewQuery.data;
 
+  const getCategoryName = (id: string) => {
+    return data?.topCategories.find((c) => c.id === id)?.name || id;
+  };
+
   const filteredOrders = useMemo(() => {
     const orders = data?.orders || [];
     return orders.filter((order) => {
@@ -384,10 +439,10 @@ export default function AdminPage() {
       return (
         product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
         product.nameEn?.toLowerCase().includes(productSearch.toLowerCase()) ||
-        formatCategoryLabel(product.category).toLowerCase().includes(productSearch.toLowerCase())
+        getCategoryName(product.category).toLowerCase().includes(productSearch.toLowerCase())
       );
     });
-  }, [data?.products, productSearch]);
+  }, [data?.products, data?.topCategories, productSearch]);
 
   function openCreateDialog() {
     setForm(initialForm);
@@ -460,17 +515,20 @@ export default function AdminPage() {
       <main className="container mx-auto flex-1 px-4 py-10">
         <section className="mb-10 overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 p-8 shadow-[0_20px_80px_rgba(69,44,16,0.08)] backdrop-blur">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
-                <Sparkles className="h-4 w-4" />
-                لوحة تحكم الإدارة
+            <div className="max-w-2xl flex items-center gap-6">
+              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain hidden sm:block drop-shadow-md" />
+              <div>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  لوحة تحكم الإدارة
+                </div>
+                <h1 className="mb-3 text-4xl font-black tracking-tight text-foreground md:text-5xl">
+                  إدارة المتجر من شاشة واحدة
+                </h1>
+                <p className="text-lg leading-8 text-muted-foreground">
+                  دخول محمي، متابعة الطلبات، وتحرير المنتجات مباشرة من لوحة تشغيل مصممة للاستخدام اليومي.
+                </p>
               </div>
-              <h1 className="mb-3 text-4xl font-black tracking-tight text-foreground md:text-5xl">
-                إدارة المتجر من شاشة واحدة
-              </h1>
-              <p className="text-lg leading-8 text-muted-foreground">
-                دخول محمي، متابعة الطلبات، وتحرير المنتجات مباشرة من لوحة تشغيل مصممة للاستخدام اليومي.
-              </p>
             </div>
 
             <div className="flex flex-col gap-4 lg:items-end">
@@ -612,9 +670,11 @@ export default function AdminPage() {
         </section>
 
         <Tabs defaultValue="overview" className="w-full space-y-8">
-          <TabsList className="grid w-full grid-cols-4 rounded-xl h-14 bg-white/60 p-1 mb-8">
+          <TabsList className="grid w-full grid-cols-6 rounded-xl h-14 bg-white/60 p-1 mb-8">
             <TabsTrigger value="overview" className="rounded-lg text-lg font-bold">الرئيسية</TabsTrigger>
+            <TabsTrigger value="customers" className="rounded-lg text-lg font-bold">العملاء</TabsTrigger>
             <TabsTrigger value="categories" className="rounded-lg text-lg font-bold">الأقسام</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-lg text-lg font-bold">طرق الدفع</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg text-lg font-bold">الإعدادات</TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg text-lg font-bold">الأمان</TabsTrigger>
           </TabsList>
@@ -798,7 +858,7 @@ export default function AdminPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-bold text-foreground">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatCategoryLabel(product.category)}</p>
+                        <p className="text-sm text-muted-foreground">{getCategoryName(product.category)}</p>
                         <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(product.price)}</p>
                       </div>
                       <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full">
@@ -825,6 +885,139 @@ export default function AdminPage() {
             </Card>
           </div>
         </section>
+        </TabsContent>
+
+        <TabsContent value="customers" className="space-y-8">
+          <Card className="border-white/60 bg-white/90 shadow-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UsersIcon className="h-5 w-5 text-primary" />
+                قائمة العملاء
+              </CardTitle>
+              <CardDescription>عرض كافة العملاء المسجلين وتاريخ انضمامهم ونشاطهم.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right">العميل</TableHead>
+                    <TableHead className="text-right">التواصل</TableHead>
+                    <TableHead className="text-right">تاريخ الانضمام</TableHead>
+                    <TableHead className="text-right">آخر نشاط</TableHead>
+                    <TableHead className="text-right">الحالة</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customersQuery.data?.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-bold">{customer.name || customer.username}</TableCell>
+                      <TableCell>
+                        <div className="text-xs">
+                          {customer.email && <p>{customer.email}</p>}
+                          {customer.phone && <p>{customer.phone}</p>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">{formatAdminDate(customer.createdAt)}</TableCell>
+                      <TableCell className="text-xs">{formatAdminDate(customer.lastActive)}</TableCell>
+                      <TableCell>
+                        {customer.lastActive && new Date().getTime() - new Date(customer.lastActive).getTime() < 10 * 60 * 1000 ? (
+                          <Badge className="bg-emerald-500">نشط الآن</Badge>
+                        ) : (
+                          <Badge variant="outline">غير متصل</Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!customersQuery.data || customersQuery.data.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                        لا يوجد عملاء مسجلون حالياً
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-8">
+          <div className="grid gap-8 md:grid-cols-2">
+            <Card className="border-white/60 bg-white/90 shadow-xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="h-5 w-5 text-primary" />
+                  إدارة الحسابات البنكية
+                </CardTitle>
+                <CardDescription>أضف الحسابات التي يمكن للعملاء التحويل إليها.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    createBankMutation.mutate({
+                      bankName: formData.get("bankName") as string,
+                      accountName: formData.get("accountName") as string,
+                      accountNumber: formData.get("accountNumber") as string,
+                    });
+                    (e.target as HTMLFormElement).reset();
+                  }}
+                >
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">اسم البنك</label>
+                    <Input name="bankName" placeholder="مثال: بنك الخرطوم" required className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">اسم صاحب الحساب</label>
+                    <Input name="accountName" placeholder="الاسم الكامل" required className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold block text-right">رقم الحساب</label>
+                    <Input name="accountNumber" placeholder="رقم الحساب أو IBAN" required className="text-right" />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={createBankMutation.isPending}>
+                    {createBankMutation.isPending ? "جارٍ الإضافة..." : "إضافة حساب جديد"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/60 bg-white/90 shadow-xl">
+              <CardHeader>
+                <CardTitle>الحسابات المضافة</CardTitle>
+                <CardDescription>قائمة الحسابات البنكية المتاحة للعملاء.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {banksQuery.data?.map((bank) => (
+                    <div key={bank.id} className="flex items-center justify-between rounded-xl border p-4">
+                      <div className="text-right">
+                        <p className="font-bold">{bank.bankName}</p>
+                        <p className="text-sm text-muted-foreground">{bank.accountName}</p>
+                        <p className="font-mono text-sm">{bank.accountNumber}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive"
+                        onClick={() => deleteBankMutation.mutate(bank.id)}
+                        disabled={deleteBankMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {(!banksQuery.data || banksQuery.data.length === 0) && (
+                    <div className="text-center py-10 text-muted-foreground">
+                      لا يوجد حسابات مضافة
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
           <TabsContent value="settings" className="space-y-8">
@@ -1174,6 +1367,15 @@ export default function AdminPage() {
             </div>
 
             <div className="flex flex-col gap-2 rounded-2xl bg-primary/5 p-4 text-right">
+              <div className="space-y-1 mb-4 border-b pb-4">
+                <p className="text-sm font-bold">طريقة الدفع:</p>
+                <p className="text-primary font-black">
+                  {selectedOrder?.paymentMethod === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام"}
+                </p>
+                {selectedOrder?.paymentMethod === "bank" && selectedOrder?.bankId && (
+                  <p className="text-xs text-muted-foreground italic">تم اختيار التحويل البنكي</p>
+                )}
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-2xl font-black text-primary">{formatPrice(selectedOrder?.total)}</span>
                 <span className="text-muted-foreground font-bold">إجمالي الفاتورة:</span>
@@ -1190,17 +1392,4 @@ export default function AdminPage() {
       <Footer />
     </div>
   );
-}
-
-function formatAdminDate(dateStr: string | null) {
-  if (!dateStr) return "غير متوفر";
-  try {
-    const date = new Date(dateStr);
-    return new Intl.DateTimeFormat("ar-EG", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(date);
-  } catch (e) {
-    return dateStr;
-  }
 }

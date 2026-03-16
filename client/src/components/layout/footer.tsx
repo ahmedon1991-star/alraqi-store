@@ -24,8 +24,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1 flex flex-col gap-4">
             <div className="flex flex-col">
-              <h2 className="text-3xl font-black text-primary tracking-tight">الراقي</h2>
-              <span className="text-sm text-muted-foreground font-bold">للمنتجات السودانية</span>
+              <img src="/logo.png" alt="الراقي" className="h-20 w-auto object-contain mb-1" />
             </div>
             <p className="text-muted-foreground leading-relaxed text-sm">
               منصتك الأولى لتسوق المنتجات السودانية الأصيلة. نجمع لك خيرات السودان في مكان واحد، بجودة عالية وتوصيل سريع.

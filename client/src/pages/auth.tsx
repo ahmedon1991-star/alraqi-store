@@ -25,6 +25,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { apiRequest, setCustomerToken } from "../lib/api";
 import { useCurrentUser } from "../hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
@@ -154,10 +156,10 @@ export default function AuthPage() {
         
         <Card className="w-full max-w-xl border-white/70 bg-white/85 shadow-[0_24px_80px_rgba(69,44,16,0.12)] backdrop-blur">
           <CardHeader className="space-y-3 text-center">
-            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-4 py-1 text-sm font-black text-primary">
-              مرحباً بك في الراقي
+            <div className="flex justify-center">
+              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain" />
             </div>
-            <CardTitle className="text-3xl font-black text-primary">تسجيل الدخول / إنشاء حساب</CardTitle>
+            <CardTitle className="text-2xl font-black text-primary">تسجيل الدخول / إنشاء حساب</CardTitle>
             <CardDescription className="text-base font-medium">ابدأ تجربة تسوق فريدة للمنتجات السودانية الأصيلة</CardDescription>
           </CardHeader>
 
@@ -193,7 +195,11 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-end -mt-2">
+                    <div className="flex items-center justify-between -mt-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox id="remember" defaultChecked />
+                        <Label htmlFor="remember" className="text-sm font-bold text-gray-600 cursor-pointer">تذكرني</Label>
+                      </div>
                       <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
                     </div>
 

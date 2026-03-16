@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
-import type { Category, InsertProduct, InsertUser, Order, Product, User, InsertAdminSettings } from "@shared/schema";
+import type { Category, InsertProduct, InsertUser, Order, Product, User, InsertAdminSettings, Bank, InsertBank } from "@shared/schema";
 import { storage } from "./storage";
 import { sendPasswordResetEmail } from "./email";
 import multer from "multer";
@@ -31,7 +31,6 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
 
 const adminSessions = new Set<string>();
-const customerSessions = new Map<string, string>();
 
 type GoogleTokenInfo = {
   sub?: string;
@@ -99,6 +98,8 @@ function sanitizeUser(user: User) {
     phone: user.phone,
     avatar: user.avatar,
     authProvider: user.authProvider,
+    createdAt: user.createdAt,
+    lastActive: user.lastActive,
   };
 }
 
@@ -113,14 +114,14 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 
 async function requireCustomer(req: Request, res: Response, next: NextFunction) {
   const token = getCustomerToken(req);
-  const userId = token ? customerSessions.get(token) : undefined;
-  if (!token || !userId) {
+  const session = token ? await storage.getSession(token) : undefined;
+  if (!token || !session) {
     return res.status(401).json({ message: "يرجى تسجيل الدخول أولًا" });
   }
 
-  const user = await storage.getUser(userId);
+  const user = await storage.getUser(session.userId);
   if (!user) {
-    customerSessions.delete(token);
+    if (token) await storage.deleteSession(token);
     return res.status(401).json({ message: "الجلسة غير صالحة" });
   }
 
@@ -144,7 +145,9 @@ async function createUniqueUsername(base: string) {
 
 async function createCustomerSession(user: User) {
   const token = createToken();
-  customerSessions.set(token, user.id);
+  await storage.createSession({ token, userId: user.id });
+  // Update last active
+  await storage.updateUserLastActive(user.id);
   return token;
 }
 
@@ -317,7 +320,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/auth/logout", requireCustomer, async (_req: Request, res: Response) => {
-    customerSessions.delete(res.locals.customerToken as string);
+    await storage.deleteSession(res.locals.customerToken as string);
     res.json({ success: true });
   });
 
@@ -362,7 +365,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     // In a real app, you would save this token to the database with an expiration time
     // and send it via email.
     
-    const resetLink = `http://localhost:5000/reset-password?token=${resetToken}&email=${user.email}`;
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const resetLink = `${protocol}://${host}/reset-password?token=${resetToken}&email=${user.email}`;
     
     // Attempt to send real email
     const emailSent = await sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم");
@@ -474,6 +479,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
     const imageUrl = `/uploads/${req.file.filename}`;
     res.json({ url: imageUrl });
+  });
+
+  // User management (Admin)
+  app.get("/api/admin/users", requireAdmin, async (_req, res) => {
+    const users = await storage.getUsers();
+    res.json(users.map(sanitizeUser));
+  });
+
+  // Bank management
+  app.get("/api/banks", async (_req, res) => {
+    const banks = await storage.getBanks();
+    res.json(banks);
+  });
+
+  app.post("/api/admin/banks", requireAdmin, async (req, res) => {
+    const bank = await storage.createBank(req.body);
+    res.json(bank);
+  });
+
+  app.delete("/api/admin/banks/:id", requireAdmin, async (req, res) => {
+    await storage.deleteBank(req.params.id);
+    res.sendStatus(200);
   });
 
   app.post("/api/admin/settings", requireAdmin, async (req: Request, res: Response) => {
@@ -755,16 +782,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/orders", async (req: Request, res: Response) => {
-    const { sessionId: bodySessionId, name, phone, address } = req.body as {
+    const { sessionId: bodySessionId, name, phone, address, paymentMethod, bankId } = req.body as {
       sessionId?: string;
       name?: string;
       phone?: string;
       address?: string;
+      paymentMethod?: string;
+      bankId?: string;
     };
 
     const sessionId = bodySessionId || getSessionId(req);
     const token = getCustomerToken(req);
-    const userId = token ? customerSessions.get(token) : undefined;
+    const dbSession = token ? await storage.getSession(token) : undefined;
+    const userId = dbSession?.userId;
 
     if (!sessionId || !name || !phone || !address) {
       return res.status(400).json({ message: "جميع الحقول مطلوبة" });
@@ -796,7 +826,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       name: item.product.name,
       price: item.product.price,
       quantity: item.quantity,
-      size: (item as any).size || null // Assuming size might be passed in some future cart update
+      size: (item as any).size || null
     }));
 
     const order = await storage.createOrder({
@@ -808,6 +838,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       phone,
       address,
       items: JSON.stringify(itemsData),
+      paymentMethod: paymentMethod || "cod",
+      bankId: bankId || null,
     });
 
     await storage.clearCart(sessionId);
@@ -817,21 +849,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const adminPhoneRaw = adminSettings?.phone || process.env.ADMIN_PHONE || "249912345678";
     const sanitizedAdminPhone = adminPhoneRaw.replace(/[^0-9]/g, '');
 
-    const itemsText = itemsData.map((item, idx) => 
-      `*${idx + 1}. ${item.name}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${item.price} ج.س`
+    const paymentMethodText = paymentMethod === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام";
+    let bankDetailsText = "";
+    if (paymentMethod === "bank" && bankId) {
+      const allBanks = await storage.getBanks();
+      const selectedBank = allBanks.find(b => b.id === bankId);
+      if (selectedBank) {
+        bankDetailsText = `%0A🏦 *بيانات التحويل:*%0A   - البنك: ${selectedBank.bankName}%0A   - الاسم: ${selectedBank.accountName}%0A   - الحساب: ${selectedBank.accountNumber}%0A`;
+      }
+    }
+
+    const itemsText = itemsData.map((item, idx) =>
+      `*${idx + 1}. ${item.name}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${(item.price).toLocaleString()} ج.س`
     ).join('%0A%0A');
 
-    const message = `✨ *فاتورة طلب جديدة - متجر الراقي* ✨%0A%0A` +
-      `📅 *التاريخ:* ${new Date().toLocaleDateString('ar-EG')}%0A` +
-      `👤 *العميل:* ${name}%0A` +
-      `📞 *الهاتف:* ${phone}%0A` +
-      `📍 *العنوان:* ${address}%0A%0A` +
-      `📦 *المنتجات:*%0A${itemsText}%0A%0A` +
-      `--------------------------%0A` +
-      `💰 *المجموع:* ${total} ج.س%0A` +
-      `🚚 *التوصيل:* ${shipping} ج.س%0A` +
-      `✅ *الإجمالي النهائي: ${total + shipping} ج.س*%0A%0A` +
-      `شكراً لتسوقكم معنا! 🙏`;
+    const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;
+
+    const message = `🌿 *الراقي للمنتجات السودانية*%0A🔖 *للتميز والفخامة*%0A%0A` +
+      `━━━━━━━━━━━━━━━━━━%0A` +
+      `📋 *فاتورة طلب جديدة*%0A` +
+      `🔢 رقم الطلب: *${orderNumber}*%0A` +
+      `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}%0A` +
+      `━━━━━━━━━━━━━━━━━━%0A%0A` +
+      `👤 *بيانات العميل:*%0A` +
+      `   الاسم: *${name}*%0A` +
+      `   الهاتف: ${phone}%0A` +
+      `   العنوان: ${address}%0A%0A` +
+      `💳 *طريقة الدفع:* ${paymentMethodText}${bankDetailsText}%0A` +
+      `━━━━━━━━━━━━━━━━━━%0A` +
+      `📦 *المنتجات المطلوبة:*%0A%0A${itemsText}%0A%0A` +
+      `━━━━━━━━━━━━━━━━━━%0A` +
+      `💰 المجموع: ${total.toLocaleString()} ج.س%0A` +
+      `🚚 التوصيل: ${shipping.toLocaleString()} ج.س%0A` +
+      `⭐ *الإجمالي النهائي: ${(total + shipping).toLocaleString()} ج.س*%0A` +
+      `━━━━━━━━━━━━━━━━━━%0A%0A` +
+      `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.%0A` +
+      `www.alraqi-store.com`;
 
     const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${message}`;
 

@@ -11,6 +11,9 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Cart() {
   const { data, isLoading: isCartLoading } = useCart();
@@ -38,9 +42,20 @@ export default function Cart() {
     });
   }
 
-  const [checkoutData, setCheckoutData] = useState({ name: "", phone: "", address: "" });
+  const [checkoutData, setCheckoutData] = useState({ 
+    name: user?.name || "", 
+    phone: user?.phone || "", 
+    address: "", 
+    paymentMethod: "cod", 
+    bankId: "" 
+  });
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [, setLocation] = useLocation();
+
+  const { data: banks } = useQuery<any[]>({
+    queryKey: ["/api/banks"],
+    queryFn: () => apiRequest("/api/banks"),
+  });
 
   const checkoutMutation = useMutation({
     mutationFn: () =>
@@ -234,6 +249,58 @@ export default function Cart() {
                             onChange={e => setCheckoutData(prev => ({ ...prev, address: e.target.value }))}
                             className="text-right"
                           />
+
+                          <div className="space-y-3">
+                            <label className="text-sm font-bold block text-right">طريقة الدفع</label>
+                            <RadioGroup
+                              value={checkoutData.paymentMethod}
+                              onValueChange={(val) => setCheckoutData(prev => ({ ...prev, paymentMethod: val }))}
+                              className="grid grid-cols-2 gap-4"
+                            >
+                              <div className="flex items-center justify-end space-x-2 space-x-reverse border rounded-xl p-3 cursor-pointer">
+                                <Label htmlFor="cod" className="cursor-pointer">الدفع عند الاستلام</Label>
+                                <RadioGroupItem value="cod" id="cod" />
+                              </div>
+                              <div className="flex items-center justify-end space-x-2 space-x-reverse border rounded-xl p-3 cursor-pointer">
+                                <Label htmlFor="bank" className="cursor-pointer">تحويل بنكي</Label>
+                                <RadioGroupItem value="bank" id="bank" />
+                              </div>
+                            </RadioGroup>
+                          </div>
+
+                          {checkoutData.paymentMethod === "bank" && (
+                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                              <label className="text-sm font-bold block text-right">اختر البنك</label>
+                              <Select
+                                value={checkoutData.bankId}
+                                onValueChange={(val) => setCheckoutData(prev => ({ ...prev, bankId: val }))}
+                              >
+                                <SelectTrigger className="text-right">
+                                  <SelectValue placeholder="اختر الحساب المحول إليه" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {banks?.map((bank) => (
+                                    <SelectItem key={bank.id} value={bank.id}>
+                                      {bank.bankName}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              {checkoutData.bankId && (
+                                <div className="rounded-xl bg-primary/5 p-4 border border-primary/20 text-right space-y-1">
+                                  {banks?.find(b => b.id === checkoutData.bankId) && (
+                                    <>
+                                      <p className="text-xs text-muted-foreground font-bold">بيانات الحساب:</p>
+                                      <p className="text-sm font-black">{banks.find(b => b.id === checkoutData.bankId).accountName}</p>
+                                      <p className="font-mono text-sm">{banks.find(b => b.id === checkoutData.bankId).accountNumber}</p>
+                                      <p className="text-[10px] text-primary/60 mt-1">يرجى إرفاق إشعار التحويل في الواتساب عند الطلب.</p>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <Button
                             type="submit"
                             className="w-full h-12 text-lg font-bold"

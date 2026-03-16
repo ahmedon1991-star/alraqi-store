@@ -18,6 +18,12 @@ import {
   adminSettings,
   type AdminSettings,
   type InsertAdminSettings,
+  type Bank,
+  type InsertBank,
+  banks,
+  sessions,
+  type Session,
+  type InsertSession,
 } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -47,6 +53,8 @@ export interface IStorage {
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
+  updateUserLastActive(id: string): Promise<void>;
 
   getProducts(): Promise<Product[]>;
   getProductById(id: string): Promise<Product | undefined>;
@@ -74,6 +82,14 @@ export interface IStorage {
 
   getAdminSettings(): Promise<AdminSettings | undefined>;
   updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings>;
+
+  getBanks(): Promise<Bank[]>;
+  createBank(bank: InsertBank): Promise<Bank>;
+  deleteBank(id: string): Promise<void>;
+
+  createSession(session: InsertSession): Promise<Session>;
+  getSession(token: string): Promise<Session | undefined>;
+  deleteSession(token: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -129,6 +145,16 @@ export class DatabaseStorage implements IStorage {
 
     const [updated] = await db.update(users).set(user).where(eq(users.id, id)).returning();
     return updated;
+  }
+
+  async getUsers(): Promise<User[]> {
+    if (!db) return [];
+    return db.select().from(users);
+  }
+
+  async updateUserLastActive(id: string): Promise<void> {
+    if (!db) return;
+    await db.update(users).set({ lastActive: new Date() }).where(eq(users.id, id));
   }
 
   async getProducts(): Promise<Product[]> {
@@ -305,7 +331,10 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Database is not configured");
     }
 
-    const [created] = await db.insert(orders).values(order).returning();
+    const [created] = await db.insert(orders).values({
+      ...order,
+      createdAt: order.createdAt || new Date(),
+    }).returning();
     return created;
   }
 
@@ -355,6 +384,39 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
+
+  async getBanks(): Promise<Bank[]> {
+    if (!db) return [];
+    return db.select().from(banks);
+  }
+
+  async createBank(bank: InsertBank): Promise<Bank> {
+    if (!db) throw new Error("Database is not configured");
+    const [created] = await db.insert(banks).values(bank).returning();
+    return created;
+  }
+
+  async deleteBank(id: string): Promise<void> {
+    if (!db) return;
+    await db.delete(banks).where(eq(banks.id, id));
+  }
+
+  async createSession(session: InsertSession): Promise<Session> {
+    if (!db) throw new Error("Database is not configured");
+    const [created] = await db.insert(sessions).values(session).returning();
+    return created;
+  }
+
+  async getSession(token: string): Promise<Session | undefined> {
+    if (!db) return undefined;
+    const [session] = await db.select().from(sessions).where(eq(sessions.token, token));
+    return session;
+  }
+
+  async deleteSession(token: string): Promise<void> {
+    if (!db) return;
+    await db.delete(sessions).where(eq(sessions.token, token));
+  }
 }
 
 export class MemoryStorage implements IStorage {
@@ -363,6 +425,8 @@ export class MemoryStorage implements IStorage {
   private categories = new Map<string, Category>();
   private cartItems = new Map<string, CartItem>();
   private orders = new Map<string, Order>();
+  private banks = new Map<string, Bank>();
+  private sessions = new Map<string, Session>();
   private adminSettings: AdminSettings | null = null;
 
   async getUser(id: string): Promise<User | undefined> {
@@ -392,6 +456,8 @@ export class MemoryStorage implements IStorage {
       googleId: user.googleId ?? null,
       avatar: user.avatar ?? null,
       authProvider: user.authProvider ?? "local",
+      createdAt: new Date(),
+      lastActive: new Date(),
     };
     this.users.set(created.id, created);
     return created;
@@ -417,6 +483,18 @@ export class MemoryStorage implements IStorage {
     };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUserLastActive(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.lastActive = new Date();
+      this.users.set(id, user);
+    }
   }
 
   async getProducts(): Promise<Product[]> {
@@ -595,6 +673,8 @@ export class MemoryStorage implements IStorage {
       phone: order.phone ?? null,
       address: order.address ?? null,
       items: order.items ?? null,
+      paymentMethod: order.paymentMethod ?? "cod",
+      bankId: order.bankId ?? null,
       createdAt: new Date(),
     };
     this.orders.set(created.id, created);
@@ -643,6 +723,34 @@ export class MemoryStorage implements IStorage {
     const updated = { ...current, ...settings } as AdminSettings;
     this.adminSettings = updated;
     return updated;
+  }
+
+  async getBanks(): Promise<Bank[]> {
+    return Array.from(this.banks.values());
+  }
+
+  async createBank(bank: InsertBank): Promise<Bank> {
+    const created: Bank = { ...bank, id: createId() };
+    this.banks.set(created.id, created);
+    return created;
+  }
+
+  async deleteBank(id: string): Promise<void> {
+    this.banks.delete(id);
+  }
+
+  async createSession(session: InsertSession): Promise<Session> {
+    const created: Session = { ...session, id: createId(), createdAt: new Date() };
+    this.sessions.set(session.token, created);
+    return created;
+  }
+
+  async getSession(token: string): Promise<Session | undefined> {
+    return this.sessions.get(token);
+  }
+
+  async deleteSession(token: string): Promise<void> {
+    this.sessions.delete(token);
   }
 }
 

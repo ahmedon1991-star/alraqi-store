@@ -63,9 +63,12 @@ export function Navbar() {
         </div>
 
         <Link href="/">
-          <div className="cursor-pointer text-center">
-            <h1 className="text-2xl font-black tracking-tight text-primary">الراقي</h1>
-            <span className="text-xs font-bold tracking-widest text-muted-foreground">للمنتجات السودانية</span>
+          <div className="cursor-pointer flex items-center">
+            <img
+              src="/logo.png"
+              alt="الراقي"
+              className="h-14 w-auto object-contain"
+            />
           </div>
         </Link>
 
