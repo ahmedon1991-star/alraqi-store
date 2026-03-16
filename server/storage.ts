@@ -40,11 +40,11 @@ function createId() {
 
 function createDatabase() {
   if (!process.env.DATABASE_URL) {
-    console.log("No DATABASE_URL found. Using MemoryStorage.");
+    console.log("⚠️  STORAGE: No DATABASE_URL found. Using MemoryStorage fallback.");
     return null;
   }
   
-  console.log("DATABASE_URL found. Connecting to PostgreSQL database.");
+  console.log("✅ STORAGE: DATABASE_URL exists. Connecting to PostgreSQL.");
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
   return drizzle(pool);
 }

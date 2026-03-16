@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCartCount } from "@/hooks/use-cart";
 import { useCurrentUser, useLogout } from "@/hooks/use-auth";
 import { getAdminToken } from "@/lib/api";
-import { useWishlist } from "../../hooks/use-wishlist";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 export function Navbar() {
   const [location] = useLocation();
