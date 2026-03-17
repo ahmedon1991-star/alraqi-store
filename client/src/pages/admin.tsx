@@ -560,43 +560,43 @@ export default function AdminPage() {
       </div>
 
       <Navbar />
-      <main className="container mx-auto flex-1 px-4 py-10 relative z-10">
-        <section className="mb-10 overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl flex items-center gap-6">
-              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain hidden sm:block drop-shadow-md" />
+      <main className="container mx-auto flex-1 px-4 py-6 md:py-10 relative z-10">
+        <section className="mb-6 md:mb-10 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border border-white/60 bg-white/40 p-4 md:p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-right gap-4 md:gap-6">
+              <img src="/logo.png" alt="الراقي" className="h-20 md:h-24 w-auto object-contain drop-shadow-md" />
               <div>
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
+                <div className="mb-2 md:mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
                   <Sparkles className="h-4 w-4" />
                   لوحة تحكم الإدارة
                 </div>
-                <h1 className="mb-3 text-4xl font-black tracking-tight text-foreground md:text-5xl">
+                <h1 className="mb-2 text-2xl font-black tracking-tight text-foreground md:text-5xl leading-tight">
                   إدارة المتجر من شاشة واحدة
                 </h1>
-                <p className="text-lg leading-8 text-muted-foreground">
+                <p className="text-sm md:text-lg leading-relaxed text-muted-foreground">
                   دخول محمي، متابعة الطلبات، وتحرير المنتجات مباشرة من لوحة تشغيل مصممة للاستخدام اليومي.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-4 lg:items-end">
-              <div className="grid min-w-[280px] grid-cols-2 gap-4 rounded-3xl border border-border/60 bg-background/80 p-5">
-                <div>
-                  <p className="text-sm text-muted-foreground">التصنيفات</p>
-                  <p className="mt-1 text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG")}</p>
+              <div className="grid grid-cols-2 gap-3 md:gap-4 rounded-2xl md:rounded-3xl border border-border/60 bg-background/80 p-4 md:p-5">
+                <div className="text-center md:text-right">
+                  <p className="text-xs md:text-sm text-muted-foreground">التصنيفات</p>
+                  <p className="mt-1 text-lg md:text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG")}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">نسبة المعلق</p>
-                  <p className="mt-1 text-2xl font-black">
+                <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
+                  <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
+                  <p className="mt-1 text-lg md:text-2xl font-black">
                     {data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-row gap-2 md:gap-3 w-full sm:w-auto">
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={openCreateDialog} className="h-12 rounded-full px-6 text-base font-bold shadow-lg shadow-primary/20">
+                    <Button onClick={openCreateDialog} className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 text-sm md:text-base font-bold shadow-lg shadow-primary/20">
                       <PlusCircle className="h-4 w-4" />
                       إضافة منتج
                     </Button>
@@ -709,7 +709,7 @@ export default function AdminPage() {
                   </DialogContent>
                 </Dialog>
 
-                <Button variant="outline" className="h-12 rounded-full px-6 font-bold" onClick={() => logoutMutation.mutate()}>
+                <Button variant="outline" className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base" onClick={() => logoutMutation.mutate()}>
                   تسجيل الخروج
                 </Button>
               </div>
@@ -717,21 +717,23 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <Tabs defaultValue="overview" className="w-full space-y-8">
-          <TabsList className="grid w-full grid-cols-6 rounded-xl h-14 bg-white/60 p-1 mb-8">
-            <TabsTrigger value="overview" className="rounded-lg text-lg font-bold">الرئيسية</TabsTrigger>
-            <TabsTrigger value="customers" className="rounded-lg text-lg font-bold">العملاء</TabsTrigger>
-            <TabsTrigger value="categories" className="rounded-lg text-lg font-bold">الأقسام</TabsTrigger>
-            <TabsTrigger value="messages" className="rounded-lg text-lg font-bold flex items-center gap-2">
-              الرسائل
-              {messagesQuery.data?.some(m => !m.isRead) && (
-                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-lg text-lg font-bold">طرق الدفع</TabsTrigger>
-            <TabsTrigger value="settings" className="rounded-lg text-lg font-bold">الإعدادات</TabsTrigger>
-            <TabsTrigger value="security" className="rounded-lg text-lg font-bold">الأمان</TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="overview" className="w-full space-y-6 md:space-y-8">
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:mx-0 md:px-0">
+            <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-7 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
+              <TabsTrigger value="overview" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الرئيسية</TabsTrigger>
+              <TabsTrigger value="customers" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">العملاء</TabsTrigger>
+              <TabsTrigger value="categories" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الأقسام</TabsTrigger>
+              <TabsTrigger value="messages" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-2">
+                الرسائل
+                {messagesQuery.data?.some(m => !m.isRead) && (
+                  <span className="h-2 w-2 md:h-2.5 md:w-2.5 rounded-full bg-green-500 animate-pulse border-2 border-white shadow-sm shrink-0" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[100px] md:min-w-[110px]">طرق الدفع</TabsTrigger>
+              <TabsTrigger value="settings" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[100px] md:min-w-[110px]">الإعدادات</TabsTrigger>
+              <TabsTrigger value="security" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الأمان</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-8">
             <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
