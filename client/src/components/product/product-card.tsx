@@ -31,16 +31,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge }:
 
   return (
     <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:-translate-y-1" data-testid={`card-product-${id}`}>
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-[4/3] sm:aspect-[3/2] overflow-hidden bg-gray-100">
         {badge && (
-          <Badge className="absolute top-3 right-3 z-10 bg-primary hover:bg-primary text-primary-foreground font-bold shadow-sm">
+          <Badge className="absolute top-2 right-2 z-10 bg-primary/90 hover:bg-primary text-[10px] px-2 py-0 font-bold shadow-sm">
             {badge}
           </Badge>
         )}
         <Button
           size="icon"
           variant="secondary"
-          className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/80 backdrop-blur-sm text-gray-700 hover:text-red-500 hover:bg-white"
+          className="absolute top-2 left-2 z-10 w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/80 backdrop-blur-sm text-gray-700 hover:text-red-500 hover:bg-white"
           data-testid={`button-wishlist-${id}`}
         >
           <Heart className="h-4 w-4" />
@@ -49,7 +49,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge }:
           <img
             src={image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400"}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-pointer"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
           />
         </Link>
       </div>
