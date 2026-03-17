@@ -32,9 +32,13 @@ async function fetchCurrentUser() {
 }
 
 export function useCurrentUser() {
+  const token = getCustomerToken();
   return useQuery({
     queryKey: ["/api/auth/me"],
-    queryFn: fetchCurrentUser,
+    queryFn: () => apiRequest("/api/auth/me").then(data => data.user as CustomerUser),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: false,
   });
 }
 
