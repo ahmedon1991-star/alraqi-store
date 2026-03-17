@@ -10,6 +10,11 @@ export function MobileNav() {
   const cartCount = useCartCount();
   const { count: wishlistCount } = useWishlist();
   const { data: user } = useCurrentUser();
+  
+  // Hide on admin routes
+  if (location.startsWith("/admin")) {
+    return null;
+  }
 
   const navItems = [
     {
@@ -47,8 +52,8 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-100 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center justify-around h-16 px-2">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-xl border-t border-gray-100 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+      <div className="flex items-center justify-between h-16 px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -68,8 +73,8 @@ export function MobileNav() {
                     </Badge>
                   )}
                 </div>
-                <span className={`text-[10px] font-bold transition-colors duration-300 ${
-                  item.active ? "text-primary" : "text-gray-400"
+                <span className={`text-[9px] font-black transition-colors duration-300 ${
+                  item.active ? "text-primary" : "text-gray-500"
                 }`}>
                   {item.label}
                 </span>

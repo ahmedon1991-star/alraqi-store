@@ -52,7 +52,8 @@ export function useLogout() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.clear();
+      window.location.href = "/";
     },
   });
 }

@@ -25,19 +25,27 @@ export function clearAdminToken() {
 }
 
 export function getCustomerToken() {
-  return localStorage.getItem(CUSTOMER_TOKEN_KEY);
+  return localStorage.getItem(CUSTOMER_TOKEN_KEY) || sessionStorage.getItem(CUSTOMER_TOKEN_KEY);
 }
 
-export function setCustomerToken(token: string | null) {
+export function setCustomerToken(token: string | null, remember: boolean = true) {
   if (token === null) {
     localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
   } else {
-    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    if (remember) {
+      localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+      sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    } else {
+      sessionStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+      localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    }
   }
 }
 
 export function clearCustomerToken() {
   localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+  sessionStorage.removeItem(CUSTOMER_TOKEN_KEY);
 }
 
 export async function apiRequest(url: string, options?: RequestInit) {

@@ -51,13 +51,13 @@ export function CustomerService() {
       {/* Floating Action Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-50 hover:scale-110 transition-transform bg-primary text-primary-foreground group"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 h-10 w-10 md:h-14 md:w-14 rounded-full shadow-2xl z-50 hover:scale-110 transition-transform bg-primary text-primary-foreground group"
         size="icon"
       >
-        <MessageCircle className="h-7 w-7 group-hover:rotate-12 transition-transform" />
-        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+        <MessageCircle className="h-5 w-5 md:h-7 md:w-7 group-hover:rotate-12 transition-transform" />
+        <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
         </span>
       </Button>
 

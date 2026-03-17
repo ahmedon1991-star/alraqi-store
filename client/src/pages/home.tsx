@@ -43,14 +43,14 @@ export default function Home() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
             {cats.map((cat: any) => (
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
-                <div className="group cursor-pointer flex flex-col items-center gap-4 p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
-                  <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10">
+                <div className="group cursor-pointer flex flex-col items-center gap-2 p-3 md:p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
+                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10">
                     {cat.icon}
                   </div>
-                  <h3 className="font-bold text-center text-foreground group-hover:text-primary transition-colors">{cat.name}</h3>
+                  <h3 className="font-bold text-center text-[10px] md:text-base text-foreground group-hover:text-primary transition-colors">{cat.name}</h3>
                 </div>
               </Link>
             ))}

@@ -34,6 +34,7 @@ import { queryClient } from "@/lib/queryClient";
 const loginSchema = z.object({
   email: z.string().email({ message: "البريد الإلكتروني غير صحيح" }),
   password: z.string().min(6, { message: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" }),
+  remember: z.boolean().default(true),
 });
 
 const registerSchema = z
@@ -62,7 +63,7 @@ export default function AuthPage() {
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", remember: true },
   });
 
   const registerForm = useForm<z.infer<typeof registerSchema>>({
@@ -79,13 +80,16 @@ export default function AuthPage() {
     mutationFn: (values: z.infer<typeof loginSchema>) =>
       apiRequest("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
       }),
-    onSuccess: (data) => {
-      setCustomerToken(data.token);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    onSuccess: (data, variables) => {
+      setCustomerToken(data.token, variables.remember);
+      queryClient.setQueryData(["/api/auth/me"], data.user);
       toast({ title: "أهلاً بك مجدداً!", description: "تم تسجيل الدخول بنجاح." });
-      setLocation("/profile");
+      window.location.href = "/profile";
     },
     onError: (error) => handleMutationError(error, "تعذر تسجيل الدخول"),
   });
@@ -102,10 +106,10 @@ export default function AuthPage() {
         }),
       }),
     onSuccess: (data) => {
-      setCustomerToken(data.token);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setCustomerToken(data.token, true); // Register always remembers
+      queryClient.setQueryData(["/api/auth/me"], data.user);
       toast({ title: "مرحباً بك!", description: "تم إنشاء حسابك بنجاح." });
-      setLocation("/profile");
+      window.location.href = "/profile";
     },
     onError: (error) => handleMutationError(error, "تعذر إنشاء الحساب"),
   });
@@ -195,13 +199,23 @@ export default function AuthPage() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex items-center justify-between -mt-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox id="remember" defaultChecked />
-                        <Label htmlFor="remember" className="text-sm font-bold text-gray-600 cursor-pointer">تذكرني</Label>
-                      </div>
-                      <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
-                    </div>
+                    <FormField
+                      control={loginForm.control}
+                      name="remember"
+                      render={({ field }) => (
+                        <div className="flex items-center justify-between -mt-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox 
+                              id="remember" 
+                              checked={field.value} 
+                              onCheckedChange={field.onChange} 
+                            />
+                            <Label htmlFor="remember" className="text-sm font-bold text-gray-600 cursor-pointer">تذكرني</Label>
+                          </div>
+                          <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
+                        </div>
+                      )}
+                    />
 
                     <Button type="submit" className="h-12 w-full text-base font-black rounded-xl shadow-lg shadow-primary/20" disabled={loginMutation.isPending}>
                       {loginMutation.isPending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "دخول"}

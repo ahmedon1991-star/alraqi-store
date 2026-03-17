@@ -18,56 +18,16 @@ export function Navbar() {
   const user = currentUserQuery.data;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-20 items-center justify-between gap-4 px-4">
-        <div className="md:hidden">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <div className="mt-10 flex flex-col gap-6 text-lg font-bold">
-                <Link href="/" className="transition-colors hover:text-primary">
-                  الرئيسية
-                </Link>
-                <Link href="/shop" className="transition-colors hover:text-primary">
-                  المنتجات
-                </Link>
-                <Link href="/cart" className="flex items-center gap-2">
-                  سلة المشتريات
-                </Link>
-
-                {user ? (
-                  <>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      مرحبا، {user.name || "العميل"}
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => logoutMutation.mutate()}
-                      className="flex items-center gap-2 text-right text-rose-600"
-                    >
-                      تسجيل الخروج
-                    </button>
-                  </>
-                ) : (
-                  <Link href="/login" className="flex items-center gap-2">
-                    تسجيل الدخول
-                  </Link>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+    <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur shadow-sm">
+      <div className="container mx-auto flex h-16 md:h-20 items-center justify-between gap-4 px-4 overflow-hidden">
+        <div className="md:hidden" />
 
         <Link href="/">
-          <div className="cursor-pointer flex items-center">
+          <div className="cursor-pointer flex items-center justify-center flex-1 md:flex-none">
             <img
               src="/logo.png"
               alt="الراقي"
-              className="h-14 w-auto object-contain"
+              className="h-10 md:h-14 w-auto object-contain transition-all"
             />
           </div>
         </Link>
@@ -82,6 +42,14 @@ export function Navbar() {
 
         </div>
 
+        <div className="lg:hidden">
+          <Link href="/shop">
+            <Button variant="ghost" size="icon" className="text-gray-500">
+              <Search className="h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+
         <div className="relative mx-4 hidden w-full max-w-sm items-center lg:flex">
           <Input
             type="search"
@@ -91,33 +59,9 @@ export function Navbar() {
           <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <Link href="/profile" className="hidden text-right sm:block cursor-pointer hover:opacity-80 transition-opacity">
-                <p className="text-sm font-bold text-foreground">{user.name || user.email || user.username}</p>
-                <p className="text-xs text-muted-foreground">{user.email || "حساب عميل"}</p>
-              </Link>
-              <Link href="/profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden sm:flex hover:bg-primary/5 hover:text-primary"
-                >
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <Link href="/login">
-              <Button variant="ghost" size="icon" className="hidden sm:flex hover:bg-primary/5 hover:text-primary">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
-          )}
-
+        <div className="flex items-center gap-1 md:gap-2">
           <Link href="/shop?wishlist=true">
-            <Button variant="ghost" size="icon" className="relative hover:bg-primary/5 hover:text-red-500">
+            <Button variant="ghost" size="icon" className="relative hidden md:flex hover:bg-primary/5 hover:text-red-500">
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (
                 <Badge
@@ -131,7 +75,7 @@ export function Navbar() {
           </Link>
 
           <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative hover:bg-primary/5 hover:text-primary">
+            <Button variant="ghost" size="icon" className="relative hidden md:flex hover:bg-primary/5 hover:text-primary">
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <Badge
@@ -143,6 +87,24 @@ export function Navbar() {
               )}
             </Button>
           </Link>
+
+          {user ? (
+            <Link href="/profile">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:flex hover:bg-primary/5 hover:text-primary"
+              >
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/login">
+              <Button variant="ghost" size="icon" className="hidden sm:flex hover:bg-primary/5 hover:text-primary">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

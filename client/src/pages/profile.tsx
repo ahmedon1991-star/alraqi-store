@@ -185,38 +185,44 @@ export default function ProfilePage() {
       <Navbar />
       
       {/* Global Style Header */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row items-center gap-6">
+      <div className="bg-white border-b relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/20 via-primary to-primary/20" />
+        <div className="container mx-auto px-4 py-10 relative z-10">
+          <div className="flex flex-col md:flex-row items-center gap-8">
             <div className="relative group">
-              <div className="h-24 w-24 rounded-full border-4 border-white shadow-lg overflow-hidden bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary">
-                {user.avatar ? <img src={user.avatar} alt={user.name || ""} className="h-full w-full object-cover" /> : (user.name || user.email || "U").charAt(0).toUpperCase()}
+              <div className="h-28 w-28 rounded-3xl border-4 border-white shadow-2xl overflow-hidden bg-primary/5 flex items-center justify-center text-4xl font-black text-primary transform rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name || ""} className="h-full w-full object-cover" />
+                ) : (
+                  (user.name || user.email || "U").charAt(0).toUpperCase()
+                )}
               </div>
-              <button className="absolute bottom-0 right-0 p-1.5 bg-white rounded-full shadow-md border hover:bg-gray-50 transition-colors">
-                <ImageIcon className="h-4 w-4 text-gray-600" />
-              </button>
+              <div className="absolute -bottom-2 -right-2 p-2 bg-white rounded-2xl shadow-xl border border-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                <ImageIcon className="h-4 w-4 text-primary" />
+              </div>
             </div>
-            <div className="text-center md:text-right flex-1">
-              <h1 className="text-2xl font-black text-gray-900 mb-1">{user.name || "مرحباً بك"}</h1>
-              <p className="text-gray-500 font-medium">{user.email}</p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
-                <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-xs font-bold text-gray-700">
-                  <Package className="h-3.5 w-3.5 text-primary" />
+            <div className="text-center md:text-right flex-1 space-y-1">
+              <h1 className="text-3xl font-black text-gray-900 tracking-tight">{user.name || "مرحباً بك"}</h1>
+              <p className="text-gray-500 font-bold text-sm opacity-80">{user.email}</p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-5">
+                <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-2xl text-xs font-black text-primary border border-primary/10">
+                  <Package className="h-4 w-4" />
                   {ordersQuery.data?.length || 0} طلبات
                 </div>
-                <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-full text-xs font-bold text-gray-700">
-                  <CreditCard className="h-3.5 w-3.5 text-blue-500" />
-                  عضو نشط
+                <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-2xl text-xs font-black text-emerald-600 border border-emerald-100">
+                  <ShieldCheck className="h-4 w-4" />
+                  عضو موثق
                 </div>
               </div>
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" className="rounded-full gap-2 font-bold" onClick={() => setLocation("/")}>
-                <ChevronLeft className="h-4 w-4 rotate-180" />
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                className="rounded-2xl gap-3 font-black h-12 px-6 border-2 hover:bg-gray-50 transition-all" 
+                onClick={() => setLocation("/")}
+              >
                 العودة للتسوق
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full text-gray-400 hover:text-rose-600" onClick={() => logoutMutation.mutate()}>
-                <LogOut className="h-5 w-5" />
+                <ChevronLeft className="h-5 w-5 rotate-180" />
               </Button>
             </div>
           </div>
@@ -226,48 +232,60 @@ export default function ProfilePage() {
       <main className="container mx-auto flex-1 px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar Menu */}
-          <aside className="lg:col-span-3 space-y-4">
-            <Card className="border-none shadow-sm overflow-hidden">
-              <div className="p-2">
-                <nav className="space-y-1">
-                  <button
-                    onClick={() => setActiveTab("orders")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-bold transition-all ${activeTab === "orders" ? "bg-primary text-white shadow-md shadow-primary/20" : "hover:bg-gray-100 text-gray-600"}`}
-                  >
-                    <LayoutDashboard className="h-5 w-5" />
-                    طلباتي
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("profile")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-bold transition-all ${activeTab === "profile" ? "bg-primary text-white shadow-md shadow-primary/20" : "hover:bg-gray-100 text-gray-600"}`}
-                  >
-                    <UserCog className="h-5 w-5" />
-                    الملف الشخصي
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("security")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-bold transition-all ${activeTab === "security" ? "bg-primary text-white shadow-md shadow-primary/20" : "hover:bg-gray-100 text-gray-600"}`}
-                  >
-                    <ShieldCheck className="h-5 w-5" />
-                    الأمان والحساب
-                  </button>
-                  <div className="h-px bg-gray-100 my-2" />
-                  <button
-                    onClick={() => setLocation("/shop?wishlist=true")}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-bold text-gray-600 hover:bg-gray-100 transition-all"
-                  >
-                    <Heart className="h-5 w-5" />
-                    المفضلة
-                  </button>
-                  <button
-                    onClick={() => logoutMutation.mutate()}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-right font-bold text-rose-600 hover:bg-rose-50 transition-all"
-                  >
-                    <LogOut className="h-5 w-5" />
-                    تسجيل الخروج
-                  </button>
-                </nav>
-              </div>
+          <aside className="lg:col-span-3 space-y-6">
+            <Card className="border-none shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden rounded-[2rem] bg-white p-3">
+              <nav className="space-y-2">
+                <button
+                  onClick={() => setActiveTab("orders")}
+                  className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-right font-black transition-all group ${
+                    activeTab === "orders" 
+                    ? "bg-primary text-white shadow-xl shadow-primary/30" 
+                    : "hover:bg-gray-50 text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <LayoutDashboard className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "orders" ? "text-white" : "text-primary/60"}`} />
+                  طلبــــــــاتي
+                </button>
+                <button
+                  onClick={() => setActiveTab("profile")}
+                  className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-right font-black transition-all group ${
+                    activeTab === "profile" 
+                    ? "bg-primary text-white shadow-xl shadow-primary/30" 
+                    : "hover:bg-gray-50 text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <UserCog className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "profile" ? "text-white" : "text-primary/60"}`} />
+                  الحســـــــــاب
+                </button>
+                <button
+                  onClick={() => setActiveTab("security")}
+                  className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-right font-black transition-all group ${
+                    activeTab === "security" 
+                    ? "bg-primary text-white shadow-xl shadow-primary/30" 
+                    : "hover:bg-gray-50 text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <ShieldCheck className={`h-5 w-5 transition-transform group-hover:scale-110 ${activeTab === "security" ? "text-white" : "text-primary/60"}`} />
+                  الأمان والخصـوصية
+                </button>
+                
+                <div className="h-px bg-gray-50 my-4 mx-4" />
+                
+                <button
+                  onClick={() => setLocation("/shop?wishlist=true")}
+                  className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-right font-black text-gray-500 hover:bg-gray-50 hover:text-rose-500 transition-all group"
+                >
+                  <Heart className="h-5 w-5 text-gray-300 group-hover:text-rose-400 group-hover:fill-rose-400/20 transition-colors" />
+                  المفضـــــــــلة
+                </button>
+                <button
+                  onClick={() => logoutMutation.mutate()}
+                  className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-right font-black text-rose-600 hover:bg-rose-50 transition-all group"
+                >
+                  <LogOut className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  تسجيل الخروج
+                </button>
+              </nav>
             </Card>
 
             <div className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-3xl border border-primary/10 text-center">
