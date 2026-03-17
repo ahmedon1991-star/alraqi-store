@@ -22,9 +22,9 @@ export function Hero() {
             <span>طعم السودان الأصيل</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight">
             الراقي <br/>
-            <span className="text-primary-foreground/90 text-4xl md:text-6xl font-bold">للمنتجات السودانية</span>
+            <span className="text-primary-foreground/90 text-3xl md:text-5xl font-bold">للمنتجات السودانية</span>
           </h1>
           
           <p className="text-lg md:text-xl text-gray-200 leading-relaxed font-light max-w-lg">
