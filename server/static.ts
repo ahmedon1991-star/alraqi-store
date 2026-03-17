@@ -13,7 +13,7 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // Serve index.html for all non-API/uploads routes (SPA client-side routing)
-  app.get("*", (req, res, next) => {
+  app.use((req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/uploads")) {
       return next();
     }
