@@ -63,6 +63,7 @@ export async function apiRequest(url: string, options?: RequestInit) {
   const customerToken = getCustomerToken();
   if (customerToken) {
     headers["x-customer-token"] = customerToken;
+    headers["Authorization"] = `Bearer ${customerToken}`;
   }
 
   const res = await fetch(url, { ...options, headers });

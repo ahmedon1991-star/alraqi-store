@@ -82,12 +82,26 @@ function getSingleParam(value: string | string[] | undefined): string {
 
 function getAdminToken(req: Request): string {
   const header = req.headers["x-admin-token"];
-  return Array.isArray(header) ? header[0] ?? "" : header ?? "";
+  if (header) return Array.isArray(header) ? header[0] ?? "" : header;
+  
+  const auth = req.headers["authorization"];
+  if (auth && typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    return auth.slice(7);
+  }
+  
+  return "";
 }
 
 function getCustomerToken(req: Request): string {
   const header = req.headers["x-customer-token"];
-  return Array.isArray(header) ? header[0] ?? "" : header ?? "";
+  if (header) return Array.isArray(header) ? header[0] ?? "" : header;
+
+  const auth = req.headers["authorization"];
+  if (auth && typeof auth === 'string' && auth.startsWith('Bearer ')) {
+    return auth.slice(7);
+  }
+
+  return "";
 }
 
 function sanitizeUser(user: User) {
