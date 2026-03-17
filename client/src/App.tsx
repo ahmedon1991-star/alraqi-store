@@ -13,6 +13,7 @@ import ResetPasswordPage from "@/pages/reset-password";
 import AdminPage from "@/pages/admin";
 import AdminLoginPage from "@/pages/admin-login";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
+import { CustomerService } from "@/components/shared/CustomerService";
 import { SplashScreen } from "@/components/SplashScreen";
 import { useState, useCallback } from "react";
 
@@ -32,6 +33,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <FloatingAdminButton />
+      <CustomerService />
     </div>
   );
 }

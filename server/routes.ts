@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
-import type { Category, InsertProduct, InsertUser, Order, Product, User, InsertAdminSettings, Bank, InsertBank } from "@shared/schema";
+import { type Category, type InsertProduct, type InsertUser, type Order, type Product, type User, type InsertAdminSettings, type Bank, type InsertBank, insertMessageSchema, type Message, type InsertMessage } from "@shared/schema";
+import { z } from "zod";
 import { storage } from "./storage";
 import { sendPasswordResetEmail } from "./email";
 import multer from "multer";
@@ -645,6 +646,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     res.json(order);
+  });
+
+  // Message routes
+  app.get("/api/admin/messages", requireAdmin, async (_req: Request, res: Response) => {
+    const messages = await storage.getMessages();
+    res.json(messages);
+  });
+
+  app.patch("/api/admin/messages/:id/read", requireAdmin, async (req: Request, res: Response) => {
+    const id = getSingleParam(req.params.id);
+    const updated = await storage.markMessageAsRead(id);
+    if (!updated) return res.status(404).json({ message: "الرسالة غير موجودة" });
+    res.json(updated);
+  });
+
+  app.post("/api/messages", async (req: Request, res: Response) => {
+    try {
+      const data = insertMessageSchema.parse(req.body);
+      const message = await storage.createMessage(data);
+      res.json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "بيانات غير صالحة", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal Server Error" });
+    }
   });
 
   app.post("/api/admin/products", requireAdmin, async (req: Request, res: Response) => {

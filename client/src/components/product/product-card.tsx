@@ -54,34 +54,34 @@ export function ProductCard({ id, name, price, image, category, rating, badge }:
         </Link>
       </div>
 
-      <CardContent className="p-4 pt-5 text-right">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{category}</span>
-          <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
+      <CardContent className="p-3 sm:p-4 pt-4 sm:pt-5 text-right">
+        <div className="flex items-center justify-between mb-1 sm:mb-2">
+          <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">{category}</span>
+          <div className="flex items-center gap-0.5 sm:gap-1 text-amber-400 text-[10px] sm:text-xs font-bold">
             <span>{rating ?? 0}</span>
-            <Star className="h-3 w-3 fill-current" />
+            <Star className="h-2.5 w-2.5 sm:h-3 w-3 fill-current" />
           </div>
         </div>
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-lg mb-2 text-foreground line-clamp-1 hover:text-primary transition-colors cursor-pointer">
+          <h3 className="font-bold text-sm sm:text-lg mb-1 sm:mb-2 text-foreground line-clamp-1 hover:text-primary transition-colors cursor-pointer">
             {name}
           </h3>
         </Link>
-        <div className="font-black text-xl text-primary font-mono">
-          {price.toLocaleString()} <span className="text-sm font-medium text-muted-foreground">ج.س</span>
+        <div className="font-black text-base sm:text-xl text-primary font-mono">
+          {price.toLocaleString()} <span className="text-[10px] sm:text-sm font-medium text-muted-foreground">ج.س</span>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-3 sm:p-4 pt-0">
         <Button
-          className="w-full rounded-full font-bold gap-2 hover-elevate group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+          className="w-full rounded-full font-bold h-8 sm:h-10 text-xs sm:text-sm gap-1 sm:gap-2 hover-elevate group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
           variant="outline"
           onClick={handleAddToCart}
           disabled={addToCart.isPending}
           data-testid={`button-add-to-cart-${id}`}
         >
-          <ShoppingCart className="h-4 w-4" />
-          إضافة للسلة
+          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
+          إضافة
         </Button>
       </CardFooter>
     </Card>

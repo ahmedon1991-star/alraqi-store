@@ -27,8 +27,11 @@ import {
   sessions,
   type Session,
   type InsertSession,
+  messages,
+  type Message,
+  type InsertMessage,
 } from "@shared/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -95,6 +98,10 @@ export interface IStorage {
   createSession(session: InsertSession): Promise<Session>;
   getSession(token: string): Promise<Session | undefined>;
   deleteSession(token: string): Promise<void>;
+
+  getMessages(): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  markMessageAsRead(id: string): Promise<Message | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -422,6 +429,23 @@ export class DatabaseStorage implements IStorage {
     if (!db) return;
     await db.delete(sessions).where(eq(sessions.token, token));
   }
+
+  async getMessages(): Promise<Message[]> {
+    if (!db) return [];
+    return db.select().from(messages).orderBy(sql`${messages.createdAt} DESC`);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    if (!db) throw new Error("Database is not configured");
+    const [created] = await db.insert(messages).values(message).returning();
+    return created;
+  }
+
+  async markMessageAsRead(id: string): Promise<Message | undefined> {
+    if (!db) return undefined;
+    const [updated] = await db.update(messages).set({ isRead: true }).where(eq(messages.id, id)).returning();
+    return updated;
+  }
 }
 
 export class MemoryStorage implements IStorage {
@@ -432,6 +456,7 @@ export class MemoryStorage implements IStorage {
   private orders = new Map<string, Order>();
   private banks = new Map<string, Bank>();
   private sessions = new Map<string, Session>();
+  private messages = new Map<string, Message>();
   private adminSettings: AdminSettings | null = null;
 
   async getUser(id: string): Promise<User | undefined> {
@@ -756,6 +781,29 @@ export class MemoryStorage implements IStorage {
 
   async deleteSession(token: string): Promise<void> {
     this.sessions.delete(token);
+  }
+
+  async getMessages(): Promise<Message[]> {
+    return Array.from(this.messages.values()).sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const created: Message = {
+      ...message,
+      id: createId(),
+      isRead: false,
+      createdAt: new Date(),
+    };
+    this.messages.set(created.id, created);
+    return created;
+  }
+
+  async markMessageAsRead(id: string): Promise<Message | undefined> {
+    const existing = this.messages.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, isRead: true };
+    this.messages.set(id, updated);
+    return updated;
   }
 }
 

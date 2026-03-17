@@ -21,6 +21,7 @@ import {
   Eye,
   Users as UsersIcon,
   Landmark,
+  Mail,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -102,6 +103,16 @@ type Customer = {
   createdAt: string;
   lastActive: string;
   authProvider: string;
+};
+
+type Message = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
 };
 
 type ProductFormState = {
@@ -234,6 +245,19 @@ export default function AdminPage() {
     queryKey: ["/api/admin/users"],
     queryFn: () => apiRequest("/api/admin/users"),
     enabled: authQuery.isSuccess,
+  });
+
+  const messagesQuery = useQuery<Message[]>({
+    queryKey: ["/api/admin/messages"],
+    queryFn: () => apiRequest("/api/admin/messages"),
+    enabled: authQuery.isSuccess,
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/admin/messages/${id}/read`, { method: "PATCH" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/messages"] });
+    },
   });
 
   const updateSettingsMutation = useMutation({
@@ -698,6 +722,12 @@ export default function AdminPage() {
             <TabsTrigger value="overview" className="rounded-lg text-lg font-bold">الرئيسية</TabsTrigger>
             <TabsTrigger value="customers" className="rounded-lg text-lg font-bold">العملاء</TabsTrigger>
             <TabsTrigger value="categories" className="rounded-lg text-lg font-bold">الأقسام</TabsTrigger>
+            <TabsTrigger value="messages" className="rounded-lg text-lg font-bold flex items-center gap-2">
+              الرسائل
+              {messagesQuery.data?.some(m => !m.isRead) && (
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="payments" className="rounded-lg text-lg font-bold">طرق الدفع</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-lg text-lg font-bold">الإعدادات</TabsTrigger>
             <TabsTrigger value="security" className="rounded-lg text-lg font-bold">الأمان</TabsTrigger>
@@ -1042,6 +1072,97 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="messages" className="space-y-8">
+          <Card className="border-white/60 bg-white/90 shadow-xl overflow-hidden">
+            <CardHeader className="bg-primary/5 border-b">
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                رسائل العملاء وخدمة العملاء
+              </CardTitle>
+              <CardDescription>هنا تظهر كافة الاستفسارات والرسائل المرسلة من الموقع.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="text-right">حالة</TableHead>
+                    <TableHead className="text-right">التاريخ</TableHead>
+                    <TableHead className="text-right">الاسم</TableHead>
+                    <TableHead className="text-right">التواصل</TableHead>
+                    <TableHead className="text-right">الرسالة</TableHead>
+                    <TableHead className="text-center">إجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {messagesQuery.data?.map((msg) => (
+                    <TableRow key={msg.id} className={msg.isRead ? "opacity-70" : "bg-green-50/30"}>
+                      <TableCell className="text-right">
+                        {!msg.isRead ? (
+                          <Badge className="bg-green-500 hover:bg-green-600">جديد</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">مقروء</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-xs">
+                        {new Date(msg.createdAt).toLocaleDateString("ar-EG")}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">{msg.name}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col text-xs">
+                          <span>{msg.email}</span>
+                          <span className="text-muted-foreground">{msg.phone}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right max-w-xs truncate">
+                        {msg.message}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={() => !msg.isRead && markReadMutation.mutate(msg.id)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>رسالة من: {msg.name}</DialogTitle>
+                                <DialogDescription>بتاريخ: {new Date(msg.createdAt).toLocaleString("ar-EG")}</DialogDescription>
+                              </DialogHeader>
+                              <div className="mt-4 space-y-4">
+                                <div className="rounded-xl bg-muted p-4 text-right whitespace-pre-wrap leading-relaxed">
+                                  {msg.message}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="text-right">
+                                    <p className="text-xs text-muted-foreground">البريد</p>
+                                    <p className="font-medium text-sm">{msg.email}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-muted-foreground">الجوال</p>
+                                    <p className="font-medium text-sm">{msg.phone || "-"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!messagesQuery.data || messagesQuery.data.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-20 text-muted-foreground">
+                        لا توجد رسائل حالياً
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
           <TabsContent value="settings" className="space-y-8">
