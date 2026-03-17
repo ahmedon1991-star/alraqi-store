@@ -19,7 +19,7 @@ export function Footer() {
 
   return (
     <footer className="bg-white border-t mt-auto">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-16 pb-20 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1 flex flex-col gap-4">
@@ -108,7 +108,7 @@ export function Footer() {
       </div>
       
       {/* Bottom Bar */}
-      <div className="border-t py-6 bg-gray-50/50">
+      <div className="border-t py-6 pb-24 md:pb-6 bg-gray-50/50">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-muted-foreground">
           <p>© 2024 الراقي للمنتجات السودانية. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4">

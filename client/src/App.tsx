@@ -15,6 +15,7 @@ import AdminLoginPage from "@/pages/admin-login";
 import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { CustomerService } from "@/components/shared/CustomerService";
 import { SplashScreen } from "@/components/SplashScreen";
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { useState, useCallback } from "react";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/admin" component={AdminPage} />
         <Route component={NotFound} />
       </Switch>
+      <MobileNav />
       <FloatingAdminButton />
       <CustomerService />
     </div>
