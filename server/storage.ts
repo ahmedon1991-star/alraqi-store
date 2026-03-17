@@ -43,16 +43,34 @@ function createId() {
 
 function createDatabase() {
   if (!process.env.DATABASE_URL) {
-    console.log("⚠️  STORAGE: No DATABASE_URL found. Using MemoryStorage fallback.");
+    console.log("⚠️  STORAGE: No DATABASE_URL found in environment variables.");
+    console.log("⚠️  STORAGE: Falling back to MemoryStorage. DATA WILL NOT BE PERSISTENT.");
     return null;
   }
   
-  console.log("✅ STORAGE: DATABASE_URL exists. Connecting to PostgreSQL.");
-  const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-  return drizzle(pool);
+  try {
+    console.log("🚀 STORAGE: DATABASE_URL detected. Initializing PostgreSQL pool...");
+    const pool = new pg.Pool({ 
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes("sslmode=require") ? { rejectUnauthorized: false } : false
+    });
+    
+    // Test connection
+    pool.on('error', (err) => {
+      console.error('❌ STORAGE: Unexpected error on idle database client', err);
+    });
+
+    console.log("✅ STORAGE: Drizzle initialized with PostgreSQL.");
+    return drizzle(pool);
+  } catch (error) {
+    console.error("❌ STORAGE: Failed to connect to database:", error);
+    console.log("⚠️  STORAGE: Falling back to MemoryStorage due to connection error.");
+    return null;
+  }
 }
 
 const db = createDatabase();
+console.log(`📡 STORAGE MODE: ${db ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)"}`);
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -379,7 +397,14 @@ export class DatabaseStorage implements IStorage {
     if (!db) return undefined;
     const [settings] = await db.select().from(adminSettings).where(eq(adminSettings.id, 1));
     if (!settings) {
-      const [created] = await db.insert(adminSettings).values({ id: 1 }).returning();
+      console.log("🛠️  STORAGE: Creating initial admin settings record...");
+      const [created] = await db.insert(adminSettings).values({ 
+        id: 1,
+        username: process.env.ADMIN_USERNAME || "admin",
+        password: process.env.ADMIN_PASSWORD || "admin12345",
+        email: process.env.SMTP_USER || "admin@example.com",
+        phone: process.env.ADMIN_PHONE || "+249912345678",
+      }).returning();
       return created;
     }
     return settings;
@@ -392,7 +417,13 @@ export class DatabaseStorage implements IStorage {
       const [updated] = await db.update(adminSettings).set(settings).where(eq(adminSettings.id, 1)).returning();
       return updated;
     } else {
-      const [created] = await db.insert(adminSettings).values({ id: 1, ...settings }).returning();
+      // Should handle via getAdminSettings, but as fallback
+      const [created] = await db.insert(adminSettings).values({ 
+        id: 1, 
+        username: process.env.ADMIN_USERNAME || "admin",
+        password: process.env.ADMIN_PASSWORD || "admin12345",
+        ...settings 
+      }).returning();
       return created;
     }
   }

@@ -199,6 +199,19 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // Diagnostic route for storage status
+  app.get("/api/admin/debug-storage", async (_req, res) => {
+    const isDatabase = storage.constructor.name === "DatabaseStorage";
+    const hasEnv = !!process.env.DATABASE_URL;
+    res.json({
+      mode: isDatabase ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)",
+      hasDatabaseUrl: hasEnv,
+      message: isDatabase 
+        ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL." 
+        : (hasEnv ? "يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال، يعمل الآن في الذاكرة المؤقتة." : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
+    });
+  });
+
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     const { name, email, password, phone } = req.body as {
       name?: string;
