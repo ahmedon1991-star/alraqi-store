@@ -187,7 +187,7 @@ export default function Shop() {
                 <p className="text-xl">لا توجد منتجات مطابقة</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6">
                 {filteredProducts.map((product: any) => (
                   <ProductCard key={product.id} {...product} />
                 ))}
