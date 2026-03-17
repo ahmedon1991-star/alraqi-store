@@ -14,7 +14,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPrice(value: number) {
-  return `${value.toLocaleString("ar-EG")} ج.س`;
+  const num = value ?? 0;
+  return `${num.toLocaleString("ar-EG")} ج.س`;
 }
 
 export function formatCategoryLabel(category: string) {

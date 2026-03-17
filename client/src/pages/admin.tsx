@@ -466,7 +466,7 @@ export default function AdminPage() {
     setIsDialogOpen(true);
   }
 
-  if (authQuery.isLoading || overviewQuery.isLoading || settingsQuery.isLoading) {
+  if (authQuery.isLoading || overviewQuery.isLoading || settingsQuery.isLoading || categoriesQuery.isLoading) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <Navbar />
@@ -503,25 +503,25 @@ export default function AdminPage() {
   const summaryCards = [
     {
       title: "إجمالي المبيعات",
-      value: formatPrice(data.stats.revenue),
+      value: formatPrice(data?.stats?.revenue || 0),
       icon: CreditCard,
       tone: "from-orange-500/15 to-orange-500/5 text-orange-700",
     },
     {
       title: "الطلبات",
-      value: data.stats.orders.toLocaleString("ar-EG"),
+      value: (data?.stats?.orders ?? 0).toLocaleString("ar-EG"),
       icon: ShoppingBag,
       tone: "from-teal-500/15 to-teal-500/5 text-teal-700",
     },
     {
       title: "طلبات معلقة",
-      value: data.stats.pendingOrders.toLocaleString("ar-EG"),
+      value: (data?.stats?.pendingOrders ?? 0).toLocaleString("ar-EG"),
       icon: Clock3,
       tone: "from-amber-500/15 to-amber-500/5 text-amber-700",
     },
     {
       title: "المنتجات",
-      value: data.stats.products.toLocaleString("ar-EG"),
+      value: (data?.stats?.products ?? 0).toLocaleString("ar-EG"),
       icon: Package,
       tone: "from-sky-500/15 to-sky-500/5 text-sky-700",
     },
@@ -559,7 +559,7 @@ export default function AdminPage() {
               <div className="grid min-w-[280px] grid-cols-2 gap-4 rounded-3xl border border-border/60 bg-background/80 p-5">
                 <div>
                   <p className="text-sm text-muted-foreground">التصنيفات</p>
-                  <p className="mt-1 text-2xl font-black">{data.stats.categories.toLocaleString("ar-EG")}</p>
+                  <p className="mt-1 text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG")}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">نسبة المعلق</p>
@@ -844,7 +844,7 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <Badge variant="outline" className="rounded-full">
-                        {category.productCount.toLocaleString("ar-EG")}
+                        {(category.productCount ?? 0).toLocaleString("ar-EG")}
                       </Badge>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-muted">
