@@ -74,7 +74,7 @@ function verifyPassword(password: string, storedHash: string) {
 
 function getSessionId(req: Request): string {
   const header = req.headers["x-session-id"];
-  let sid = getSingleParam(header); 
+  let sid = getSingleParam(header);
   if (!sid) {
     sid = Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
@@ -88,12 +88,12 @@ function getSingleParam(value: string | string[] | undefined): string {
 function getAdminToken(req: Request): string {
   const header = req.headers["x-admin-token"];
   if (header) return Array.isArray(header) ? header[0] ?? "" : header;
-  
+
   const auth = req.headers["authorization"];
   if (auth && typeof auth === 'string' && auth.startsWith('Bearer ')) {
     return auth.slice(7);
   }
-  
+
   return "";
 }
 
@@ -235,8 +235,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       mode: isDatabase ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)",
       hasDatabaseUrl: hasEnv,
       lastError: lastError || null,
-      message: isDatabase 
-        ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL." 
+      message: isDatabase
+        ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL."
         : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
     });
   });
@@ -291,16 +291,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    
+
     // 1. Try customer login first
     const user = await storage.getUserByEmail(normalizedEmail);
     const settings = await storage.getAdminSettings();
-    
+
     if (user && verifyPassword(password, user.password)) {
       // Check if this customer is also the admin
       const adminEmail = settings?.email?.trim().toLowerCase() || ADMIN_USERNAME;
       const adminUsername = settings?.username?.trim().toLowerCase() || ADMIN_USERNAME;
-      
+
       if (normalizedEmail === adminEmail || user.username === adminUsername) {
         const token = createToken();
         await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
@@ -325,7 +325,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const storedPassword = settings?.password || ADMIN_PASSWORD;
 
     const emailMatch = normalizedEmail === storedEmail || normalizedEmail === storedUsername;
-    
+
     let passwordMatch = false;
     if (storedPassword.includes(':')) {
       passwordMatch = verifyPassword(password, storedPassword);
@@ -519,7 +519,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     // Store a hash or the token directly for biometric login verification
     // Here we'll just enable the flag for simplicity in this version
-    const updated = await storage.updateUser(user.id, { 
+    const updated = await storage.updateUser(user.id, {
       biometricEnabled: true,
       biometricToken: token, // This token identifies the device/enrolled state
     });
@@ -807,7 +807,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const user = res.locals.customer as User;
       const count = await storage.getMessageCountInLast24Hours(user.id);
-      
+
       if (count >= 3) {
         return res.status(429).json({ message: "لقد استنفدت عدد المحاولات المتاحة لهذا اليوم (3 محاولات). يمكنك الإرسال مجدداً بعد 24 ساعة لعدم الإزعاج." });
       }
@@ -881,23 +881,38 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.get("/api/products", async (req: Request, res: Response) => {
-    const category = req.query.category as string | undefined;
-    const result = category ? await storage.getProductsByCategory(category) : await storage.getProducts();
-    res.json(result);
+    try {
+      const category = req.query.category as string | undefined;
+      const result = category ? await storage.getProductsByCategory(category) : await storage.getProducts();
+      res.json(result);
+    } catch (error) {
+      console.error("❌ Database connection error fetching products:", error);
+      // نُرجع مصفوفة فارغة مؤقتاً أو خطأ معالج لمنع انهيار الواجهة
+      res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات. يرجى التأكد من اتصال قاعدة البيانات.", error: String(error) });
+    }
   });
 
   app.get("/api/products/:id", async (req: Request, res: Response) => {
-    const product = await storage.getProductById(getSingleParam(req.params.id));
-    if (!product) {
-      return res.status(404).json({ message: "المنتج غير موجود" });
+    try {
+      const product = await storage.getProductById(getSingleParam(req.params.id));
+      if (!product) {
+        return res.status(404).json({ message: "المنتج غير موجود" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error(`❌ Database connection error fetching product ${req.params.id}:`, error);
+      res.status(500).json({ message: "تعذر جلب تفاصيل المنتج", error: String(error) });
     }
-
-    res.json(product);
   });
 
   app.get("/api/categories", async (_req: Request, res: Response) => {
-    const result = await storage.getCategories();
-    res.json(result);
+    try {
+      const result = await storage.getCategories();
+      res.json(result);
+    } catch (error) {
+      console.error("❌ Database connection error fetching categories:", error);
+      res.status(500).json({ message: "تعذر جلب الأقسام", error: String(error) });
+    }
   });
 
   app.get("/api/cart", async (req: Request, res: Response) => {
