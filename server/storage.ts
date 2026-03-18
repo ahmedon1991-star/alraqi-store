@@ -52,7 +52,7 @@ function createDatabase() {
     console.log("🚀 STORAGE: DATABASE_URL detected. Initializing PostgreSQL pool...");
     const pool = new pg.Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL.includes("sslmode=require") ? { rejectUnauthorized: false } : false
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
     });
     
     // Test connection
