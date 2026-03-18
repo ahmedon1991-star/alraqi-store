@@ -41,6 +41,9 @@ function createId() {
   return crypto.randomUUID();
 }
 
+let dbLastError: string | null = null;
+export function getDbLastError() { return dbLastError; }
+
 function createDatabase() {
   if (!process.env.DATABASE_URL) {
     console.log("⚠️  STORAGE: No DATABASE_URL found in environment variables.");
@@ -55,13 +58,13 @@ function createDatabase() {
       ssl: { rejectUnauthorized: false }
     });
     
-    // Test connection
+    // Log errors on idle client
     pool.on('error', (err) => {
       console.error('❌ STORAGE: Unexpected error on idle database client', err);
       dbLastError = err.message;
     });
 
-    // Async test query
+    // Async connection test
     pool.query("SELECT 1").then(() => {
       console.log("✅ STORAGE: Database connection test OK.");
       dbLastError = null;
@@ -81,11 +84,9 @@ function createDatabase() {
   }
 }
 
-let dbLastError: string | null = null;
-export function getDbLastError() { return dbLastError; }
-
 const db = createDatabase();
 console.log(`📡 STORAGE MODE: ${db ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)"}`);
+
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
