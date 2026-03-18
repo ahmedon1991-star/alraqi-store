@@ -564,6 +564,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(settings);
   });
 
+  app.post("/api/admin/products/reorder", requireAdmin, async (req: Request, res: Response) => {
+    const { ids } = req.body as { ids: string[] };
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(400).json({ message: "مطلوب قائمة المعرفات (IDs)" });
+    }
+    await storage.reorderProducts(ids);
+    res.sendStatus(200);
+  });
+
   app.post("/api/admin/categories", requireAdmin, async (req: Request, res: Response) => {
     const { id, name, icon } = req.body as { id: string; name: string; icon?: string };
     if (!id || !name) {

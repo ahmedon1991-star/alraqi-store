@@ -31,7 +31,7 @@ import {
   type Message,
   type InsertMessage,
 } from "@shared/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, asc, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -89,6 +89,7 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<Product | undefined>;
   rateProduct(id: string, rating: number): Promise<Product | undefined>;
+  reorderProducts(ids: string[]): Promise<void>;
 
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
@@ -192,7 +193,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    return db.select().from(products);
+    return db.select().from(products).orderBy(asc(products.sortOrder), desc(sql`created_at`));
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -209,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    return db.select().from(products).where(eq(products.category, category));
+    return db.select().from(products).where(eq(products.category, category)).orderBy(asc(products.sortOrder));
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
@@ -255,6 +256,13 @@ export class DatabaseStorage implements IStorage {
 
     const [updated] = await db.update(products).set({ rating: roundedRating, reviews: newReviews }).where(eq(products.id, id)).returning();
     return updated;
+  }
+
+  async reorderProducts(ids: string[]): Promise<void> {
+    if (!db) return;
+    for (let i = 0; i < ids.length; i++) {
+      await db.update(products).set({ sortOrder: i }).where(eq(products.id, ids[i]));
+    }
   }
 
   async getCategories(): Promise<Category[]> {
@@ -559,7 +567,7 @@ export class MemoryStorage implements IStorage {
   }
 
   async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values());
+    return Array.from(this.products.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -567,7 +575,9 @@ export class MemoryStorage implements IStorage {
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
-    return Array.from(this.products.values()).filter((product) => product.category === category);
+    return Array.from(this.products.values())
+      .filter((product) => product.category === category)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
@@ -584,7 +594,7 @@ export class MemoryStorage implements IStorage {
       badge: product.badge ?? null,
       inStock: product.inStock ?? true,
       sizes: product.sizes ?? null,
-      measurements: product.measurements ?? null,
+      sortOrder: product.sortOrder ?? 0,
     };
     this.products.set(created.id, created);
     return created;
@@ -835,6 +845,14 @@ export class MemoryStorage implements IStorage {
     const updated = { ...existing, isRead: true };
     this.messages.set(id, updated);
     return updated;
+  }
+  async reorderProducts(ids: string[]): Promise<void> {
+    ids.forEach((id, index) => {
+      const product = this.products.get(id);
+      if (product) {
+        this.products.set(id, { ...product, sortOrder: index });
+      }
+    });
   }
 }
 

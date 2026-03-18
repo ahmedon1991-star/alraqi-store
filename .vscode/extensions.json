@@ -5,6 +5,7 @@
         "google.geminicodeassist",
         "github.vscode-github-actions",
         "github.vscode-pull-request-github",
-        "ms-vscode.powershell"
+        "ms-vscode.powershell",
+        "dart-code.dart-code"
     ]
 }

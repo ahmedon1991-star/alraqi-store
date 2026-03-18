@@ -3,22 +3,6 @@ import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
-  Boxes,
-  Clock3,
-  CreditCard,
-  Layers,
-  Loader2,
-  Package,
-  Pencil,
-  PlusCircle,
-  Search,
-  ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Trash2,
-  FileText,
-  Upload,
-  Eye,
   Users as UsersIcon,
   Landmark,
   Mail,
@@ -144,8 +128,8 @@ const initialForm: ProductFormState = {
 
 const statusLabels: Record<string, string> = {
   pending: "قيد الانتظار",
-  processing: "قيد المعالجة",
-  completed: "مكتمل",
+  processing: "جارٍ التجهيز",
+  completed: "تم التوصيل",
   cancelled: "ملغي",
 };
 
@@ -791,6 +775,15 @@ export default function AdminPage() {
           <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:mx-0 md:px-0">
             <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-7 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
               <TabsTrigger value="overview" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الرئيسية</TabsTrigger>
+              <TabsTrigger value="orders" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-2">
+                الطلبات
+                {data?.stats?.pendingOrders > 0 && (
+                  <span className="h-5 w-5 rounded-full bg-amber-500 text-[10px] flex items-center justify-center text-white border-2 border-white shadow-sm shrink-0">
+                    {data.stats.pendingOrders > 9 ? '+9' : data.stats.pendingOrders}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="products" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">المنتجات</TabsTrigger>
               <TabsTrigger value="customers" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">العملاء</TabsTrigger>
               <TabsTrigger value="categories" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الأقسام</TabsTrigger>
               <TabsTrigger value="messages" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-2">
@@ -828,13 +821,181 @@ export default function AdminPage() {
           })}
         </section>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.25fr_0.95fr]">
+        <section className="grid grid-cols-1 gap-6">
           <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
             <CardHeader>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Boxes className="h-5 w-5 text-primary" />
+                توزيع التصنيفات
+              </CardTitle>
+              <CardDescription>عدد المنتجات داخل كل قسم</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.topCategories.map((category) => (
+                <div key={category.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl">
+                        {category.icon || "•"}
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground">{category.name}</p>
+                        <p className="text-xs text-muted-foreground">{category.id}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="rounded-full">
+                      {(category.productCount ?? 0).toLocaleString("ar-EG")}
+                    </Badge>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{ width: `${data.stats.products === 0 ? 0 : Math.max((category.productCount / data.stats.products) * 100, 6)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-8">
+          <Card className="border-white/60 bg-white/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
+            <CardHeader className="p-6 md:p-8">
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <CardTitle>إدارة الطلبات</CardTitle>
-                  <CardDescription>بحث وفلاتر سريعة مع تحديث الحالة من الجدول.</CardDescription>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary mb-2">
+                    <ListOrdered className="h-3.5 w-3.5" />
+                    إدارة المخزون
+                  </div>
+                  <CardTitle className="text-2xl font-black">قائمة المنتجات</CardTitle>
+                  <CardDescription>اسحب وأفلت لترتيب المنتجات في المتجر.</CardDescription>
+                </div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      placeholder="بحث في المنتجات..."
+                      className="w-full sm:w-64 pr-9 h-12 rounded-2xl border-border/60 bg-background/50"
+                    />
+                  </div>
+                  <Button onClick={openCreateDialog} className="h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 gap-2 font-black">
+                    <PlusCircle className="h-5 w-5" />
+                    إضافة منتج
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="px-6 pb-8">
+              <Reorder.Group
+                axis="y"
+                values={filteredProducts}
+                onReorder={(newOrder) => {
+                   // Optimistic update
+                   queryClient.setQueryData(["/api/admin/overview"], (prev: any) => ({
+                     ...prev,
+                     products: prev.products.map((p: any) => {
+                        const newIdx = newOrder.findIndex((np: any) => np.id === p.id);
+                        return newIdx !== -1 ? newOrder[newIdx] : p;
+                     })
+                   }));
+                   // Call API
+                   apiRequest("/api/admin/products/reorder", {
+                     method: "POST",
+                     body: { ids: newOrder.map(p => p.id) }
+                   });
+                }}
+                className="space-y-4"
+              >
+                {filteredProducts.map((product) => (
+                  <Reorder.Item
+                    key={product.id}
+                    value={product}
+                    className="group rounded-3xl border border-border/40 bg-white/50 backdrop-blur-sm p-4 hover:border-primary/30 transition-all active:scale-[0.99] cursor-grab active:cursor-grabbing"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="text-muted-foreground/30 group-hover:text-primary/50 transition-colors">
+                        <GripVertical className="h-5 w-5" />
+                      </div>
+                      
+                      {product.image && (
+                        <div className="h-16 w-16 rounded-2xl overflow-hidden border shrink-0">
+                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                        </div>
+                      )}
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-black text-foreground truncate">{product.name}</h3>
+                          <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-5 px-2">
+                            {product.inStock ? "متوفر" : "غير متوفر"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="font-bold text-primary/80">{getCategoryName(product.category)}</span>
+                          <span>•</span>
+                          <span className="font-black text-black">{formatPrice(product.price)}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-primary hover:bg-primary/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditDialog(product);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-10 w-10 rounded-xl text-red-500 hover:bg-red-50"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                               deleteProductMutation.mutate(product.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </Reorder.Item>
+                ))}
+              </Reorder.Group>
+
+              {filteredProducts.length === 0 && (
+                <div className="py-20 text-center">
+                  <div className="mx-auto w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-4">
+                    <Search className="h-10 w-10 text-muted-foreground/40" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">لا يوجد منتجات</h3>
+                  <p className="text-muted-foreground">أضف منتجاً جديداً أو جرب البحث بكلمات أخرى.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="orders" className="space-y-8">
+          <Card className="border-white/60 bg-white/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
+            <CardHeader className="p-6 md:p-8 border-b border-border/40">
+              <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-black text-primary mb-2">
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    إدارة الطلبات
+                  </div>
+                  <CardTitle className="text-2xl font-black">سجل الطلبات</CardTitle>
+                  <CardDescription>تابع طلبات العملاء وحالات التوصيل من مكان واحد.</CardDescription>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <div className="relative">
@@ -842,175 +1003,159 @@ export default function AdminPage() {
                     <Input
                       value={orderSearch}
                       onChange={(e) => setOrderSearch(e.target.value)}
-                      placeholder="ابحث بالعميل أو الهاتف"
-                      className="w-64 pr-9 text-right"
+                      placeholder="ابحث بالاسم أو الهاتف..."
+                      className="w-full sm:w-64 pr-9 text-right h-12 rounded-2xl border-border/60 bg-background/50"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-44 text-right">
+                    <SelectTrigger className="w-full sm:w-44 text-right h-12 rounded-2xl border-border/60 bg-background/50">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-2xl">
                       <SelectItem value="all">كل الحالات</SelectItem>
                       <SelectItem value="pending">قيد الانتظار</SelectItem>
-                      <SelectItem value="completed">مكتمل</SelectItem>
+                      <SelectItem value="processing">جارٍ التجهيز</SelectItem>
+                      <SelectItem value="completed">تم التوصيل</SelectItem>
                       <SelectItem value="cancelled">ملغي</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">العميل</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                    <TableHead className="text-right">القيمة</TableHead>
-                    <TableHead className="text-right">العنوان</TableHead>
-                    <TableHead className="text-right">التاريخ</TableHead>
-                    <TableHead className="text-right">التفاصيل</TableHead>
-                    <TableHead className="text-right">تعديل الحالة</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="text-right">
-                        <div className="font-semibold text-foreground">{order.name || "بدون اسم"}</div>
-                        <div className="text-xs text-muted-foreground">{order.phone || "لا يوجد هاتف"}</div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusClasses[order.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
-                        >
-                          {statusLabels[order.status] || order.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">{formatPrice(order.total)}</TableCell>
-                      <TableCell className="max-w-40 text-right text-sm text-muted-foreground">{order.address || "غير متوفر"}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{formatAdminDate(order.createdAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="gap-1 text-primary hover:bg-primary/5"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setIsOrderDialogOpen(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                          عرض المحتوى
-                        </Button>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
-                          <SelectTrigger className="w-36 text-right">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">قيد الانتظار</SelectItem>
-                            <SelectItem value="completed">مكتمل</SelectItem>
-                            <SelectItem value="cancelled">ملغي</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
+            <CardContent className="p-0">
+              {/* Desktop View Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="text-right py-5 pr-8">العميل</TableHead>
+                      <TableHead className="text-right py-5">الحالة</TableHead>
+                      <TableHead className="text-right py-5">القيمة</TableHead>
+                      <TableHead className="text-right py-5">العنوان</TableHead>
+                      <TableHead className="text-right py-5">التاريخ</TableHead>
+                      <TableHead className="text-right py-5">الإجراءات</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrders.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-primary/5 transition-colors">
+                        <TableCell className="text-right py-4 pr-8">
+                          <div className="font-bold text-foreground">{order.name || "بدون اسم"}</div>
+                          <div className="text-xs text-muted-foreground font-mono">{order.phone || "لا يوجد هاتف"}</div>
+                        </TableCell>
+                        <TableCell className="text-right py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusClasses[order.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                          >
+                            {statusLabels[order.status] || order.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right py-4 font-black text-primary">{formatPrice(order.total)}</TableCell>
+                        <TableCell className="max-w-xs text-right text-sm text-muted-foreground truncate">{order.address || "غير متوفر"}</TableCell>
+                        <TableCell className="text-right py-4 text-xs text-muted-foreground font-medium">{formatAdminDate(order.createdAt)}</TableCell>
+                        <TableCell className="text-right py-4 pl-8">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-9 px-3 rounded-xl gap-1 text-primary hover:bg-primary/10 font-bold"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsOrderDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                              عرض
+                            </Button>
+                            <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
+                              <SelectTrigger className="h-9 w-32 text-right rounded-xl border-border/40 text-xs font-bold">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl">
+                                <SelectItem value="pending" className="text-xs">قيد الانتظار</SelectItem>
+                                <SelectItem value="processing" className="text-xs">جارٍ التجهيز</SelectItem>
+                                <SelectItem value="completed" className="text-xs">تم التوصيل</SelectItem>
+                                <SelectItem value="cancelled" className="text-xs text-red-500">إلغاء الطلب</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile View Cards (Timo Style) */}
+              <div className="md:hidden p-4 space-y-4">
+                {filteredOrders.map((order) => (
+                  <div key={order.id} className="rounded-3xl border border-border/40 bg-white p-5 shadow-sm active:scale-[0.98] transition-transform">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex h-2 w-2 rounded-full ${order.status === 'pending' ? 'bg-amber-500' : order.status === 'processing' ? 'bg-blue-500' : order.status === 'completed' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                          <span className="text-xs font-black text-muted-foreground uppercase">{statusLabels[order.status]}</span>
+                        </div>
+                        <h3 className="font-black text-lg text-foreground">{order.name || "عميل بدون اسم"}</h3>
+                        <p className="text-xs text-muted-foreground">{formatAdminDate(order.createdAt)}</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="font-black text-primary text-lg">{formatPrice(order.total)}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">#{order.id.split('-')[0]}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 mb-5">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{order.phone}</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Package className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span className="line-clamp-2 leading-relaxed">{order.address}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                       <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="flex-1 rounded-2xl h-11 font-black gap-2 bg-primary/5 text-primary hover:bg-primary/10 border-none"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setIsOrderDialogOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        التفاصيل
+                      </Button>
+                      <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
+                        <SelectTrigger className="flex-1 h-11 rounded-2xl border-border/40 text-xs font-bold text-center">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-2xl">
+                          <SelectItem value="pending">قيد الانتظار</SelectItem>
+                          <SelectItem value="processing">جارٍ التجهيز</SelectItem>
+                          <SelectItem value="completed">تم التوصيل</SelectItem>
+                          <SelectItem value="cancelled" className="text-red-500">إلغاء</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filteredOrders.length === 0 && (
+                <div className="p-20 text-center">
+                  <div className="mx-auto w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-4">
+                    <Search className="h-10 w-10 text-muted-foreground/40" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">لم يتم العثور على طلبات</h3>
+                  <p className="text-muted-foreground">جرب تغيير الفلاتر أو البحث بكلمات أخرى.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
-
-          <div className="space-y-6">
-            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Boxes className="h-5 w-5 text-primary" />
-                  توزيع التصنيفات
-                </CardTitle>
-                <CardDescription>عدد المنتجات داخل كل قسم</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {data.topCategories.map((category) => (
-                  <div key={category.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl">
-                          {category.icon || "•"}
-                        </div>
-                        <div>
-                          <p className="font-bold text-foreground">{category.name}</p>
-                          <p className="text-xs text-muted-foreground">{category.id}</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="rounded-full">
-                        {(category.productCount ?? 0).toLocaleString("ar-EG")}
-                      </Badge>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${data.stats.products === 0 ? 0 : Math.max((category.productCount / data.stats.products) * 100, 6)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
-              <CardHeader>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <CardTitle>إدارة المنتجات</CardTitle>
-                    <CardDescription>بحث سريع مع تعديل أو حذف مباشر.</CardDescription>
-                  </div>
-                  <div className="relative">
-                    <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      placeholder="ابحث باسم المنتج أو القسم"
-                      className="pr-9 text-right"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {filteredProducts.map((product) => (
-                  <div key={product.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-bold text-foreground">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{getCategoryName(product.category)}</p>
-                        <p className="mt-1 text-sm font-semibold text-primary">{formatPrice(product.price)}</p>
-                      </div>
-                      <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full">
-                        {product.inStock ? "متوفر" : "غير متوفر"}
-                      </Badge>
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                      <Button variant="outline" className="flex-1" onClick={() => openEditDialog(product)}>
-                        <Pencil className="h-4 w-4" />
-                        تعديل
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 text-red-600 hover:text-red-700"
-                        onClick={() => deleteProductMutation.mutate(product.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        حذف
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </section>
         </TabsContent>
 
         <TabsContent value="customers" className="space-y-8">

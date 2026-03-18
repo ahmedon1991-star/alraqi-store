@@ -45,6 +45,7 @@ export const products = pgTable("products", {
   inStock: boolean("in_stock").default(true),
   sizes: text("sizes"), // e.g., "S, M, L, XL"
   measurements: text("measurements"), // e.g., "Weight: 1kg, Length: 50cm"
+  sortOrder: integer("sort_order").default(0),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
