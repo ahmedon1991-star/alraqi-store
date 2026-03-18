@@ -629,7 +629,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/admin/logout", requireAdmin, async (req: Request, res: Response) => {
-    adminSessions.delete(getAdminToken(req));
+    const token = getAdminToken(req);
+    if (token) {
+      await storage.deleteSession(token);
+    }
     res.json({ success: true });
   });
 
@@ -675,7 +678,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "حالة الطلب مطلوبة" });
     }
 
-    const allowedStatuses = new Set(["pending", "completed", "cancelled"]);
+    const allowedStatuses = new Set(["pending", "processing", "completed", "cancelled"]);
     if (!allowedStatuses.has(status)) {
       return res.status(400).json({ message: "حالة الطلب غير صالحة" });
     }

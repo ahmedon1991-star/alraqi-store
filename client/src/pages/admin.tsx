@@ -144,12 +144,14 @@ const initialForm: ProductFormState = {
 
 const statusLabels: Record<string, string> = {
   pending: "قيد الانتظار",
+  processing: "قيد المعالجة",
   completed: "مكتمل",
   cancelled: "ملغي",
 };
 
 const statusClasses: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
+  processing: "bg-blue-100 text-blue-800 border-blue-200",
   completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
   cancelled: "bg-rose-100 text-rose-800 border-rose-200",
 };
@@ -590,7 +592,7 @@ export default function AdminPage() {
                 <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
                   <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
                   <p className="mt-1 text-lg md:text-2xl font-black">
-                    {data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
+                  {data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
                   </p>
                 </div>
               </div>
@@ -603,111 +605,177 @@ export default function AdminPage() {
                       إضافة منتج
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader className="text-right sm:text-right">
-                      <DialogTitle>{form.id ? "تعديل المنتج" : "إضافة منتج جديد"}</DialogTitle>
-                      <DialogDescription>
-                        {form.id ? "عدّل تفاصيل المنتج ثم احفظ التغييرات." : "أضف منتجًا جديدًا ليظهر داخل المتجر ولوحة الإدارة."}
-                      </DialogDescription>
-                    </DialogHeader>
+                  <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] rounded-[1.5rem] md:rounded-[2rem] border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
+                    <div className="p-6 pb-2 border-b border-border/40 bg-white">
+                      <DialogHeader className="text-right sm:text-right space-y-2">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary w-fit">
+                          <Package className="h-3.5 w-3.5" />
+                          {form.id ? "تعديل بيانات المنتج" : "إضافة منتج للنظام"}
+                        </div>
+                        <DialogTitle className="text-xl md:text-2xl font-black text-foreground">
+                          {form.id ? "تعديل المنتج" : "إضافة منتج جديد"}
+                        </DialogTitle>
+                        <DialogDescription className="text-sm font-medium">
+                          {form.id ? "عدّل تفاصيل المنتج ثم احفظ التغييرات." : "أضف منتجًا جديدًا ليظهر داخل المتجر ولوحة الإدارة."}
+                        </DialogDescription>
+                      </DialogHeader>
+                    </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <Input
-                        placeholder="اسم المنتج"
-                        value={form.name}
-                        onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                        className="text-right"
-                      />
-                      <Input
-                        placeholder="الاسم بالإنجليزية"
-                        value={form.nameEn}
-                        onChange={(e) => setForm((prev) => ({ ...prev, nameEn: e.target.value }))}
-                        className="text-right"
-                      />
-                      <Select value={form.category} onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}>
-                        <SelectTrigger className="text-right">
-                          <SelectValue placeholder="اختر القسم" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {data.topCategories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        placeholder="السعر"
-                        value={form.price}
-                        onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
-                        className="text-right"
-                      />
-                      <div className="flex gap-2 md:col-span-2">
-                        <Input
-                          placeholder="رابط الصورة"
-                          value={form.image}
-                          onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-                          className="text-right flex-1"
-                        />
-                        <div className="relative">
-                          <Button variant="outline" className="gap-2" disabled={isUploading}>
-                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                            رفع صوره
-                          </Button>
-                          <input
-                            type="file"
-                            className="absolute inset-0 cursor-pointer opacity-0"
-                            onChange={(e) => handleImageUpload(e, "product")}
-                            accept="image/*"
+                    <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+                      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">اسم المنتج</label>
+                          <Input
+                            placeholder="مثال: عباية سودانية فاخرة"
+                            value={form.name}
+                            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
                           />
                         </div>
-                      </div>
-                      <Input
-                        placeholder="الأحجام المتوفرة (مثال: S, M, L)"
-                        value={form.sizes}
-                        onChange={(e) => setForm((prev) => ({ ...prev, sizes: e.target.value }))}
-                        className="text-right"
-                      />
-                      <Input
-                        placeholder="المقاسات / الأوزان (مثال: 1كجم، 50سم)"
-                        value={form.measurements}
-                        onChange={(e) => setForm((prev) => ({ ...prev, measurements: e.target.value }))}
-                        className="text-right"
-                      />
-                      <Input
-                        placeholder="شارة المنتج"
-                        value={form.badge}
-                        onChange={(e) => setForm((prev) => ({ ...prev, badge: e.target.value }))}
-                        className="text-right md:col-span-2"
-                      />
-                      <Textarea
-                        placeholder="وصف المنتج"
-                        value={form.description}
-                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                        className="min-h-32 text-right md:col-span-2"
-                      />
-                      <div className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3 md:col-span-2">
-                        <div className="text-right">
-                          <p className="font-bold text-foreground">التوفر في المخزون</p>
-                          <p className="text-sm text-muted-foreground">تحكم سريع في حالة توفر المنتج.</p>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">الاسم بالإنجليزي</label>
+                          <Input
+                            placeholder="مثال: Sudanese Abaya"
+                            value={form.nameEn}
+                            onChange={(e) => setForm((prev) => ({ ...prev, nameEn: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            dir="ltr"
+                          />
                         </div>
-                        <Switch checked={form.inStock} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, inStock: checked }))} />
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">القسم / التصنيف</label>
+                          <Select value={form.category} onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}>
+                            <SelectTrigger className="text-right h-11 rounded-xl border-gray-200">
+                              <SelectValue placeholder="اختر القسم" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              {data.topCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id} className="text-right">
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">السعر (SDG)</label>
+                          <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={form.price}
+                            onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200"
+                          />
+                        </div>
+                        
+                        <div className="md:col-span-2 space-y-3">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">صورة المنتج</label>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Input
+                              placeholder="رابط الصورة المباشر"
+                              value={form.image}
+                              onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
+                              className="text-right h-11 rounded-xl border-gray-200 flex-1"
+                              dir="ltr"
+                            />
+                            <div className="relative shrink-0">
+                              <Button 
+                                variant="outline" 
+                                type="button" 
+                                className={`h-11 px-6 gap-2 rounded-xl border-dashed border-2 hover:bg-primary/5 hover:border-primary/30 transition-all ${isUploading ? 'opacity-70' : ''}`} 
+                                disabled={isUploading}
+                              >
+                                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                {isUploading ? "جاري الرفع..." : "رفع صوره"}
+                              </Button>
+                              <input
+                                type="file"
+                                className="absolute inset-0 cursor-pointer opacity-0"
+                                onChange={(e) => handleImageUpload(e, "product")}
+                                accept="image/*"
+                              />
+                            </div>
+                          </div>
+                          {form.image && (
+                            <div className="mt-2 relative group w-24 h-24 rounded-2xl overflow-hidden border border-border shadow-sm">
+                              <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+                              <Button 
+                                size="icon" 
+                                variant="destructive" 
+                                className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setForm(prev => ({ ...prev, image: "" }))}
+                                type="button"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">الأحجام (اختياري)</label>
+                          <Input
+                            placeholder="مثال: S, M, L"
+                            value={form.sizes}
+                            onChange={(e) => setForm((prev) => ({ ...prev, sizes: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">المقاسات (اختياري)</label>
+                          <Input
+                            placeholder="مثال: 50سم X 50سم"
+                            value={form.measurements}
+                            onChange={(e) => setForm((prev) => ({ ...prev, measurements: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">شارة المنتج (اختياري)</label>
+                          <Input
+                            placeholder="مثال: خصم 20%، قطعة واحدة، الأكثر مبيعاً"
+                            value={form.badge}
+                            onChange={(e) => setForm((prev) => ({ ...prev, badge: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200"
+                          />
+                        </div>
+                        <div className="md:col-span-2 space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">وصف المنتج</label>
+                          <Textarea
+                            placeholder="اكتب تفاصيل المنتج المميزة لجذب المشترين..."
+                            value={form.description}
+                            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                            className="min-h-32 text-right rounded-2xl border-gray-200 focus:border-primary/30 py-3"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-primary/5 px-5 py-4 md:col-span-2 shadow-inner">
+                          <div className="text-right">
+                            <p className="font-black text-foreground">الحالة: متوفر بالمخزون</p>
+                            <p className="text-sm text-muted-foreground">سيظهر المنتج للعملاء في المتجر إذا كان مفعلاً.</p>
+                          </div>
+                          <Switch checked={form.inStock} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, inStock: checked }))} />
+                        </div>
                       </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-start sm:space-x-reverse">
-                      <Button
-                        onClick={() => saveProductMutation.mutate()}
-                        disabled={saveProductMutation.isPending || !form.name || !form.category || !form.price}
-                        className="min-w-32"
-                      >
-                        {saveProductMutation.isPending ? "جارٍ الحفظ..." : form.id ? "حفظ التعديل" : "حفظ المنتج"}
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                        إلغاء
-                      </Button>
-                    </DialogFooter>
+                    <div className="p-6 border-t border-border/40 bg-gray-50/80 backdrop-blur-sm">
+                      <DialogFooter className="flex flex-row-reverse sm:justify-start gap-3 w-full">
+                        <Button
+                          onClick={() => saveProductMutation.mutate()}
+                          disabled={saveProductMutation.isPending || !form.name || !form.category || !form.price}
+                          className="flex-1 sm:flex-none min-w-[140px] h-12 rounded-xl font-black text-base shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                          {saveProductMutation.isPending ? (
+                            <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري الحفظ</>
+                          ) : (
+                            <><ShieldCheck className="ml-2 h-5 w-5" /> {form.id ? "حفظ التعديلات" : "إضافة المنتج الآن"}</>
+                          )}
+                        </Button>
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none h-12 rounded-xl font-bold text-muted-foreground hover:bg-gray-200/50">
+                          إلغاء
+                        </Button>
+                      </DialogFooter>
+                    </div>
                   </DialogContent>
                 </Dialog>
 
