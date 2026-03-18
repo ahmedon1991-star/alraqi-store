@@ -10,7 +10,7 @@ export function MobileNav() {
   const cartCount = useCartCount();
   const { count: wishlistCount } = useWishlist();
   const { data: user } = useCurrentUser();
-  
+
   // Hide on admin routes
   if (location.startsWith("/admin")) {
     return null;
@@ -60,12 +60,11 @@ export function MobileNav() {
             <Link key={item.label} href={item.href}>
               <div className={`flex flex-col items-center justify-center gap-1 group relative cursor-pointer min-w-[64px]`}>
                 <div className="relative">
-                  <Icon 
-                    className={`h-6 w-6 transition-all duration-300 ${
-                      item.active 
-                        ? "text-primary scale-110 fill-primary/10" 
+                  <Icon
+                    className={`h-6 w-6 transition-all duration-300 ${item.active
+                        ? "text-primary scale-110 fill-primary/10"
                         : "text-gray-400 group-hover:text-primary/70"
-                    }`} 
+                      }`}
                   />
                   {item.count !== undefined && item.count > 0 && (
                     <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-[10px] border-2 border-white animate-in zoom-in duration-300">
@@ -73,13 +72,12 @@ export function MobileNav() {
                     </Badge>
                   )}
                 </div>
-                <span className={`text-[9px] font-black transition-colors duration-300 ${
-                  item.active ? "text-primary" : "text-gray-500"
-                }`}>
+                <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-gray-500"
+                  }`}>
                   {item.label}
                 </span>
                 {item.active && (
-                   <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
                 )}
               </div>
             </Link>

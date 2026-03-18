@@ -6,7 +6,26 @@ import {
   Users as UsersIcon,
   Landmark,
   Mail,
+  Trash2,
+  ShieldCheck,
+  Loader2,
+  FileText,
+  CreditCard,
+  ShoppingBag,
+  Clock3,
+  Package,
+  Sparkles,
+  PlusCircle,
+  Upload,
+  GripVertical,
+  Pencil,
+  Search,
+  Eye,
+  Layers,
+  Boxes,
+  ListOrdered,
 } from "lucide-react";
+import { Reorder } from "framer-motion";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -905,7 +924,7 @@ export default function AdminPage() {
                    // Call API
                    apiRequest("/api/admin/products/reorder", {
                      method: "POST",
-                     body: { ids: newOrder.map(p => p.id) }
+                     body: JSON.stringify({ ids: newOrder.map(p => p.id) })
                    });
                 }}
                 className="space-y-4"

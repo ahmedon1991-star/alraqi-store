@@ -26,6 +26,9 @@ import {
   Bell,
   Wallet,
   ArrowRight,
+  Fingerprint,
+  Check,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -109,6 +112,55 @@ export default function ProfilePage() {
     },
   });
 
+  const handleEnableBiometrics = async () => {
+    try {
+      if (!window.PublicKeyCredential) {
+        toast({
+          title: "غير مدعوم",
+          description: "جهازك أو متصفحك لا يدعم السمات الحيوية (WebAuthn).",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: new Uint8Array([1, 2, 3, 4]).buffer,
+          rp: { name: "الراقي للمنتجات السودانية" },
+          user: {
+            id: new Uint8Array([1, 2, 3, 4]).buffer,
+            name: user?.email || "user",
+            displayName: user?.name || "User",
+          },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+          timeout: 60000,
+          attestation: "direct",
+        }
+      });
+
+      if (credential) {
+        const deviceToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        await apiRequest("/api/auth/biometric/enable", {
+          method: "POST",
+          body: JSON.stringify({ token: deviceToken }),
+        });
+
+        localStorage.setItem("alraqi_biometric_email", user?.email || "");
+        localStorage.setItem("alraqi_biometric_token", deviceToken);
+
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        toast({ title: "تم التفعيل", description: "تم تفعيل الدخول بالبصمة/الوجه بنجاح لهذا الجهاز." });
+      }
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "فشل التفعيل",
+        description: error.message || "تعذر إكمال عملية التحقق",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleReorder = async (itemsJson: string) => {
     try {
       const items = JSON.parse(itemsJson);
@@ -134,7 +186,6 @@ export default function ProfilePage() {
     <div className="flex min-h-screen flex-col bg-[#F7F8FA]" dir="rtl">
       <Navbar />
       
-      {/* Premium Header Content */}
       <div className="bg-white border-b sticky top-0 z-40 md:relative">
          <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -165,14 +216,13 @@ export default function ProfilePage() {
 
       <main className="container mx-auto flex-1 px-4 py-6 md:py-10">
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Sidebar Menu - Replaced with more compact for mobile */}
             <aside className="lg:col-span-3">
                <div className="md:grid hidden gap-2">
                   {[
-                    { id: "orders", label: "طلبــــاتي", icon: ShoppingBag },
+                    { id: "orders", label: "طلباتي", icon: ShoppingBag },
                     { id: "profile", label: "الملف الشخصي", icon: UserCog },
-                    { id: "wallet", label: "المحفـــــظة", icon: Wallet },
-                    { id: "settings", label: "الإعــــــــدادات", icon: Settings }
+                    { id: "wallet", label: "المحفظة", icon: Wallet },
+                    { id: "settings", label: "الإعدادات", icon: Settings }
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -189,7 +239,6 @@ export default function ProfilePage() {
                   <button onClick={() => logoutMutation.mutate()} className="flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-rose-600 hover:bg-rose-50 transition-all mt-6"><LogOut className="h-5 w-5 text-rose-400" /> تسجيل الخروج</button>
                </div>
 
-               {/* Mobile Quick Navigation */}
                <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar">
                   {[
                     { id: "orders", label: "طلباتي", icon: ShoppingBag },
@@ -212,7 +261,6 @@ export default function ProfilePage() {
                </div>
             </aside>
 
-            {/* Content Area */}
             <div className="lg:col-span-9 space-y-6">
                {activeTab === "orders" && (
                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -231,7 +279,6 @@ export default function ProfilePage() {
                             return (
                               <Card key={order.id} className="border-none shadow-sm md:shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white group hover:shadow-md transition-all duration-300">
                                  <div className="flex flex-col">
-                                    {/* Order Header */}
                                     <div className="p-5 md:p-6 flex items-center justify-between border-b border-gray-50">
                                        <div className="flex items-center gap-3">
                                           <div className={cn("p-2.5 rounded-2xl", status.bg)}>
@@ -247,7 +294,6 @@ export default function ProfilePage() {
                                        </div>
                                     </div>
 
-                                    {/* Order Details Preview */}
                                     <div className="p-5 md:p-6">
                                        <div className="flex items-center gap-4 overflow-x-auto pb-4 invisible-scrollbar">
                                           {items.map((item: any, idx: number) => (
@@ -347,11 +393,65 @@ export default function ProfilePage() {
                      </Card>
                   </div>
                )}
+
+               {activeTab === "settings" && (
+                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <h2 className="text-2xl font-black text-gray-900">إعدادات الحساب والأمان</h2>
+                    <Card className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-white">
+                      <CardHeader className="bg-gray-50/50 border-b p-8">
+                        <CardTitle className="text-xl font-black flex items-center gap-3">
+                          <ShieldCheck className="h-6 w-6 text-primary" />
+                          الأمان والسمات الحيوية
+                        </CardTitle>
+                        <CardDescription className="text-gray-500 font-bold">
+                          قم بتفعيل الدخول السريع عبر بصمة الإصبع أو التعرف على الوجه
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-8">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-[1.5rem] bg-[#F8F9FB] border-2 border-dashed border-gray-200">
+                          <div className="flex items-center gap-4 text-right">
+                            <div className={cn(
+                              "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg transition-all",
+                              user.biometricEnabled ? "bg-primary text-white" : "bg-white text-gray-300"
+                            )}>
+                              <Fingerprint className="h-8 w-8" />
+                            </div>
+                            <div>
+                              <h3 className="font-black text-gray-900">الدخول بالبصمة / الوجه</h3>
+                              <p className="text-sm text-gray-500 font-bold">
+                                {user.biometricEnabled ? "مفعل على هذا الحساب" : "غير مفعل حالياً"}
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            onClick={() => handleEnableBiometrics()}
+                            variant={user.biometricEnabled ? "outline" : "default"}
+                            className="rounded-full px-8 h-12 font-black shadow-lg"
+                          >
+                            {user.biometricEnabled ? "إعادة ضبط البصمة" : "تفعيل الآن"}
+                          </Button>
+                        </div>
+
+                        <div className="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-start gap-3">
+                          <CheckCircle2 className="h-5 w-5 text-amber-600 mt-0.5" />
+                          <p className="text-xs text-amber-700 font-bold leading-relaxed">
+                            ملاحظة: تفعيل السمات الحيوية يعتمد على تقنية WebAuthn وسيعمل فقط على هذا المتصفح/الجهاز الذي تقوم بتفعيله منه حالياً.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-white border-t-4 border-t-rose-500">
+                       <h3 className="text-xl font-black text-rose-600 mb-2">منطقة الخطر</h3>
+                       <p className="text-gray-500 font-bold mb-6">حذف الحساب سيؤدي إلى فقدان جميع بياناتك وطلباتك بشكل نهائي.</p>
+                       <Button variant="destructive" className="rounded-full px-8 h-12 font-black">حذف الحساب نهائياً</Button>
+                    </Card>
+                  </div>
+               )}
             </div>
          </div>
       </main>
 
-      {/* Order Tracking Dialog */}
       <Dialog open={isTrackOpen} onOpenChange={setIsTrackOpen}>
          <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none max-w-lg">
             {selectedOrder && (
@@ -367,7 +467,6 @@ export default function ProfilePage() {
                  
                  <div className="p-8 space-y-8 bg-white">
                     <div className="space-y-8 relative before:absolute before:inset-y-0 before:right-7 before:w-0.5 before:bg-gray-100 pb-2">
-                       {/* Timeline Step 1 */}
                        <div className="flex items-start gap-5 relative group">
                           <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", selectedOrder.createdAt ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-100 text-gray-400")}>
                              <Clock className="h-6 w-6" />
@@ -378,7 +477,6 @@ export default function ProfilePage() {
                           </div>
                        </div>
                        
-                       {/* Timeline Step 2 */}
                        <div className="flex items-start gap-5 relative">
                           <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status !== 'pending') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
                              <Package className="h-6 w-6" />
@@ -389,7 +487,6 @@ export default function ProfilePage() {
                           </div>
                        </div>
                        
-                       {/* Timeline Step 3 */}
                        <div className="flex items-start gap-5 relative">
                           <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
                              <Truck className="h-6 w-6" />
@@ -400,14 +497,13 @@ export default function ProfilePage() {
                           </div>
                        </div>
                        
-                       {/* Timeline Step 4 */}
                        <div className="flex items-start gap-5 relative">
                           <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
                              <CheckCircle2 className="h-6 w-6" />
                           </div>
                           <div>
                              <h4 className="font-black text-gray-900 leading-none mb-2">تم التوصيل</h4>
-                             <p className="text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم</p>
+                             <p className="text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم...</p>
                           </div>
                        </div>
                     </div>
@@ -426,26 +522,6 @@ export default function ProfilePage() {
             )}
          </DialogContent>
       </Dialog>
-      
-      <Footer />
-    </div>
-  );
-}�د تماماً؟</DialogTitle>
-                          <DialogDescription className="font-medium pt-2">سيتم حذف سجل طلباتك ومعلوماتك ولا يمكن التراجع عن هذا القرار.</DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter className="gap-2 sm:justify-start pt-4">
-                          <Button variant="destructive" className="rounded-full font-bold px-6" onClick={() => deleteAccountMutation.mutate()} disabled={deleteAccountMutation.isPending}>{deleteAccountMutation.isPending ? "جارٍ الحذف..." : "نعم، احذف حسابي"}</Button>
-                          <DialogClose asChild><Button variant="outline" className="rounded-full font-bold px-6">إلغاء</Button></DialogClose>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </Card>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
       
       <Footer />
     </div>

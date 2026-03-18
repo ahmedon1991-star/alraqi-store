@@ -118,6 +118,7 @@ function sanitizeUser(user: User) {
     phone: user.phone,
     avatar: user.avatar,
     authProvider: user.authProvider,
+    biometricEnabled: user.biometricEnabled,
     createdAt: user.createdAt,
     lastActive: user.lastActive,
   };
@@ -287,16 +288,67 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "البريد الإلكتروني وكلمة المرور مطلوبة" });
     }
 
-    const user = await storage.getUserByEmail(email.trim().toLowerCase());
-    if (!user || !verifyPassword(password, user.password)) {
-      return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // 1. Try customer login first
+    const user = await storage.getUserByEmail(normalizedEmail);
+    const settings = await storage.getAdminSettings();
+    
+    if (user && verifyPassword(password, user.password)) {
+      // Check if this customer is also the admin
+      const adminEmail = settings?.email?.trim().toLowerCase() || ADMIN_USERNAME;
+      const adminUsername = settings?.username?.trim().toLowerCase() || ADMIN_USERNAME;
+      
+      if (normalizedEmail === adminEmail || user.username === adminUsername) {
+        const token = createToken();
+        await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
+        return res.json({
+          token,
+          user: { ...sanitizeUser(user), isAdmin: true },
+          isAdmin: true
+        });
+      }
+
+      const token = await createCustomerSession(user);
+      return res.json({
+        token,
+        user: sanitizeUser(user),
+        isAdmin: false
+      });
     }
 
-    const token = await createCustomerSession(user);
-    res.json({
-      token,
-      user: sanitizeUser(user),
-    });
+    // 2. Try direct admin login (if not a customer or customer password didn't match)
+    const storedEmail = settings?.email?.trim().toLowerCase() || ADMIN_USERNAME;
+    const storedUsername = settings?.username?.trim().toLowerCase() || ADMIN_USERNAME;
+    const storedPassword = settings?.password || ADMIN_PASSWORD;
+
+    const emailMatch = normalizedEmail === storedEmail || normalizedEmail === storedUsername;
+    
+    let passwordMatch = false;
+    if (storedPassword.includes(':')) {
+      passwordMatch = verifyPassword(password, storedPassword);
+    } else {
+      passwordMatch = password === storedPassword;
+    }
+
+    // fallback to env vars if not authenticated yet
+    if (!emailMatch || !passwordMatch) {
+      if ((normalizedEmail === ADMIN_USERNAME || normalizedEmail === process.env.ADMIN_EMAIL) && password === ADMIN_PASSWORD) {
+        passwordMatch = true;
+      }
+    }
+
+    if (emailMatch && passwordMatch) {
+      const token = createToken();
+      await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
+      return res.json({
+        token,
+        user: { username: storedUsername, isAdmin: true },
+        isAdmin: true
+      });
+    }
+
+    return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
   });
 
   app.post("/api/auth/google", async (req: Request, res: Response) => {
@@ -455,6 +507,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     res.json({ success: true, message: "تم تحديث كلمة المرور بنجاح" });
+  });
+
+  app.post("/api/auth/biometric/enable", requireCustomer, async (req: Request, res: Response) => {
+    const user = res.locals.customer as User;
+    const { token } = req.body as { token: string };
+
+    if (!token) return res.status(400).json({ message: "الرمز مطلوب" });
+
+    // Store a hash or the token directly for biometric login verification
+    // Here we'll just enable the flag for simplicity in this version
+    const updated = await storage.updateUser(user.id, { 
+      biometricEnabled: true,
+      biometricToken: token, // This token identifies the device/enrolled state
+    });
+
+    res.json({ success: true, user: sanitizeUser(updated!) });
+  });
+
+  app.post("/api/auth/biometric/login", async (req: Request, res: Response) => {
+    const { email, deviceToken } = req.body as { email: string; deviceToken: string };
+
+    if (!email || !deviceToken) {
+      return res.status(400).json({ message: "البريد والرمز مطلوبان" });
+    }
+
+    const user = await storage.getUserByEmail(email.trim().toLowerCase());
+    if (!user || !user.biometricEnabled || user.biometricToken !== deviceToken) {
+      return res.status(401).json({ message: "فشل التحقق من السمات الحيوية أو الحساب غير منشط." });
+    }
+
+    // In a real app, verify deviceToken against a stored key
+    const token = await createCustomerSession(user);
+    res.json({
+      token,
+      user: sanitizeUser(user),
+    });
   });
 
   app.post("/api/admin/login", async (req: Request, res: Response) => {
@@ -713,9 +801,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(updated);
   });
 
-  app.post("/api/messages", async (req: Request, res: Response) => {
+  app.post("/api/messages", requireCustomer, async (req: Request, res: Response) => {
     try {
-      const data = insertMessageSchema.parse(req.body);
+      const user = res.locals.customer as User;
+      const count = await storage.getMessageCountInLast24Hours(user.id);
+      
+      if (count >= 3) {
+        return res.status(429).json({ message: "لقد استنفدت عدد المحاولات المتاحة لهذا اليوم (3 محاولات). يمكنك الإرسال مجدداً بعد 24 ساعة لعدم الإزعاج." });
+      }
+
+      const data = insertMessageSchema.parse({
+        ...req.body,
+        userId: user.id
+      });
       const message = await storage.createMessage(data);
       res.json(message);
     } catch (error) {

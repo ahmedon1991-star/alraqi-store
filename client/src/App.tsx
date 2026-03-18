@@ -12,7 +12,6 @@ import ProfilePage from "@/pages/profile";
 import ResetPasswordPage from "@/pages/reset-password";
 import AdminPage from "@/pages/admin";
 import AdminLoginPage from "@/pages/admin-login";
-import { FloatingAdminButton } from "@/components/FloatingAdminButton";
 import { CustomerService } from "@/components/shared/CustomerService";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -34,7 +33,6 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <MobileNav />
-      <FloatingAdminButton />
       <CustomerService />
     </div>
   );

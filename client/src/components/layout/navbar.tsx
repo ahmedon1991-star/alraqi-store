@@ -88,6 +88,14 @@ export function Navbar() {
             </Button>
           </Link>
 
+          {getAdminToken() && (
+            <Link href="/admin">
+              <Button variant="ghost" size="icon" className="text-orange-600 hover:bg-orange-50 hidden sm:flex">
+                <Shield className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+
           {user ? (
             <Link href="/profile">
               <Button

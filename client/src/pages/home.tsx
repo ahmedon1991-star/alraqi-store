@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/home/hero";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, ShieldCheck, Headphones, Loader2 } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck, Headphones, Loader2, Send } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, seedDatabase } from "@/lib/api";
@@ -90,28 +90,28 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-20 container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center text-center p-8 rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-6">
-                <ShieldCheck className="h-8 w-8" />
+        <section className="py-12 md:py-20 container mx-auto px-4">
+          <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-8">
+            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-3 md:mb-6">
+                <ShieldCheck className="h-5 w-5 md:h-8 md:w-8" />
               </div>
-              <h3 className="text-xl font-bold mb-3">جودة مضمونة 100%</h3>
-              <p className="text-muted-foreground">جميع منتجاتنا طبيعية ومختارة بعناية من أفضل المزارع السودانية.</p>
+              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">جودة مضمونة</h3>
+              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">منتجات طبيعية ومختارة بعناية</p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-6">
-                <Truck className="h-8 w-8" />
+            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 md:mb-6">
+                <Truck className="h-5 w-5 md:h-8 md:w-8" />
               </div>
-              <h3 className="text-xl font-bold mb-3">شحن سريع ومبرد</h3>
-              <p className="text-muted-foreground">نضمن وصول منتجاتك طازجة وفي أسرع وقت ممكن لأي مكان.</p>
+              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">شحن سريع</h3>
+              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">توصيل مبرد لكل السودان</p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow">
-              <div className="w-16 h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-6">
-                <Headphones className="h-8 w-8" />
+            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
+              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-3 md:mb-6">
+                <Send className="h-5 w-5 md:h-8 md:w-8" />
               </div>
-              <h3 className="text-xl font-bold mb-3">خدمة عملاء متميزة</h3>
-              <p className="text-muted-foreground">فريقنا جاهز لمساعدتك والإجابة على استفساراتك على مدار الساعة.</p>
+              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">تواصل معنا</h3>
+              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">دعم فني جاهز لخدمتكم 24/7</p>
             </div>
           </div>
         </section>

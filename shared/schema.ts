@@ -13,6 +13,8 @@ export const users = pgTable("users", {
   googleId: text("google_id").unique(),
   avatar: text("avatar"),
   authProvider: text("auth_provider").notNull().default("local"),
+  biometricEnabled: boolean("biometric_enabled").default(false),
+  biometricToken: text("biometric_token"),
   createdAt: timestamp("created_at").defaultNow(),
   lastActive: timestamp("last_active").defaultNow(),
 });
@@ -26,6 +28,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   googleId: true,
   avatar: true,
   authProvider: true,
+  biometricEnabled: true,
+  biometricToken: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -132,6 +136,7 @@ export type InsertSession = { token: string; userId: string };
 
 export const messages = pgTable("messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),

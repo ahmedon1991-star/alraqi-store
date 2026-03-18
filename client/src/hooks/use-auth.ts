@@ -10,6 +10,8 @@ export type CustomerUser = {
   phone?: string;
   avatar?: string;
   authProvider: string;
+  biometricEnabled?: boolean;
+  biometricToken?: string;
 };
 
 async function fetchCurrentUser() {

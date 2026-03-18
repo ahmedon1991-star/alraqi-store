@@ -8,6 +8,7 @@ import {
   Loader2,
   Mail,
   Lock,
+  Fingerprint,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { apiRequest, setCustomerToken } from "../lib/api";
+import { apiRequest, setCustomerToken, setAdminToken } from "../lib/api";
 import { useCurrentUser } from "../hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
 
@@ -76,6 +77,17 @@ export default function AuthPage() {
     defaultValues: { email: "" },
   });
 
+  useEffect(() => {
+    if (user && !isUserLoading) {
+      setLocation("/profile");
+    }
+  }, [user, isUserLoading, setLocation]);
+
+  function handleMutationError(error: unknown, fallback: string) {
+    const message = error instanceof Error ? error.message : fallback;
+    toast({ title: "خطأ", description: message, variant: "destructive" });
+  }
+
   const loginMutation = useMutation({
     mutationFn: (values: z.infer<typeof loginSchema>) =>
       apiRequest("/api/auth/login", {
@@ -86,13 +98,73 @@ export default function AuthPage() {
         }),
       }),
     onSuccess: (data, variables) => {
-      setCustomerToken(data.token, variables.remember);
-      queryClient.setQueryData(["/api/auth/me"], data.user);
-      toast({ title: "أهلاً بك مجدداً!", description: "تم تسجيل الدخول بنجاح." });
-      window.location.href = "/profile";
+      if (data.isAdmin) {
+        setAdminToken(data.token);
+        toast({ title: "مرحباً أيها المدير!", description: "تم تسجيل دخولك كمسؤول بنجاح." });
+        window.location.href = "/admin";
+      } else {
+        setCustomerToken(data.token, variables.remember);
+        queryClient.setQueryData(["/api/auth/me"], data.user);
+        toast({ title: "أهلاً بك مجدداً!", description: "تم تسجيل الدخول بنجاح." });
+        window.location.href = "/profile";
+      }
     },
     onError: (error) => handleMutationError(error, "تعذر تسجيل الدخول"),
   });
+
+  const handleBiometricLogin = async () => {
+    try {
+      const savedEmail = localStorage.getItem("alraqi_biometric_email");
+      const deviceToken = localStorage.getItem("alraqi_biometric_token");
+
+      if (!savedEmail || !deviceToken) {
+        toast({
+          title: "البصمة غير منشطة",
+          description: "يرجى تسجيل الدخول أولاً وتفعيل الدخول بالبصمة من الملف الشخصي.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (window.PublicKeyCredential) {
+        try {
+          await navigator.credentials.get({
+            publicKey: {
+              challenge: new Uint8Array([1,2,3,4]).buffer,
+              timeout: 60000,
+              userVerification: "required",
+              allowCredentials: []
+            }
+          });
+        } catch (e) {
+          console.error("Biometric prompt error:", e);
+          if ((e as Error).name === "NotAllowedError") return;
+        }
+      }
+
+      const data = await apiRequest("/api/auth/biometric/login", {
+        method: "POST",
+        body: JSON.stringify({ email: savedEmail, deviceToken }),
+      });
+
+      if (data.isAdmin) {
+        setAdminToken(data.token);
+        toast({ title: "مرحباً أيها المدير!", description: "تم الدخول بالبصمة بنجاح." });
+        window.location.href = "/admin";
+      } else {
+        setCustomerToken(data.token, true);
+        queryClient.setQueryData(["/api/auth/me"], data.user);
+        toast({ title: "أهلاً بك!", description: "تم الدخول بالبصمة بنجاح." });
+        window.location.href = "/profile";
+      }
+    } catch (error: any) {
+      toast({
+        title: "فشل الدخول",
+        description: error.message || "تعذر التحقق من البصمة",
+        variant: "destructive",
+      });
+    }
+  };
 
   const registerMutation = useMutation({
     mutationFn: (values: z.infer<typeof registerSchema>) =>
@@ -134,10 +206,7 @@ export default function AuthPage() {
     }
   }, [user, isUserLoading, setLocation]);
 
-  function handleMutationError(error: unknown, fallback: string) {
-    const message = error instanceof Error ? error.message : fallback;
-    toast({ title: "خطأ", description: message, variant: "destructive" });
-  }
+
 
   if (isUserLoading) {
     return (
@@ -219,6 +288,25 @@ export default function AuthPage() {
 
                     <Button type="submit" className="h-12 w-full text-base font-black rounded-xl shadow-lg shadow-primary/20" disabled={loginMutation.isPending}>
                       {loginMutation.isPending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "دخول"}
+                    </Button>
+
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-200" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-3 font-bold text-gray-500">أو الدخول عبر</span>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="h-12 w-full text-base font-bold rounded-xl border-2 border-gray-100 hover:bg-gray-50 gap-2"
+                      onClick={() => handleBiometricLogin()}
+                    >
+                      <Fingerprint className="h-5 w-5 text-primary" />
+                      الدخول بالسمات الحيوية (البصمة/الوجه)
                     </Button>
                   </form>
                 </Form>

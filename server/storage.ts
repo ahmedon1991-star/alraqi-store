@@ -31,7 +31,7 @@ import {
   type Message,
   type InsertMessage,
 } from "@shared/schema";
-import { and, eq, sql, asc, desc } from "drizzle-orm";
+import { and, eq, sql, asc, desc, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -118,6 +118,7 @@ export interface IStorage {
   getSession(token: string): Promise<Session | undefined>;
   deleteSession(token: string): Promise<void>;
 
+  getMessageCountInLast24Hours(userId: string): Promise<number>;
   getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: string): Promise<Message | undefined>;
@@ -485,6 +486,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(messages).set({ isRead: true }).where(eq(messages.id, id)).returning();
     return updated;
   }
+
+  async getMessageCountInLast24Hours(userId: string): Promise<number> {
+    if (!db) return 0;
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(and(eq(messages.userId, userId), gte(messages.createdAt, yesterday)));
+    return Number(result.count || 0);
+  }
 }
 
 export class MemoryStorage implements IStorage {
@@ -525,6 +535,8 @@ export class MemoryStorage implements IStorage {
       googleId: user.googleId ?? null,
       avatar: user.avatar ?? null,
       authProvider: user.authProvider ?? "local",
+      biometricEnabled: user.biometricEnabled ?? false,
+      biometricToken: user.biometricToken ?? null,
       createdAt: new Date(),
       lastActive: new Date(),
     };
@@ -547,6 +559,8 @@ export class MemoryStorage implements IStorage {
       googleId: user.googleId ?? existing.googleId,
       avatar: user.avatar ?? existing.avatar,
       authProvider: user.authProvider ?? existing.authProvider,
+      biometricEnabled: user.biometricEnabled ?? existing.biometricEnabled,
+      biometricToken: user.biometricToken ?? existing.biometricToken,
       password: user.password ?? existing.password,
       username: user.username ?? existing.username,
     };
@@ -594,6 +608,7 @@ export class MemoryStorage implements IStorage {
       badge: product.badge ?? null,
       inStock: product.inStock ?? true,
       sizes: product.sizes ?? null,
+      measurements: product.measurements ?? null,
       sortOrder: product.sortOrder ?? 0,
     };
     this.products.set(created.id, created);
@@ -830,7 +845,11 @@ export class MemoryStorage implements IStorage {
 
   async createMessage(message: InsertMessage): Promise<Message> {
     const created: Message = {
-      ...message,
+      userId: message.userId || null,
+      name: message.name,
+      email: message.email,
+      phone: message.phone || null,
+      message: message.message,
       id: createId(),
       isRead: false,
       createdAt: new Date(),
@@ -845,6 +864,13 @@ export class MemoryStorage implements IStorage {
     const updated = { ...existing, isRead: true };
     this.messages.set(id, updated);
     return updated;
+  }
+
+  async getMessageCountInLast24Hours(userId: string): Promise<number> {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return Array.from(this.messages.values()).filter(m => 
+      m.userId === userId && m.createdAt && m.createdAt >= yesterday
+    ).length;
   }
   async reorderProducts(ids: string[]): Promise<void> {
     ids.forEach((id, index) => {
