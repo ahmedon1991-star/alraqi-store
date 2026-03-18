@@ -31,7 +31,7 @@ import {
   type Message,
   type InsertMessage,
 } from "@shared/schema";
-import { and, eq, sql, asc, desc, gte } from "drizzle-orm";
+import { and, eq, sql, asc, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
@@ -210,7 +210,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    return db.select().from(products).orderBy(asc(products.sortOrder), desc(sql`created_at`));
+    return db.select().from(products).orderBy(asc(products.sortOrder));
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
