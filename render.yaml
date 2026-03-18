@@ -3,6 +3,7 @@ services:
     name: alraqi-store
     env: node
     autoDeploy: true
+    branch: main
     buildCommand: npm install && npm run build
     startCommand: npm run db:push && npm run start
     envVars:
