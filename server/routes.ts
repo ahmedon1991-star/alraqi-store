@@ -3,7 +3,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
 import { type Category, type InsertProduct, type InsertUser, type Order, type Product, type User, type InsertAdminSettings, type Bank, type InsertBank, insertMessageSchema, type Message, type InsertMessage } from "@shared/schema";
 import { z } from "zod";
-import { storage } from "./storage";
+import { storage, getDbLastError } from "./storage";
 import { sendPasswordResetEmail } from "./email";
 import multer from "multer";
 import path from "path";
@@ -230,12 +230,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/admin/debug-storage", async (_req, res) => {
     const isDatabase = storage.constructor.name === "DatabaseStorage";
     const hasEnv = !!process.env.DATABASE_URL;
+    const lastError = getDbLastError();
     res.json({
       mode: isDatabase ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)",
       hasDatabaseUrl: hasEnv,
+      lastError: lastError || null,
       message: isDatabase 
         ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL." 
-        : (hasEnv ? "يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال، يعمل الآن في الذاكرة المؤقتة." : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
+        : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
     });
   });
 

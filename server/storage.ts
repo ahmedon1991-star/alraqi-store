@@ -52,22 +52,37 @@ function createDatabase() {
     console.log("🚀 STORAGE: DATABASE_URL detected. Initializing PostgreSQL pool...");
     const pool = new pg.Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+      ssl: { rejectUnauthorized: false }
     });
     
     // Test connection
     pool.on('error', (err) => {
       console.error('❌ STORAGE: Unexpected error on idle database client', err);
+      dbLastError = err.message;
+    });
+
+    // Async test query
+    pool.query("SELECT 1").then(() => {
+      console.log("✅ STORAGE: Database connection test OK.");
+      dbLastError = null;
+    }).catch((err) => {
+      console.error("❌ STORAGE: Async connection test failed:", err);
+      dbLastError = err.message;
     });
 
     console.log("✅ STORAGE: Drizzle initialized with PostgreSQL.");
     return drizzle(pool);
   } catch (error) {
-    console.error("❌ STORAGE: Failed to connect to database:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("❌ STORAGE: Failed to connect to database:", msg);
     console.log("⚠️  STORAGE: Falling back to MemoryStorage due to connection error.");
+    dbLastError = msg;
     return null;
   }
 }
+
+let dbLastError: string | null = null;
+export function getDbLastError() { return dbLastError; }
 
 const db = createDatabase();
 console.log(`📡 STORAGE MODE: ${db ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)"}`);
