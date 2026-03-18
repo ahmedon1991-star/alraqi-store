@@ -195,13 +195,15 @@ export default function AdminPage() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error("فشل رفع الصورة");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "فشل رفع الصورة");
+      }
       
       const data = await response.json();
       if (target === "product") {
         setForm(prev => ({ ...prev, image: data.url }));
       } else {
-        // Handle category icon upload if needed, here we'll just return the URL
         return data.url;
       }
       toast({ title: "تم رفع الصورة بنجاح" });

@@ -11,8 +11,13 @@ import fs from "fs";
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), "dist", "public", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`📁 Created upload directory at: ${uploadDir}`);
+  }
+} catch (err) {
+  console.error(`❌ FAILED to create/access upload directory: ${err}`);
 }
 
 const multerStorage = multer.diskStorage({
@@ -31,7 +36,7 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
 
-const adminSessions = new Set<string>();
+// Admin sessions are now persisted in the database table 'sessions'
 
 type GoogleTokenInfo = {
   sub?: string;
@@ -118,10 +123,17 @@ function sanitizeUser(user: User) {
   };
 }
 
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const token = getAdminToken(req);
-  if (!token || !adminSessions.has(token)) {
+  if (!token) {
     return res.status(401).json({ message: "غير مصرح لك بالوصول إلى لوحة الإدارة" });
+  }
+
+  // Check if it's a persistent admin session in DB
+  const session = await storage.getSession(token);
+  // We use a convention for admin session userId: e.g. "admin-settings-id"
+  if (!session || !session.userId.startsWith("admin-")) {
+    return res.status(401).json({ message: "انتهت جلسة الإدارة، يرجى تسجيل الدخول مجدداً" });
   }
 
   next();
@@ -486,7 +498,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const token = createToken();
-    adminSessions.add(token);
+    // Persist admin session in DB with a special identifier
+    await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
 
     res.json({
       token,
