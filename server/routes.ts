@@ -292,61 +292,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 1. Try customer login first
+    // Try customer login
     const user = await storage.getUserByEmail(normalizedEmail);
-    const settings = await storage.getAdminSettings();
 
     if (user && verifyPassword(password, user.password)) {
-      // Check if this customer is also the admin
-      // Only promote if they explicitly match the configured admin email in settings
-      const adminEmail = settings?.email?.trim().toLowerCase();
-
-      if (adminEmail && normalizedEmail === adminEmail) {
-        const token = createToken();
-        await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
-        return res.json({
-          token,
-          user: { ...sanitizeUser(user), isAdmin: true },
-          isAdmin: true
-        });
-      }
-
       const token = await createCustomerSession(user);
       return res.json({
         token,
         user: sanitizeUser(user),
         isAdmin: false
-      });
-    }
-
-    // 2. Try direct admin login (if not a customer or customer password didn't match)
-    const storedEmail = settings?.email?.trim().toLowerCase() || ADMIN_USERNAME;
-    const storedUsername = settings?.username?.trim().toLowerCase() || ADMIN_USERNAME;
-    const storedPassword = settings?.password || ADMIN_PASSWORD;
-
-    const emailMatch = normalizedEmail === storedEmail || normalizedEmail === storedUsername;
-
-    let passwordMatch = false;
-    if (storedPassword.includes(':')) {
-      passwordMatch = verifyPassword(password, storedPassword);
-    } else {
-      passwordMatch = password === storedPassword;
-    }
-
-    // fallback to env vars if not authenticated yet
-    if (!emailMatch || !passwordMatch) {
-      if ((normalizedEmail === ADMIN_USERNAME || normalizedEmail === process.env.ADMIN_EMAIL) && password === ADMIN_PASSWORD) {
-        passwordMatch = true;
-      }
-    }
-
-    if (emailMatch && passwordMatch) {
-      const token = createToken();
-      await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
-      return res.json({
-        token,
-        user: { username: storedUsername, isAdmin: true },
-        isAdmin: true
       });
     }
 
