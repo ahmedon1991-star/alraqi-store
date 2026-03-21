@@ -1,15 +1,17 @@
-import { Home, LayoutGrid, ShoppingBag, User, Heart } from "lucide-react";
+import { Home, LayoutGrid, ShoppingBag, User, Heart, Shield } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { useCartCount } from "@/hooks/use-cart";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCurrentUser } from "@/hooks/use-auth";
+import { getAdminToken } from "@/lib/api";
 
 export function MobileNav() {
   const [location] = useLocation();
   const cartCount = useCartCount();
   const { count: wishlistCount } = useWishlist();
   const { data: user } = useCurrentUser();
+  const adminToken = getAdminToken();
 
   // Hide on admin routes
   if (location.startsWith("/admin")) {
@@ -50,6 +52,15 @@ export function MobileNav() {
       active: location === "/profile" || location === "/login",
     },
   ];
+
+  if (adminToken) {
+    navItems.push({
+      label: "الإدارة",
+      icon: Shield,
+      href: "/admin",
+      active: location.startsWith("/admin"),
+    });
+  }
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/98 backdrop-blur-xl border-t border-gray-100 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
