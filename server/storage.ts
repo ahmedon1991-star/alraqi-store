@@ -84,7 +84,7 @@ function createDatabase() {
   }
 }
 
-const db = createDatabase();
+export const db = createDatabase();
 console.log(`📡 STORAGE MODE: ${db ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)"}`);
 
 
