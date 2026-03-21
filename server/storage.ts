@@ -138,6 +138,8 @@ export interface IStorage {
   getMessages(): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: string): Promise<Message | undefined>;
+  archiveMessage(id: string): Promise<Message | undefined>;
+  archiveOrder(id: string): Promise<Order | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -415,7 +417,13 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
 
-    const [updated] = await db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
+    const [updated] = await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id)).returning();
+    return updated;
+  }
+
+  async archiveOrder(id: string): Promise<Order | undefined> {
+    if (!db) return undefined;
+    const [updated] = await db.update(orders).set({ isArchived: true }).where(eq(orders.id, id)).returning();
     return updated;
   }
 
@@ -501,6 +509,12 @@ export class DatabaseStorage implements IStorage {
   async markMessageAsRead(id: string): Promise<Message | undefined> {
     if (!db) return undefined;
     const [updated] = await db.update(messages).set({ isRead: true }).where(eq(messages.id, id)).returning();
+    return updated;
+  }
+
+  async archiveMessage(id: string): Promise<Message | undefined> {
+    if (!db) return undefined;
+    const [updated] = await db.update(messages).set({ isArchived: true }).where(eq(messages.id, id)).returning();
     return updated;
   }
 
@@ -799,7 +813,15 @@ export class MemoryStorage implements IStorage {
       return undefined;
     }
 
-    const updated: Order = { ...existing, status };
+    const updated: Order = { ...existing, status, updatedAt: new Date() };
+    this.orders.set(id, updated);
+    return updated;
+  }
+
+  async archiveOrder(id: string): Promise<Order | undefined> {
+    const existing = this.orders.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, isArchived: true };
     this.orders.set(id, updated);
     return updated;
   }
@@ -880,6 +902,14 @@ export class MemoryStorage implements IStorage {
     const existing = this.messages.get(id);
     if (!existing) return undefined;
     const updated = { ...existing, isRead: true };
+    this.messages.set(id, updated);
+    return updated;
+  }
+
+  async archiveMessage(id: string): Promise<Message | undefined> {
+    const existing = this.messages.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, isArchived: true };
     this.messages.set(id, updated);
     return updated;
   }

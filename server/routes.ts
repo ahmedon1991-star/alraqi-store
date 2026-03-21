@@ -744,6 +744,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(order);
   });
 
+  app.patch("/api/admin/orders/:id/archive", requireAdmin, async (req: Request, res: Response) => {
+    const orderId = getSingleParam(req.params.id);
+    const order = await storage.archiveOrder(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "الطلب غير موجود" });
+    }
+    res.json(order);
+  });
+
   // Message routes
   app.get("/api/admin/messages", requireAdmin, async (_req: Request, res: Response) => {
     const messages = await storage.getMessages();
@@ -751,10 +760,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.patch("/api/admin/messages/:id/read", requireAdmin, async (req: Request, res: Response) => {
-    const id = getSingleParam(req.params.id);
-    const updated = await storage.markMessageAsRead(id);
-    if (!updated) return res.status(404).json({ message: "الرسالة غير موجودة" });
-    res.json(updated);
+    const msg = await storage.markMessageAsRead(req.params.id);
+    if (!msg) return res.status(404).json({ message: "الرسالة غير موجودة" });
+    res.json(msg);
+  });
+
+  app.patch("/api/admin/messages/:id/archive", requireAdmin, async (req: Request, res: Response) => {
+    const msg = await storage.archiveMessage(req.params.id);
+    if (!msg) return res.status(404).json({ message: "الرسالة غير موجودة" });
+    res.json(msg);
   });
 
   app.post("/api/messages", requireCustomer, async (req: Request, res: Response) => {

@@ -69,6 +69,8 @@ type AdminOverview = {
     phone: string | null;
     address: string | null;
     items: string | null;
+    isArchived: boolean | null;
+    updatedAt: string | null;
   }>;
   products: Array<{
     id: string;
@@ -176,6 +178,7 @@ export default function AdminPage() {
   const [form, setForm] = useState<ProductFormState>(initialForm);
   const [orderSearch, setOrderSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [messageFilter, setMessageFilter] = useState("active");
   const [productSearch, setProductSearch] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -265,6 +268,14 @@ export default function AdminPage() {
     mutationFn: (id: string) => apiRequest(`/api/admin/messages/${id}/read`, { method: "PATCH" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/messages"] });
+    },
+  });
+
+  const archiveMessageMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/admin/messages/${id}/archive`, { method: "PATCH" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/messages"] });
+      toast({ title: "تم أرشفة الرسالة" });
     },
   });
 
@@ -389,6 +400,20 @@ export default function AdminPage() {
     },
   });
 
+  const archiveOrderMutation = useMutation({
+    mutationFn: (orderId: string) =>
+      apiRequest(`/api/admin/orders/${orderId}/archive`, {
+        method: "PATCH",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      toast({
+        title: "تم أرشفة الطلب",
+        description: "تم نقل الطلب إلى الأرشيف بنجاح.",
+      });
+    },
+  });
+
   const saveProductMutation = useMutation({
     mutationFn: () =>
       apiRequest(form.id ? `/api/admin/products/${form.id}` : "/api/admin/products", {
@@ -456,8 +481,17 @@ export default function AdminPage() {
         order.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
         order.phone?.includes(orderSearch) ||
         order.address?.toLowerCase().includes(orderSearch.toLowerCase());
-      const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-      return matchesSearch && matchesStatus;
+        
+      const timeReference = order.updatedAt || order.createdAt;
+      const isOlderThan24h = timeReference ? new Date().getTime() - new Date(timeReference).getTime() > 24 * 60 * 60 * 1000 : false;
+      const isArchived = order.isArchived || (order.status === "completed" && isOlderThan24h);
+
+      if (statusFilter === "archived") {
+        return matchesSearch && isArchived;
+      }
+      
+      const matchesStatus = statusFilter === "all" ? true : order.status === statusFilter;
+      return matchesSearch && matchesStatus && !isArchived;
     });
   }, [data?.orders, orderSearch, statusFilter]);
 
@@ -1037,6 +1071,7 @@ export default function AdminPage() {
                       <SelectItem value="processing">جارٍ التجهيز</SelectItem>
                       <SelectItem value="completed">تم التوصيل</SelectItem>
                       <SelectItem value="cancelled">ملغي</SelectItem>
+                      <SelectItem value="archived">مؤرشف</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1087,7 +1122,7 @@ export default function AdminPage() {
                               <Eye className="h-4 w-4" />
                               عرض
                             </Button>
-                            <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
+                            <Select value={order.isArchived ? "archived" : order.status} onValueChange={(value) => value === "archived" ? archiveOrderMutation.mutate(order.id) : updateOrderMutation.mutate({ orderId: order.id, status: value })}>
                               <SelectTrigger className="h-9 w-32 text-right rounded-xl border-border/40 text-xs font-bold">
                                 <SelectValue />
                               </SelectTrigger>
@@ -1096,6 +1131,7 @@ export default function AdminPage() {
                                 <SelectItem value="processing" className="text-xs">جارٍ التجهيز</SelectItem>
                                 <SelectItem value="completed" className="text-xs">تم التوصيل</SelectItem>
                                 <SelectItem value="cancelled" className="text-xs text-red-500">إلغاء الطلب</SelectItem>
+                                <SelectItem value="archived" className="text-xs text-gray-500">أرشفة</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1149,7 +1185,7 @@ export default function AdminPage() {
                         <Eye className="h-4 w-4" />
                         التفاصيل
                       </Button>
-                      <Select value={order.status} onValueChange={(value) => updateOrderMutation.mutate({ orderId: order.id, status: value })}>
+                      <Select value={order.isArchived ? "archived" : order.status} onValueChange={(value) => value === "archived" ? archiveOrderMutation.mutate(order.id) : updateOrderMutation.mutate({ orderId: order.id, status: value })}>
                         <SelectTrigger className="flex-1 h-11 rounded-2xl border-border/40 text-xs font-bold text-center">
                           <SelectValue />
                         </SelectTrigger>
@@ -1158,6 +1194,7 @@ export default function AdminPage() {
                           <SelectItem value="processing">جارٍ التجهيز</SelectItem>
                           <SelectItem value="completed">تم التوصيل</SelectItem>
                           <SelectItem value="cancelled" className="text-red-500">إلغاء</SelectItem>
+                          <SelectItem value="archived" className="text-gray-500">أرشفة</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1371,11 +1408,33 @@ export default function AdminPage() {
         <TabsContent value="messages" className="space-y-8">
           <Card className="border-white/60 bg-white/90 shadow-xl overflow-hidden">
             <CardHeader className="bg-primary/5 border-b">
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-primary" />
-                رسائل العملاء وخدمة العملاء
-              </CardTitle>
-              <CardDescription>هنا تظهر كافة الاستفسارات والرسائل المرسلة من الموقع.</CardDescription>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-right">
+                  <CardTitle className="flex items-center gap-2 justify-end">
+                    <Mail className="h-5 w-5 text-primary" />
+                    رسائل العملاء وخدمة العملاء
+                  </CardTitle>
+                  <CardDescription>هنا تظهر كافة الاستفسارات والرسائل المرسلة من الموقع.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-2xl border border-border/40 w-full sm:w-auto">
+                  <Button 
+                    variant={messageFilter === "active" ? "primary" : "ghost"} 
+                    size="sm" 
+                    className={`rounded-xl flex-1 sm:flex-none font-bold ${messageFilter === "active" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
+                    onClick={() => setMessageFilter("active")}
+                  >
+                    النشطة
+                  </Button>
+                  <Button 
+                    variant={messageFilter === "archived" ? "primary" : "ghost"} 
+                    size="sm" 
+                    className={`rounded-xl flex-1 sm:flex-none font-bold ${messageFilter === "archived" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
+                    onClick={() => setMessageFilter("archived")}
+                  >
+                    المؤرشفة
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -1390,7 +1449,10 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {messagesQuery.data?.map((msg) => (
+                  {messagesQuery.data?.filter(msg => {
+                    const isArchived = msg.isArchived || (msg.isRead && (new Date().getTime() - new Date(msg.createdAt).getTime() > 24 * 60 * 60 * 1000));
+                    return messageFilter === "archived" ? isArchived : !isArchived;
+                  }).map((msg) => (
                     <TableRow key={msg.id} className={msg.isRead ? "opacity-70" : "bg-green-50/30"}>
                       <TableCell className="text-right">
                         {!msg.isRead ? (
@@ -1414,6 +1476,15 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex items-center justify-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-muted-foreground hover:text-primary rounded-xl"
+                            onClick={() => archiveMessageMutation.mutate(msg.id)}
+                            title="أرشفة"
+                          >
+                            <PlusCircle className="h-4 w-4 rotate-45" />
+                          </Button>
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="ghost" size="icon" onClick={() => !msg.isRead && markReadMutation.mutate(msg.id)}>

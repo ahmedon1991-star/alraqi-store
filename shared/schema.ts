@@ -90,9 +90,11 @@ export const orders = pgTable("orders", {
   paymentMethod: text("payment_method").notNull().default("cod"), // "cod" or "bank"
   bankId: varchar("bank_id"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  isArchived: boolean("is_archived").default(false),
 });
 
-export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
+export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true, isArchived: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
 
@@ -143,8 +145,9 @@ export const messages = pgTable("messages", {
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  isArchived: boolean("is_archived").default(false),
 });
 
-export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, isRead: true, createdAt: true });
+export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, isRead: true, createdAt: true, isArchived: true });
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
