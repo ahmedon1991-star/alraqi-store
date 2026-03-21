@@ -24,6 +24,7 @@ import {
   Layers,
   Boxes,
   ListOrdered,
+  Phone,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { Navbar } from "@/components/layout/navbar";
@@ -1186,47 +1187,104 @@ export default function AdminPage() {
               </CardTitle>
               <CardDescription>عرض كافة العملاء المسجلين وتاريخ انضمامهم ونشاطهم.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-right">العميل</TableHead>
-                    <TableHead className="text-right">التواصل</TableHead>
-                    <TableHead className="text-right">تاريخ الانضمام</TableHead>
-                    <TableHead className="text-right">آخر نشاط</TableHead>
-                    <TableHead className="text-right">الحالة</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {customersQuery.data?.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-bold">{customer.name || customer.username}</TableCell>
-                      <TableCell>
-                        <div className="text-xs">
-                          {customer.email && <p>{customer.email}</p>}
-                          {customer.phone && <p>{customer.phone}</p>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs">{formatAdminDate(customer.createdAt)}</TableCell>
-                      <TableCell className="text-xs">{formatAdminDate(customer.lastActive)}</TableCell>
-                      <TableCell>
-                        {customer.lastActive && new Date().getTime() - new Date(customer.lastActive).getTime() < 10 * 60 * 1000 ? (
-                          <Badge className="bg-emerald-500">نشط الآن</Badge>
-                        ) : (
-                          <Badge variant="outline">غير متصل</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!customersQuery.data || customersQuery.data.length === 0) && (
+            <CardContent className="p-0 md:p-6">
+              {/* Desktop View Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                        لا يوجد عملاء مسجلون حالياً
-                      </TableCell>
+                      <TableHead className="text-right">العميل</TableHead>
+                      <TableHead className="text-right">التواصل</TableHead>
+                      <TableHead className="text-right">تاريخ الانضمام</TableHead>
+                      <TableHead className="text-right">آخر نشاط</TableHead>
+                      <TableHead className="text-right">الحالة</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {customersQuery.data?.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-bold">{customer.name || customer.username}</TableCell>
+                        <TableCell>
+                          <div className="text-xs">
+                            {customer.email && <p>{customer.email}</p>}
+                            {customer.phone && <p dir="ltr" className="text-right">{customer.phone}</p>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">{formatAdminDate(customer.createdAt)}</TableCell>
+                        <TableCell className="text-xs">{formatAdminDate(customer.lastActive)}</TableCell>
+                        <TableCell>
+                          {customer.lastActive && new Date().getTime() - new Date(customer.lastActive).getTime() < 10 * 60 * 1000 ? (
+                            <Badge className="bg-emerald-500">نشط الآن</Badge>
+                          ) : (
+                            <Badge variant="outline">غير متصل</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!customersQuery.data || customersQuery.data.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                          لا يوجد عملاء مسجلون حالياً
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile View Cards */}
+              <div className="md:hidden p-4 space-y-4 bg-background/50">
+                {customersQuery.data?.map((customer) => {
+                  const isActive = customer.lastActive && new Date().getTime() - new Date(customer.lastActive).getTime() < 10 * 60 * 1000;
+                  return (
+                    <div key={customer.id} className="rounded-3xl border border-border/40 bg-white p-5 shadow-sm">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xl">
+                            {(customer.name || customer.username || "U").charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h3 className="font-black text-lg text-foreground">{customer.name || customer.username || "بدون اسم"}</h3>
+                            <p className="text-xs text-muted-foreground">عضو منذ {formatAdminDate(customer.createdAt)}</p>
+                          </div>
+                        </div>
+                        <div>
+                          {isActive ? (
+                            <span className="flex h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+                          ) : (
+                            <span className="flex h-3 w-3 rounded-full bg-slate-300"></span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3 bg-slate-50 p-4 rounded-2xl">
+                        {customer.email && (
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <Mail className="h-4 w-4 shrink-0 text-primary/60" />
+                            <span className="truncate flex-1" dir="ltr">{customer.email}</span>
+                          </div>
+                        )}
+                        {customer.phone && (
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <Phone className="h-4 w-4 shrink-0 text-primary/60" />
+                            <span dir="ltr">{customer.phone}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-200/60 mt-2">
+                          <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                          <span>تاريخ آخر نشاط: {formatAdminDate(customer.lastActive) || "غير معروف"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(!customersQuery.data || customersQuery.data.length === 0) && (
+                  <div className="p-10 text-center bg-white rounded-3xl border border-dashed border-slate-200">
+                    <UsersIcon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500 font-bold">لا يوجد عملاء مسجلون حالياً</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
