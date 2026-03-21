@@ -47,7 +47,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiRequest, clearAdminToken } from "@/lib/api";
+import { apiRequest, clearAdminToken, getAdminToken } from "@/lib/api";
 import { formatCategoryLabel, formatPrice } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -196,7 +196,7 @@ export default function AdminPage() {
       const response = await fetch("/api/admin/upload", {
         method: "POST",
         headers: {
-          "x-admin-token": localStorage.getItem("admin_token") || "",
+          "x-admin-token": getAdminToken() || "",
         },
         body: formData,
       });
