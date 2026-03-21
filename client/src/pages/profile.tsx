@@ -11,6 +11,7 @@ import {
   MapPin,
   ChevronLeft,
   Heart,
+  FileText,
   Settings,
   Clock,
   CheckCircle2,
@@ -258,6 +259,13 @@ export default function ProfilePage() {
                       {item.label}
                     </button>
                   ))}
+                  <button
+                    onClick={() => logoutMutation.mutate()}
+                    className="flex-1 min-w-[100px] flex flex-col items-center justify-center p-4 rounded-2xl font-black text-xs transition-all bg-rose-50 text-rose-600 shadow-sm"
+                  >
+                    <LogOut className="h-5 w-5 mb-2" />
+                    خروج
+                  </button>
                </div>
             </aside>
 
@@ -320,7 +328,7 @@ export default function ProfilePage() {
                                                 className="rounded-full font-black px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
                                                 onClick={() => { setSelectedOrder(order); setIsTrackOpen(true); }}
                                              >
-                                                تتبع الطلب <Truck className="h-4 w-4 mr-1.5" />
+                                                تفاصيل الطلب <FileText className="h-4 w-4 mr-1.5" />
                                              </Button>
                                              <Button 
                                                 size="sm" 
@@ -506,6 +514,29 @@ export default function ProfilePage() {
                              <p className="text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم...</p>
                           </div>
                        </div>
+                    </div>
+                    
+                    {/* Order Details / Items */}
+                    <div className="mt-8 border-t pt-6 bg-white">
+                      <h4 className="font-black text-gray-900 mb-4 px-2">تفاصيل المنتجات:</h4>
+                      <div className="space-y-4">
+                        {(() => {
+                          try {
+                            const items = JSON.parse(selectedOrder.items || '[]');
+                            return items.map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                <div>
+                                  <p className="font-bold text-gray-900">{item.name}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
+                                </div>
+                                <p className="font-black text-primary">{formatPrice(item.price)}</p>
+                              </div>
+                            ));
+                          } catch(e) {
+                            return <p className="text-gray-500 text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
+                          }
+                        })()}
+                      </div>
                     </div>
                     
                     <div className="bg-[#F8F9FB] rounded-3xl p-6">
