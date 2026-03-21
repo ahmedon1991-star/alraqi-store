@@ -9,11 +9,12 @@ import {
   Mail,
   Lock,
   Fingerprint,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -381,6 +382,12 @@ export default function AuthPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
+          <CardFooter className="flex justify-center border-t border-gray-100 pt-4 pb-4">
+            <Link href="/admin-login" className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-primary transition-colors">
+              <Shield className="h-4 w-4" />
+              أنا صاحب المتجر
+            </Link>
+          </CardFooter>
         </Card>
       </main>
 
