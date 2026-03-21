@@ -227,6 +227,13 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Diagnostic route for storage status
+  app.get("/api/admin/run-migration", async (_req, res) => {
+    const { exec } = await import("child_process");
+    exec("npm run db:push", (error, stdout, stderr) => {
+      res.json({ error: error?.message, stdout, stderr });
+    });
+  });
+
   app.get("/api/admin/debug-storage", async (_req, res) => {
     const isDatabase = storage.constructor.name === "DatabaseStorage";
     const hasEnv = !!process.env.DATABASE_URL;
