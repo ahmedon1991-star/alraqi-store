@@ -141,6 +141,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  public readonly mode = "DATABASE";
   async getUser(id: string): Promise<User | undefined> {
     if (!db) {
       return undefined;
@@ -514,6 +515,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 export class MemoryStorage implements IStorage {
+  public readonly mode = "MEMORY";
   private users = new Map<string, User>();
   private products = new Map<string, Product>();
   private categories = new Map<string, Category>();

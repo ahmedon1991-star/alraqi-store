@@ -3,8 +3,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
 import { type Category, type InsertProduct, type InsertUser, type Order, type Product, type User, type InsertAdminSettings, type Bank, type InsertBank, insertMessageSchema, type Message, type InsertMessage } from "@shared/schema";
 import { z } from "zod";
-import { storage, getDbLastError, db } from "./storage";
-import { sql } from "drizzle-orm";
+import { storage, getDbLastError } from "./storage";
 import { sendPasswordResetEmail } from "./email";
 import multer from "multer";
 import path from "path";
@@ -228,33 +227,15 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   // Diagnostic route for storage status
-  app.get("/api/admin/run-migration", async (_req, res) => {
-    const { exec } = await import("child_process");
-    exec("npm run db:push", (error, stdout, stderr) => {
-      res.json({ error: error?.message, stdout, stderr });
-    });
-  });
-
-  app.get("/api/admin/debug-db", async (_req, res) => {
-    if (!db) return res.status(500).json({ message: "Database not initialized" });
-    try {
-      const columns = await db.execute(sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'products'`);
-      const tables = await db.execute(sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`);
-      res.json({ columns: columns.rows, tables: tables.rows });
-    } catch (error) {
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
   app.get("/api/admin/debug-storage", async (_req, res) => {
-    const isDatabase = storage.constructor.name === "DatabaseStorage";
+    const mode = (storage as any).mode || "unknown";
     const hasEnv = !!process.env.DATABASE_URL;
     const lastError = getDbLastError();
     res.json({
-      mode: isDatabase ? "DATABASE (PostgreSQL)" : "MEMORY (Local Map)",
+      mode: mode,
       hasDatabaseUrl: hasEnv,
       lastError: lastError || null,
-      message: isDatabase
+      message: mode === "DATABASE"
         ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL."
         : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
     });
