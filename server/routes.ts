@@ -298,10 +298,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     if (user && verifyPassword(password, user.password)) {
       // Check if this customer is also the admin
-      const adminEmail = settings?.email?.trim().toLowerCase() || ADMIN_USERNAME;
-      const adminUsername = settings?.username?.trim().toLowerCase() || ADMIN_USERNAME;
+      // Only promote if they explicitly match the configured admin email in settings
+      const adminEmail = settings?.email?.trim().toLowerCase();
 
-      if (normalizedEmail === adminEmail || user.username === adminUsername) {
+      if (adminEmail && normalizedEmail === adminEmail) {
         const token = createToken();
         await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
         return res.json({
