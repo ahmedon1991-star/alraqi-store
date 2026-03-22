@@ -14,23 +14,35 @@ export default defineConfig({
     metaImagesPlugin(),
     VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "auto",
       manifest: {
         name: "الراقي للمنتجات السودانية",
         short_name: "الراقي",
-        description: "متجرك الأول للمنتجات السودانية الأصيلة",
-        theme_color: "#ea580c",
+        description: "متجرك الأول للمنتجات السودانية الأصيلة من قلب المزارع مباشرة",
+        theme_color: "#1B705C",
+        background_color: "#FDFBF7",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: "/",
         icons: [
           {
             src: "/logo.png",
             sizes: "192x192",
-            type: "image/png"
+            type: "image/png",
+            purpose: "any"
           },
           {
             src: "/logo.png",
             sizes: "512x512",
-            type: "image/png"
+            type: "image/png",
+            purpose: "any maskable"
           }
         ]
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+        cleanupOutdatedCaches: true,
+        navigateFallback: "index.html"
       }
     }),
     ...(process.env.NODE_ENV !== "production" &&
