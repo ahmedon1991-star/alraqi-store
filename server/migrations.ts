@@ -52,6 +52,8 @@ export async function runMigrations() {
 
     // products: add sort_order if missing
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS sort_order integer DEFAULT 0`);
+    // products: add stock if missing
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock integer DEFAULT 0`);
 
     // Ensure admin settings row exists with correct credentials
     const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
