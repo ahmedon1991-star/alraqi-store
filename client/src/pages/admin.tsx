@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -26,6 +26,7 @@ import {
   ListOrdered,
   Phone,
   Truck,
+  Volume2,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { Navbar } from "@/components/layout/navbar";
@@ -391,27 +392,54 @@ export default function AdminPage() {
   }, [authQuery.error, setLocation]);
 
   const prevOrdersCountRef = useRef<number | null>(null);
+  const prevMessagesCountRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    const currentOrdersCount = overviewQuery.data?.stats?.orders;
-    if (currentOrdersCount !== undefined) {
-      if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
-        try {
-          const audio = new Audio('/notification.wav');
-          audio.volume = 1.0;
-          audio.play().catch(e => console.error("Audio play blocked by browser:", e));
-          
-          toast({
-            title: "🔔 طلب جديد الوارد",
-            description: "تم استلام طلب جديد من أحد العملاء، يرجى مراجعته.",
-          });
-        } catch (e) {
-          console.error("Audio play failed, user interaction may be required:", e);
-        }
-      }
-      prevOrdersCountRef.current = currentOrdersCount;
+    // Preload audio
+    audioRef.current = new Audio('/notification.wav');
+    audioRef.current.load();
+  }, []);
+
+  const playNotification = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => {
+        console.error("Audio play blocked - needs user interaction:", e);
+      });
     }
-  }, [overviewQuery.data?.stats?.orders, toast]);
+  }, []);
+
+  useEffect(() => {
+    const stats = overviewQuery.data?.stats;
+    if (!stats) return;
+
+    const currentOrdersCount = stats.orders;
+    const currentMessagesCount = (stats as any).messages;
+
+    // Handle NEW ORDERS
+    if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
+      playNotification();
+      toast({
+        title: "🔔 طلب جديد وارد",
+        description: `تم استلام طلب جديد رقم ${currentOrdersCount} من أحد العملاء.`,
+        className: "bg-primary text-white font-bold",
+      });
+    }
+    prevOrdersCountRef.current = currentOrdersCount;
+
+    // Handle NEW MESSAGES
+    if (prevMessagesCountRef.current !== null && currentMessagesCount > prevMessagesCountRef.current) {
+      playNotification();
+      toast({
+        title: "📩 رسالة جديدة واردة",
+        description: "وصلتك مراجعة أو استفسار جديد من أحد العملاء، يرجى مراجعته.",
+        className: "bg-blue-600 text-white font-bold",
+      });
+    }
+    prevMessagesCountRef.current = currentMessagesCount;
+
+  }, [overviewQuery.data?.stats, toast, playNotification]);
 
   const updateOrderMutation = useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
@@ -898,7 +926,16 @@ export default function AdminPage() {
                   </DialogContent>
                 </Dialog>
 
-                <Button variant="outline" className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base" onClick={() => logoutMutation.mutate()}>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base gap-2 border-primary/30 text-primary hover:bg-primary/5" 
+                  onClick={playNotification}
+                >
+                  <Volume2 className="h-4 w-4" />
+                  اختبار الصوت
+                </Button>
+
+                <Button variant="outline" className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => logoutMutation.mutate()}>
                   تسجيل الخروج
                 </Button>
               </div>

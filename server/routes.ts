@@ -706,10 +706,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/admin/overview", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const [products, categories, allOrders] = await Promise.all([
+      const [products, categories, allOrders, allMessages] = await Promise.all([
         storage.getProducts(),
         storage.getCategories(),
         storage.getAllOrders(),
+        storage.getMessages(),
       ]);
 
       const sortedOrders = [...allOrders].sort((a: Order, b: Order) => {
@@ -720,6 +721,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       const revenue = allOrders.reduce((sum: number, order: Order) => sum + order.total, 0);
       const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
+      const unreadMessages = allMessages.filter((msg) => !msg.isRead).length;
+      
       const topCategories = categories.map((category: Category) => ({
         ...category,
         productCount: products.filter((product: Product) => product.category === category.id).length,
@@ -731,6 +734,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           categories: categories.length,
           orders: allOrders.length,
           pendingOrders: pendingOrders.length,
+          messages: allMessages.length,
+          unreadMessages,
           revenue,
         },
         orders: sortedOrders,
