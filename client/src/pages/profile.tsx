@@ -461,93 +461,95 @@ export default function ProfilePage() {
       </main>
 
       <Dialog open={isTrackOpen} onOpenChange={setIsTrackOpen}>
-         <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden border-none max-w-lg">
+         <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] p-0 overflow-hidden border-none w-[95vw] max-w-lg max-h-[90vh] flex flex-col hide-scrollbar">
             {selectedOrder && (
-              <div className="flex flex-col">
-                 <div className="bg-primary p-10 text-white relative">
-                    <DialogClose className="absolute top-6 left-6 text-white/60 hover:text-white"><XCircle className="h-6 w-6" /></DialogClose>
-                    <h2 className="text-xl font-black mb-2 opacity-80">تتبع طلبك</h2>
-                    <h3 className="text-3xl font-black">#{selectedOrder.id.slice(0, 8).toUpperCase()}</h3>
-                    <div className="flex items-center gap-2 mt-4 bg-white/10 w-fit px-4 py-1.5 rounded-full text-xs font-bold capitalize">
+              <div className="flex flex-col h-full overflow-y-auto scrollbar-hide">
+                 <div className="bg-primary p-6 md:p-8 text-white relative shrink-0">
+                    <DialogClose className="absolute top-4 outline-none left-4 md:top-6 md:left-6 text-white/70 hover:text-white"><XCircle className="h-6 w-6 md:h-7 md:w-7" /></DialogClose>
+                    <h2 className="text-lg md:text-xl font-black mb-1 md:mb-2 opacity-80">تتبع طلبك</h2>
+                    <h3 className="text-2xl md:text-3xl font-black">#{selectedOrder.id.slice(0, 8).toUpperCase()}</h3>
+                    <div className="flex items-center gap-2 mt-3 md:mt-4 bg-white/10 w-fit px-3 py-1.5 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold capitalize">
                        <statusData.pending.icon className="h-4 w-4" /> {selectedOrder.status === 'completed' ? 'وصلت بسلام' : 'في الطريق إليك'}
                     </div>
                  </div>
                  
-                 <div className="p-8 space-y-8 bg-white">
-                    <div className="space-y-8 relative before:absolute before:inset-y-0 before:right-7 before:w-0.5 before:bg-gray-100 pb-2">
-                       <div className="flex items-start gap-5 relative group">
-                          <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", selectedOrder.createdAt ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-100 text-gray-400")}>
-                             <Clock className="h-6 w-6" />
+                 <div className="p-5 md:p-8 space-y-6 md:space-y-8 bg-white flex-1 overflow-visible">
+                    <div className="space-y-6 md:space-y-8 relative before:absolute before:inset-y-0 before:right-6 md:before:right-7 before:w-0.5 before:bg-gray-100 pb-2">
+                       <div className="flex items-start gap-4 md:gap-5 relative group">
+                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", selectedOrder.createdAt ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-100 text-gray-400")}>
+                             <Clock className="h-5 w-5 md:h-6 md:w-6" />
                           </div>
-                          <div>
-                             <h4 className="font-black text-gray-900 leading-none mb-2">تم استلام الطلب</h4>
-                             <p className="text-xs text-muted-foreground font-medium">{formatOrderDate(selectedOrder.createdAt)}</p>
-                          </div>
-                       </div>
-                       
-                       <div className="flex items-start gap-5 relative">
-                          <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status !== 'pending') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <Package className="h-6 w-6" />
-                          </div>
-                          <div>
-                             <h4 className="font-black text-gray-900 leading-none mb-2">قيد التجهيز</h4>
-                             <p className="text-xs text-muted-foreground font-medium">نحن نعمل على تغليف منتجاتك بعناية</p>
+                          <div className="pt-1">
+                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم استلام الطلب</h4>
+                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">{formatOrderDate(selectedOrder.createdAt)}</p>
                           </div>
                        </div>
                        
-                       <div className="flex items-start gap-5 relative">
-                          <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <Truck className="h-6 w-6" />
+                       <div className="flex items-start gap-4 md:gap-5 relative">
+                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status !== 'pending') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
+                             <Package className="h-5 w-5 md:h-6 md:w-6" />
                           </div>
-                          <div>
-                             <h4 className="font-black text-gray-900 leading-none mb-2">تم الشحن</h4>
-                             <p className="text-xs text-muted-foreground font-medium">الطلب في طريقه إلى عنوانك الحالي</p>
+                          <div className="pt-1">
+                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">قيد التجهيز</h4>
+                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">نحن نعمل على تغليف منتجاتك بعناية</p>
                           </div>
                        </div>
                        
-                       <div className="flex items-start gap-5 relative">
-                          <div className={cn("z-10 h-14 w-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <CheckCircle2 className="h-6 w-6" />
+                       <div className="flex items-start gap-4 md:gap-5 relative">
+                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
+                             <Truck className="h-5 w-5 md:h-6 md:w-6" />
                           </div>
-                          <div>
-                             <h4 className="font-black text-gray-900 leading-none mb-2">تم التوصيل</h4>
-                             <p className="text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم...</p>
+                          <div className="pt-1">
+                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم الشحن</h4>
+                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">الطلب في طريقه إلى عنوانك الحالي</p>
+                          </div>
+                       </div>
+                       
+                       <div className="flex items-start gap-4 md:gap-5 relative">
+                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
+                             <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
+                          </div>
+                          <div className="pt-1">
+                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم التوصيل</h4>
+                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم...</p>
                           </div>
                        </div>
                     </div>
                     
                     {/* Order Details / Items */}
-                    <div className="mt-8 border-t pt-6 bg-white">
-                      <h4 className="font-black text-gray-900 mb-4 px-2">تفاصيل المنتجات:</h4>
-                      <div className="space-y-4">
+                    <div className="mt-6 md:mt-8 border-t pt-5 md:pt-6 bg-white shrink-0">
+                      <h4 className="text-sm md:text-base font-black text-gray-900 mb-3 md:mb-4 px-1 md:px-2">تفاصيل المنتجات:</h4>
+                      <div className="space-y-3 md:space-y-4">
                         {(() => {
                           try {
                             const items = JSON.parse(selectedOrder.items || '[]');
                             return items.map((item: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                              <div key={idx} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-xl md:rounded-2xl border border-gray-100">
                                 <div>
-                                  <p className="font-bold text-gray-900">{item.name}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
+                                  <p className="text-xs md:text-sm font-bold text-gray-900">{item.name}</p>
+                                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
                                 </div>
-                                <p className="font-black text-primary">{formatPrice(item.price)}</p>
+                                <p className="text-sm md:text-base font-black text-primary shrink-0 mr-2">{formatPrice(item.price)}</p>
                               </div>
                             ));
                           } catch(e) {
-                            return <p className="text-gray-500 text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
+                            return <p className="text-gray-500 text-xs md:text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
                           }
                         })()}
                       </div>
                     </div>
                     
-                    <div className="bg-[#F8F9FB] rounded-3xl p-6">
-                       <div className="flex items-center gap-3 mb-4">
-                          <MapPin className="h-5 w-5 text-primary" />
-                          <h4 className="font-black text-gray-900">عنوان التوصيل</h4>
+                    <div className="bg-[#F8F9FB] rounded-[1.5rem] md:rounded-3xl p-5 md:p-6 mb-4 md:mb-0 shrink-0">
+                       <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                          <MapPin className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                          <h4 className="text-sm md:text-base font-black text-gray-900">عنوان التوصيل</h4>
                        </div>
-                       <p className="text-sm font-medium text-gray-600 leading-relaxed mr-8">{selectedOrder.address}</p>
+                       <p className="text-xs md:text-sm font-medium text-gray-600 leading-relaxed md:mr-8 break-words">{selectedOrder.address}</p>
                     </div>
 
-                    <Button className="w-full h-14 rounded-full font-black text-lg" onClick={() => setIsTrackOpen(false)}>حفظ والعودة</Button>
+                    <div className="shrink-0 mb-2">
+                       <Button className="w-full h-12 md:h-14 rounded-2xl md:rounded-full font-black text-base md:text-lg shadow-lg shadow-primary/20" onClick={() => setIsTrackOpen(false)}>إغلاق التفاصيل</Button>
+                    </div>
                  </div>
               </div>
             )}
