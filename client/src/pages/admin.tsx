@@ -194,40 +194,39 @@ export default function AdminPage() {
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: "product" | "category") => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: "product" | "category"): Promise<string | undefined> => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) return Promise.resolve(undefined);
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("image", file);
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        
+        try {
+          if (target === "product") {
+            setForm(prev => ({ ...prev, image: base64String }));
+          }
+          toast({ title: "تم معالجة الصورة بنجاح" });
+          resolve(base64String);
+        } catch (err: any) {
+          toast({ title: "خطأ في معالجة الصورة", description: err.message, variant: "destructive" });
+          resolve(undefined);
+        } finally {
+          setIsUploading(false);
+        }
+      };
 
-    try {
-      const response = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: {
-          "x-admin-token": getAdminToken() || "",
-        },
-        body: formData,
-      });
+      reader.onerror = () => {
+        toast({ title: "خطأ في قراءة ملف الصورة", variant: "destructive" });
+        setIsUploading(false);
+        resolve(undefined);
+      };
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "فشل رفع الصورة");
-      }
-      
-      const data = await response.json();
-      if (target === "product") {
-        setForm(prev => ({ ...prev, image: data.url }));
-      } else {
-        return data.url;
-      }
-      toast({ title: "تم رفع الصورة بنجاح" });
-    } catch (err: any) {
-      toast({ title: "خطأ في الرفع", description: err.message, variant: "destructive" });
-    } finally {
-      setIsUploading(false);
-    }
+      reader.readAsDataURL(file);
+    });
   };
 
   const authQuery = useQuery({
