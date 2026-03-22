@@ -4,8 +4,8 @@ import { apiRequest } from "@/lib/api";
 
 export function AnnouncementBar() {
   const { data: settings } = useQuery<any>({
-    queryKey: ["/api/admin/settings"],
-    queryFn: () => apiRequest("/api/admin/settings"),
+    queryKey: ["/api/settings"],
+    queryFn: () => apiRequest("/api/settings"),
   });
 
   const announcement = settings?.announcementText || "خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!";

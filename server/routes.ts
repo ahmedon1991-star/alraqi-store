@@ -565,6 +565,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ url: imageUrl });
   });
 
+  // Public settings for visitors (announcement, shipping, etc)
+  app.get("/api/settings", async (_req: Request, res: Response) => {
+    const settings = await storage.getAdminSettings();
+    res.json({
+      email: settings?.email,
+      phone: settings?.phone,
+      address: settings?.address,
+      facebook: settings?.facebook,
+      instagram: settings?.instagram,
+      twitter: settings?.twitter,
+      shippingFee: settings?.shippingFee,
+      freeShippingThreshold: settings?.freeShippingThreshold,
+      announcementText: settings?.announcementText,
+    });
+  });
+
   // User management (Admin)
   app.get("/api/admin/users", requireAdmin, async (_req, res) => {
     const users = await storage.getUsers();

@@ -32,8 +32,8 @@ export default function Cart() {
   const { toast } = useToast();
 
   const { data: adminSettings } = useQuery<any>({
-    queryKey: ["/api/admin/settings"],
-    queryFn: () => apiRequest("/api/admin/settings"),
+    queryKey: ["/api/settings"],
+    queryFn: () => apiRequest("/api/settings"),
   });
 
   const cartItems = data?.items || [];
