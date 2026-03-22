@@ -44,7 +44,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
     <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:-translate-y-1 relative" data-testid={`card-product-${id}`}>
       <div className="relative aspect-[1/1] overflow-hidden bg-white flex items-center justify-center">
         {badge && (
-          <Badge className="absolute top-1 right-1 z-10 bg-primary/90 hover:bg-primary text-[10px] sm:text-xs px-2 py-0.5 font-black shadow-lg rounded-full">
+          <Badge className="absolute top-2 right-2 z-10 bg-primary/90 hover:bg-primary text-[9px] sm:text-xs px-2 sm:px-3 py-1 font-bold shadow-lg rounded-lg animate-in fade-in duration-300">
             {badge}
           </Badge>
         )}
@@ -89,14 +89,13 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
 
       <CardFooter className="p-2 sm:p-3 pt-0">
         <Button
-          className="w-full rounded-xl font-black h-8 sm:h-11 text-xs sm:text-base gap-2 shadow-sm hover:shadow-primary/20 hover-elevate transition-all duration-300"
+          className="w-full rounded-xl font-black h-9 sm:h-11 text-[10px] sm:text-base px-2 sm:px-4 gap-1.5 sm:gap-2 shadow-sm hover:shadow-primary/20 hover-elevate transition-all duration-300 overflow-hidden whitespace-nowrap"
           variant="default"
           onClick={handleAddToCart}
           disabled={addToCart.isPending}
-          data-testid={`button-add-to-cart-${id}`}
         >
-          <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
-          إضافة للسلة
+          <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0" />
+          <span className="truncate">أضف للسلة</span>
         </Button>
       </CardFooter>
     </Card>
