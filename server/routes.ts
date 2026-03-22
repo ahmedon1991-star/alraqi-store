@@ -508,32 +508,31 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "اسم المستخدم وكلمة المرور مطلوبة" });
     }
 
-    const settings = await storage.getAdminSettings();
-    const storedUsername = settings?.username || ADMIN_USERNAME;
-    const storedPassword = settings?.password || ADMIN_PASSWORD;
-
-    // First try database settings (could be hashed or plaintext if default)
     let authenticated = false;
 
-    // Check if it's the hashed password from DB
-    if (username === storedUsername) {
-      if (storedPassword.includes(':')) {
-        // Assume hashed
-        if (verifyPassword(password, storedPassword)) {
-          authenticated = true;
-        }
-      } else {
-        // Assume plaintext (default case)
-        if (password === storedPassword) {
-          authenticated = true;
-        }
-      }
+    // PRIORITY 1: Always check environment variables first (master override)
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      authenticated = true;
     }
 
-    // Fallback to environment variables
+    // PRIORITY 2: Check database credentials if env check failed
     if (!authenticated) {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        authenticated = true;
+      const settings = await storage.getAdminSettings();
+      const storedUsername = settings?.username;
+      const storedPassword = settings?.password;
+
+      if (storedUsername && storedPassword && username === storedUsername) {
+        if (storedPassword.includes(':')) {
+          // Hashed password
+          if (verifyPassword(password, storedPassword)) {
+            authenticated = true;
+          }
+        } else {
+          // Plaintext password stored in DB
+          if (password === storedPassword) {
+            authenticated = true;
+          }
+        }
       }
     }
 
@@ -541,14 +540,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(401).json({ message: "بيانات دخول الأدمن غير صحيحة" });
     }
 
+    const settings = await storage.getAdminSettings();
     const token = createToken();
-    // Persist admin session in DB with a special identifier
     await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
 
     res.json({
       token,
       user: {
-        username: storedUsername,
+        username: settings?.username || ADMIN_USERNAME,
       },
     });
   });
