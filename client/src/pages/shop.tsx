@@ -51,6 +51,13 @@ export default function Shop() {
     } else {
       setSelectedCategories([]);
     }
+
+    const search = params.get("search");
+    if (search) {
+      setSearchTerm(search);
+    } else {
+      setSearchTerm("");
+    }
   }, [location]);
 
   const filteredProducts = useMemo(() => {
