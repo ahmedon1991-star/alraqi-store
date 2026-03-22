@@ -510,11 +510,12 @@ export default function AdminPage() {
 
     const filteredTotal = data.orders.reduce((acc, order) => {
       const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+      const amount = Number(order.total) || 0;
       
-      if (revenueFilter === "today" && orderTime >= startOfToday) return acc + order.total;
-      if (revenueFilter === "week" && orderTime >= past7Days) return acc + order.total;
-      if (revenueFilter === "month" && orderTime >= startOfMonth) return acc + order.total;
-      if (revenueFilter === "all") return acc + order.total;
+      if (revenueFilter === "today" && orderTime >= startOfToday) return acc + amount;
+      if (revenueFilter === "week" && orderTime >= past7Days) return acc + amount;
+      if (revenueFilter === "month" && orderTime >= startOfMonth) return acc + amount;
+      if (revenueFilter === "all") return acc + amount;
       
       return acc;
     }, 0);
@@ -529,7 +530,7 @@ export default function AdminPage() {
       
       const dayTotal = data.orders.reduce((acc, order) => {
           const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
-          if (t >= dayStart && t < dayEnd) return acc + order.total;
+          if (t >= dayStart && t < dayEnd) return acc + (Number(order.total) || 0);
           return acc;
       }, 0);
       
