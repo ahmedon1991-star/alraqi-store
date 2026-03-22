@@ -1584,7 +1584,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-background/50 p-1.5 rounded-2xl border border-border/40 w-full sm:w-auto">
                   <Button 
-                    variant={messageFilter === "active" ? "primary" : "ghost"} 
+                    variant={messageFilter === "active" ? "default" : "ghost"} 
                     size="sm" 
                     className={`rounded-xl flex-1 sm:flex-none font-bold ${messageFilter === "active" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
                     onClick={() => setMessageFilter("active")}
@@ -1592,7 +1592,7 @@ export default function AdminPage() {
                     النشطة
                   </Button>
                   <Button 
-                    variant={messageFilter === "archived" ? "primary" : "ghost"} 
+                    variant={messageFilter === "archived" ? "default" : "ghost"} 
                     size="sm" 
                     className={`rounded-xl flex-1 sm:flex-none font-bold ${messageFilter === "archived" ? "bg-primary text-white shadow-md" : "text-muted-foreground"}`}
                     onClick={() => setMessageFilter("archived")}

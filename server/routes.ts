@@ -501,31 +501,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
-  // Temporary debug endpoint - shows stored vs env credentials and resets DB to match env
-  app.get("/api/admin/debug-reset", async (req: Request, res: Response) => {
-    const secret = req.query.secret as string;
-    if (secret !== ADMIN_PASSWORD) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-    const settings = await storage.getAdminSettings();
-    const dbUsername = settings?.username || "(not set)";
-    const dbPassword = settings?.password || "(not set)";
-    const isHashed = dbPassword.includes(":");
-    
-    // Reset DB to match env
-    await storage.updateAdminSettings({
-      username: ADMIN_USERNAME,
-      password: ADMIN_PASSWORD,
-    });
-
-    return res.json({
-      env: { username: ADMIN_USERNAME, password: ADMIN_PASSWORD },
-      db_before: { username: dbUsername, passwordHashed: isHashed, passwordValue: isHashed ? "(hashed)" : dbPassword },
-      action: "Reset DB password to match ENV variables",
-      loginWith: { username: ADMIN_USERNAME, password: ADMIN_PASSWORD },
-    });
-  });
-
   app.post("/api/admin/login", async (req: Request, res: Response) => {
     const { username, password } = req.body as { username?: string; password?: string };
 
@@ -792,13 +767,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.patch("/api/admin/messages/:id/read", requireAdmin, async (req: Request, res: Response) => {
-    const msg = await storage.markMessageAsRead(req.params.id);
+    const msg = await storage.markMessageAsRead(req.params.id as string);
     if (!msg) return res.status(404).json({ message: "الرسالة غير موجودة" });
     res.json(msg);
   });
 
   app.patch("/api/admin/messages/:id/archive", requireAdmin, async (req: Request, res: Response) => {
-    const msg = await storage.archiveMessage(req.params.id);
+    const msg = await storage.archiveMessage(req.params.id as string);
     if (!msg) return res.status(404).json({ message: "الرسالة غير موجودة" });
     res.json(msg);
   });

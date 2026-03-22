@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
+import { runMigrations } from "./migrations";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import path from "path";
@@ -64,6 +65,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await runMigrations();
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
