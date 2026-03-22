@@ -124,8 +124,8 @@ export default function Cart() {
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item: any) => (
                 <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-white border border-border/50 items-center" data-testid={`card-cart-item-${item.id}`}>
-                  <div className="w-24 h-24 bg-white border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-2">
-                    <img src={item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain mix-blend-multiply" />
+                  <div className="w-24 h-24 bg-white border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1">
+                    <img src={item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
                   </div>
 
                   <div className="flex-1 min-w-0">

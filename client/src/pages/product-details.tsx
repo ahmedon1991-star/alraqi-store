@@ -105,7 +105,7 @@ export default function ProductDetails() {
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
           <div className="space-y-4">
-            <div className="aspect-square rounded-3xl overflow-hidden bg-white flex items-center justify-center p-4 relative shadow-sm border border-border/50">
+            <div className="aspect-square rounded-3xl overflow-hidden bg-white flex items-center justify-center p-1 relative shadow-sm border border-border/50">
               {product.badge && (
                 <Badge className="absolute top-4 right-4 z-10 bg-primary text-lg px-4 py-1 shadow-sm">
                   {product.badge}
@@ -114,7 +114,7 @@ export default function ProductDetails() {
               <img
                 src={product.image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=800"}
                 alt={product.name}
-                className="w-full h-full object-contain mix-blend-multiply"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
