@@ -408,32 +408,39 @@ export default function AdminPage() {
   }, []);
 
   const playNotification = useCallback((isTest = false) => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/notification.wav');
+    // Create new audio instance on user gesture for better mobile support
+    try {
+      const audio = new Audio('/notification.wav');
+      audio.volume = 1.0;
+      
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Success! Store this for future use if needed, but gestured play is best
+            audioRef.current = audio;
+            if (isTest) {
+              toast({
+                title: "🔊 النظام يعمل",
+                description: "تم تفعيل التنبيهات الصوتية بنجاح على هذا الجهاز.",
+              });
+            }
+          })
+          .catch(e => {
+            console.error("Audio play failed logic:", e);
+            if (isTest) {
+              toast({
+                title: "🔇 التنبيهات معطلة",
+                description: "المتصفح يمنع تشغيل الصوت. برجاء النقر على \"السماح بالصوت\" في إعدادات المتصفح أو المحاولة مرة أخرى.",
+                variant: "destructive",
+              });
+            }
+          });
+      }
+    } catch (err) {
+      console.error("Audio instance error:", err);
     }
-    
-    // Most browsers require interaction to play. 
-    // This button fulfills that requirement.
-    audioRef.current.currentTime = 0;
-    audioRef.current.play()
-      .then(() => {
-        if (isTest) {
-          toast({
-            title: "🔊 النظام يعمل",
-            description: "تم تفعيل التنبيهات الصوتية بنجاح.",
-          });
-        }
-      })
-      .catch(e => {
-        console.error("Audio play failed:", e);
-        if (isTest) {
-          toast({
-            title: "🔇 التنبيهات معطلة",
-            description: "برجاء السماح للموقع بتشغيل الصوت من إعدادات المتصفح.",
-            variant: "destructive",
-          });
-        }
-      });
   }, [toast]);
 
   useEffect(() => {
