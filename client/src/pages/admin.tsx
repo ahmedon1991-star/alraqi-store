@@ -476,8 +476,32 @@ export default function AdminPage() {
       });
     }
     prevMessagesCountRef.current = currentMessagesCount;
+    prevOrdersCountRef.current = currentOrdersCount;
 
   }, [overviewQuery.data?.stats, toast, playNotification]);
+
+  // Persistent reminder for pending orders every 2 minutes
+  useEffect(() => {
+    const stats = overviewQuery.data?.stats;
+    const hasPendingOrders = stats && stats.pendingOrders > 0;
+    
+    if (!hasPendingOrders) return;
+
+    const intervalId = setInterval(() => {
+      const currentStats = overviewQuery.data?.stats;
+      if (currentStats && currentStats.pendingOrders > 0) {
+        console.log("⏰ Pending order reminder! Playing sound...");
+        playNotification();
+        toast({
+          title: "⏰ تنبيه: طلبات معلقة",
+          description: `تنبيه: يوجد عدد (${currentStats.pendingOrders}) طلبات معلقة لم يتم التعامل معها بعد.`,
+          className: "bg-orange-600 text-white font-black border-2 border-white/20",
+        });
+      }
+    }, 120000);
+
+    return () => clearInterval(intervalId);
+  }, [overviewQuery.data?.stats?.pendingOrders, playNotification, toast]);
 
   const updateOrderMutation = useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
