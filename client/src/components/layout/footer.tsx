@@ -71,7 +71,7 @@ export function Footer() {
           </div>
 
           {/* Categories */}
-          <div className="col-span-1">
+          <div className="col-span-1 hidden md:block">
             <h3 className="font-bold text-lg mb-6 text-foreground">تسوق حسب القسم</h3>
             <ul className="flex flex-wrap gap-x-6 gap-y-3 md:block md:space-y-3 text-sm text-muted-foreground font-medium text-right">
               {categories?.slice(0, 6).map((category) => (
