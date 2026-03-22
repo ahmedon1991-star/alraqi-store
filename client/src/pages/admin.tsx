@@ -493,6 +493,55 @@ export default function AdminPage() {
 
   const data = overviewQuery.data;
 
+  const [revenueFilter, setRevenueFilter] = useState<"today" | "week" | "month" | "all">("all");
+
+  const revenueData = useMemo(() => {
+    if (!data?.orders) return { total: 0, chartData: [] };
+    
+    const now = new Date();
+    // Midnight of today
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    
+    // Start of current week (assuming Sunday as first day, or 7 days ago if we want rolling week)
+    // Rolling 7 days is usually more useful for graphs
+    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const filteredTotal = data.orders.reduce((acc, order) => {
+      const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+      
+      if (revenueFilter === "today" && orderTime >= startOfToday) return acc + order.total;
+      if (revenueFilter === "week" && orderTime >= past7Days) return acc + order.total;
+      if (revenueFilter === "month" && orderTime >= startOfMonth) return acc + order.total;
+      if (revenueFilter === "all") return acc + order.total;
+      
+      return acc;
+    }, 0);
+
+    // Build chart data for the last 7 days regardless of filter
+    const chartData = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      const dayStart = d.getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      
+      const dayTotal = data.orders.reduce((acc, order) => {
+          const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+          if (t >= dayStart && t < dayEnd) return acc + order.total;
+          return acc;
+      }, 0);
+      
+      return { 
+          label: d.toLocaleDateString('ar-EG', { weekday: 'long' }).substring(0, 3), 
+          value: dayTotal 
+      };
+    });
+
+    return { total: filteredTotal, chartData };
+  }, [data?.orders, revenueFilter]);
+
   const getCategoryName = (id: string) => {
     return data?.topCategories.find((c) => c.id === id)?.name || id;
   };
@@ -619,57 +668,6 @@ export default function AdminPage() {
       </div>
     );
   }
-
-  const [revenueFilter, setRevenueFilter] = useState<"today" | "week" | "month" | "all">("all");
-
-  const revenueData = useMemo(() => {
-    if (!data?.orders) return { total: 0, chartData: [] };
-    
-    const now = new Date();
-    // Midnight of today
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    
-    // Start of current week (assuming Sunday as first day, or 7 days ago if we want rolling week)
-    // Rolling 7 days is usually more useful for graphs
-    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
-    
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-    const filteredTotal = data.orders.reduce((acc, order) => {
-      // Assuming valid orders contribute to revenue. Usually completed or all.
-      // the existing API sums all orders unconditionally. We'll do the same.
-      const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
-      
-      if (revenueFilter === "today" && orderTime >= startOfToday) return acc + order.total;
-      if (revenueFilter === "week" && orderTime >= past7Days) return acc + order.total;
-      if (revenueFilter === "month" && orderTime >= startOfMonth) return acc + order.total;
-      if (revenueFilter === "all") return acc + order.total;
-      
-      return acc;
-    }, 0);
-
-    // Build chart data for the last 7 days regardless of filter (or match filter later)
-    const chartData = Array.from({ length: 7 }).map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      d.setHours(0, 0, 0, 0);
-      const dayStart = d.getTime();
-      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
-      
-      const dayTotal = data.orders.reduce((acc, order) => {
-          const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
-          if (t >= dayStart && t < dayEnd) return acc + order.total;
-          return acc;
-      }, 0);
-      
-      return { 
-          label: d.toLocaleDateString('ar-EG', { weekday: 'long' }).substring(0, 3), 
-          value: dayTotal 
-      };
-    });
-
-    return { total: filteredTotal, chartData };
-  }, [data?.orders, revenueFilter]);
 
   return (
     <div className="flex min-h-screen flex-col relative overflow-hidden bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(248,244,238,1))]">
