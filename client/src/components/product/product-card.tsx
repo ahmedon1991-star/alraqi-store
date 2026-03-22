@@ -42,7 +42,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
 
   return (
     <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:-translate-y-1 relative" data-testid={`card-product-${id}`}>
-      <div className="relative aspect-[1/1] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[1/1] overflow-hidden bg-white flex items-center justify-center">
         {badge && (
           <Badge className="absolute top-1 right-1 z-10 bg-primary/90 hover:bg-primary text-[8px] sm:text-[10px] px-1.5 py-0 font-bold shadow-sm rounded-sm">
             {badge}
@@ -60,7 +60,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           <img
             src={image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400"}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+            className="w-full h-full object-contain p-2 mix-blend-multiply transition-transform duration-500 group-hover:scale-105 cursor-pointer"
           />
         </Link>
       </div>

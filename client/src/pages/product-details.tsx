@@ -33,8 +33,8 @@ export default function ProductDetails() {
   function handleAddToCart() {
     if (!product) return;
     
-    const sizesList = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : [];
-    const measurementList = product.measurements ? product.measurements.split(',').map(m => m.trim()).filter(Boolean) : [];
+    const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+    const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
 
     if (sizesList.length > 0 && !selectedSize) {
       toast({ title: "تنبيه", description: "يرجى اختيار المقاس المناسب قبل الإضافة للسلة", variant: "destructive" });
@@ -105,16 +105,16 @@ export default function ProductDetails() {
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
           <div className="space-y-4">
-            <div className="aspect-square rounded-3xl overflow-hidden bg-white shadow-sm border border-border/50 relative">
+            <div className="aspect-square rounded-3xl overflow-hidden bg-white flex items-center justify-center p-4 relative shadow-sm border border-border/50">
               {product.badge && (
-                <Badge className="absolute top-4 right-4 z-10 bg-primary text-lg px-4 py-1">
+                <Badge className="absolute top-4 right-4 z-10 bg-primary text-lg px-4 py-1 shadow-sm">
                   {product.badge}
                 </Badge>
               )}
               <img
                 src={product.image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=800"}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain mix-blend-multiply"
               />
             </div>
           </div>
@@ -156,8 +156,8 @@ export default function ProductDetails() {
             </div>
 
             {(() => {
-              const sizesList = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : [];
-              const measurementList = product.measurements ? product.measurements.split(',').map(m => m.trim()).filter(Boolean) : [];
+              const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+              const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
               
               if (sizesList.length === 0 && measurementList.length === 0) return null;
               
@@ -167,7 +167,7 @@ export default function ProductDetails() {
                     <div>
                       <h3 className="font-bold text-lg mb-3">اختر المقاس:</h3>
                       <div className="flex flex-wrap gap-2 text-sm font-medium">
-                        {sizesList.map((s, idx) => (
+                        {sizesList.map((s: string, idx: number) => (
                            <button 
                              key={idx}
                              onClick={() => setSelectedSize(s)}
@@ -184,7 +184,7 @@ export default function ProductDetails() {
                     <div>
                       <h3 className="font-bold text-lg mb-3">اختر الحجم / الوزن:</h3>
                       <div className="flex flex-wrap gap-2 text-sm font-medium">
-                        {measurementList.map((m, idx) => (
+                        {measurementList.map((m: string, idx: number) => (
                            <button 
                              key={idx}
                              onClick={() => setSelectedMeasurement(m)}
