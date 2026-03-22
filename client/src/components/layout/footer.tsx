@@ -57,10 +57,10 @@ export function Footer() {
           {/* Quick Links */}
           <div className="col-span-1">
             <h3 className="font-bold text-lg mb-6 text-foreground">روابط سريعة</h3>
-            <ul className="space-y-3 text-sm text-muted-foreground font-medium">
-              <li><a href="#" className="hover:text-primary transition-colors">الرئيسية</a></li>
+            <ul className="flex flex-wrap gap-x-6 gap-y-3 md:block md:space-y-3 text-sm text-muted-foreground font-medium text-right">
+              <li><a href="/" className="hover:text-primary transition-colors">الرئيسية</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">عن الراقي</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">المتجر</a></li>
+              <li><a href="/shop" className="hover:text-primary transition-colors">المتجر</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">المدونة</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">تواصل معنا</a></li>
             </ul>
@@ -69,10 +69,10 @@ export function Footer() {
           {/* Categories */}
           <div className="col-span-1">
             <h3 className="font-bold text-lg mb-6 text-foreground">تسوق حسب القسم</h3>
-            <ul className="space-y-3 text-sm text-muted-foreground font-medium">
-              {categories?.slice(0, 5).map((category) => (
+            <ul className="flex flex-wrap gap-x-6 gap-y-3 md:block md:space-y-3 text-sm text-muted-foreground font-medium text-right">
+              {categories?.slice(0, 6).map((category) => (
                 <li key={category.id}>
-                  <Link href={`/?category=${category.id}`} className="hover:text-primary transition-colors">
+                  <Link href={`/shop?category=${category.id}`} className="hover:text-primary transition-colors">
                     {category.name}
                   </Link>
                 </li>
@@ -89,7 +89,7 @@ export function Footer() {
           {/* Contact */}
           <div className="col-span-1">
             <h3 className="font-bold text-lg mb-6 text-foreground">تواصل معنا</h3>
-            <ul className="space-y-4 text-sm text-muted-foreground font-medium">
+            <ul className="flex flex-wrap gap-x-8 gap-y-4 md:block md:space-y-4 text-sm text-muted-foreground font-medium text-right">
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-primary" />
                 <span dir="ltr">{settings?.phone || "+249 91 234 5678"}</span>
@@ -98,7 +98,7 @@ export function Footer() {
                 <Mail className="h-5 w-5 text-primary" />
                 <span>{settings?.email || "info@alraqi-sudanese.com"}</span>
               </li>
-              <li className="flex items-start gap-3">
+              <li className="flex items-start gap-3 w-full md:w-auto">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
                 <span>{settings?.address || "الخرطوم، السودان - شارع النيل"}</span>
               </li>
