@@ -1076,18 +1076,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ ...order, whatsappUrl });
   });
 
-  app.post("/api/seed", async (_req: Request, res: Response) => {
+  app.post("/api/seed", async (req: Request, res: Response) => {
+    const force = req.query.force === "true";
     const existingProducts = await storage.getProducts();
-    if (existingProducts.length > 0) {
-      return res.json({ message: "البيانات موجودة بالفعل", seeded: false });
+    
+    if (existingProducts.length > 0 && !force) {
+      return res.json({ message: "البيانات موجودة بالفعل. استخدم ?force=true لإعادة التأسيس.", seeded: false });
+    }
+
+    if (force) {
+      console.log("🔄 Force seeding: Clearing existing categories and products...");
+      // We need to clear categories and products. 
+      // This is a bit destructive so we only do it if the user specifically asked.
+      const allCats = await storage.getCategories();
+      for (const cat of allCats) {
+        await storage.deleteCategory(cat.id);
+      }
+      const allProds = await storage.getProducts();
+      for (const prod of allProds) {
+        await storage.deleteProduct(prod.id);
+      }
     }
 
     const catData = [
-      { id: "spices", name: "التوابل والبهارات", icon: "🌶️" },
-      { id: "grains", name: "الحبوب والدقيق", icon: "🌾" },
-      { id: "drinks", name: "المشروبات والكركديه", icon: "🥤" },
-      { id: "sweets", name: "التمور والحلويات", icon: "🍬" },
-      { id: "natural", name: "منتجات طبيعية", icon: "🌿" },
+      { id: "spices", name: "التوابل والبهارات", icon: "/images/category-spices.png" },
+      { id: "grains", name: "الحبوب والدقيق", icon: "/images/category-grains.png" },
+      { id: "drinks", name: "المشروبات والكركديه", icon: "/images/category-drinks.png" },
+      { id: "sweets", name: "التمور والحلويات", icon: "/images/category-sweets.png" },
+      { id: "natural", name: "منتجات طبيعية", icon: "/images/category-natural.png" },
     ];
 
     for (const category of catData) {
@@ -1100,7 +1116,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         nameEn: "Premium Sudanese Hibiscus",
         price: 4500,
         category: "drinks",
-        image: "https://images.unsplash.com/photo-1555529324-448e898399e5?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/product-hibiscus.png",
         rating: 4.8,
         reviews: 120,
         badge: "الأكثر مبيعًا",
@@ -1112,7 +1128,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         nameEn: "Gum Arabic (Hashab)",
         price: 8000,
         category: "natural",
-        image: "https://images.unsplash.com/photo-1610450949065-2f2268393530?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/product-gum.png",
         rating: 5,
         reviews: 85,
         badge: "عضوي",
@@ -1124,7 +1140,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         nameEn: "Special Mixed Spices",
         price: 3200,
         category: "spices",
-        image: "https://images.unsplash.com/photo-1506368249639-73a05d6f6488?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/product-spices.png",
         rating: 4.9,
         reviews: 200,
         badge: null,
@@ -1136,7 +1152,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         nameEn: "Corn Flour",
         price: 2100,
         category: "grains",
-        image: "https://images.unsplash.com/photo-1620916297397-a4a5402a3c6c?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/category-grains.png",
         rating: 4.5,
         reviews: 45,
         badge: "جديد",
@@ -1160,7 +1176,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         nameEn: "Gondila Dates",
         price: 5500,
         category: "sweets",
-        image: "https://images.unsplash.com/photo-1549487561-125026e6327c?q=80&w=1000&auto=format&fit=crop",
+        image: "/images/category-sweets.png",
         rating: 4.9,
         reviews: 310,
         badge: "موسمي",

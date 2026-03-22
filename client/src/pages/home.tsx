@@ -47,14 +47,14 @@ export default function Home() {
             {cats.map((cat: any) => (
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
                 <div className="group cursor-pointer flex flex-col items-center gap-2 p-3 md:p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
-                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10 overflow-hidden">
-                    {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/uploads")) ? (
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-3xl bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10 overflow-hidden shadow-sm group-hover:shadow-primary/20">
+                    {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/uploads") || cat.icon.startsWith("/images")) ? (
                       <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/3081/3081840.png"; }} />
                     ) : (
                       cat.icon || "•"
                     )}
                   </div>
-                  <h3 className="font-bold text-center text-[10px] md:text-base text-foreground group-hover:text-primary transition-colors">{cat.name}</h3>
+                  <h3 className="font-bold text-center text-xs md:text-lg text-foreground group-hover:text-primary transition-colors leading-tight">{cat.name}</h3>
                 </div>
               </Link>
             ))}
@@ -96,26 +96,26 @@ export default function Home() {
 
         <section className="py-12 md:py-20 container mx-auto px-4">
           <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-8">
-            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
-              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-3 md:mb-6">
-                <ShieldCheck className="h-5 w-5 md:h-8 md:w-8" />
+            <div className="flex flex-col items-center text-center p-4 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-border/50 hover:shadow-2xl hover:border-primary/20 transition-all duration-500 shadow-sm hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-20 md:h-20 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4 md:mb-8 shadow-inner">
+                <ShieldCheck className="h-6 w-6 md:h-10 md:w-10" />
               </div>
-              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">جودة مضمونة</h3>
-              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">منتجات طبيعية ومختارة بعناية</p>
+              <h3 className="text-xs md:text-2xl font-black mb-1 md:mb-4 text-slate-800">جودة مضمونة</h3>
+              <p className="text-[10px] md:text-lg text-muted-foreground/80 leading-relaxed font-medium">منتجات طبيعية مختارة بعناية فائقة</p>
             </div>
-            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
-              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 md:mb-6">
-                <Truck className="h-5 w-5 md:h-8 md:w-8" />
+            <div className="flex flex-col items-center text-center p-4 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-border/50 hover:shadow-2xl hover:border-primary/20 transition-all duration-500 shadow-sm hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-20 md:h-20 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4 md:mb-8 shadow-inner">
+                <Truck className="h-6 w-6 md:h-10 md:w-10" />
               </div>
-              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">شحن سريع</h3>
-              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">توصيل مبرد لكل السودان</p>
+              <h3 className="text-xs md:text-2xl font-black mb-1 md:mb-4 text-slate-800">شحن سريع</h3>
+              <p className="text-[10px] md:text-lg text-muted-foreground/80 leading-relaxed font-medium">توصيل آمن لكل ولايات السودان</p>
             </div>
-            <div className="flex flex-col items-center text-center p-3 md:p-8 rounded-2xl md:rounded-3xl bg-white border border-border/50 hover:shadow-xl transition-shadow shadow-sm">
-              <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-3 md:mb-6">
-                <Send className="h-5 w-5 md:h-8 md:w-8" />
+            <div className="flex flex-col items-center text-center p-4 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-border/50 hover:shadow-2xl hover:border-primary/20 transition-all duration-500 shadow-sm hover:-translate-y-2">
+              <div className="w-12 h-12 md:w-20 md:h-20 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 md:mb-8 shadow-inner">
+                <Send className="h-6 w-6 md:h-10 md:w-10" />
               </div>
-              <h3 className="text-[10px] md:text-xl font-black mb-1 md:mb-3">تواصل معنا</h3>
-              <p className="text-[8px] md:text-base text-muted-foreground line-clamp-2 md:line-clamp-none">دعم فني جاهز لخدمتكم 24/7</p>
+              <h3 className="text-xs md:text-2xl font-black mb-1 md:mb-4 text-slate-800">تواصل معنا</h3>
+              <p className="text-[10px] md:text-lg text-muted-foreground/80 leading-relaxed font-medium">دعم فني جاهز لخدمتكم على مدار الساعة</p>
             </div>
           </div>
         </section>

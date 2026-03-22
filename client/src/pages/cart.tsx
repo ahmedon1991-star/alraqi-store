@@ -141,9 +141,9 @@ export default function Cart() {
                     <h3 className="font-bold text-lg truncate">{item.product.name}</h3>
                     <p className="text-muted-foreground text-sm mb-1">{item.product.category}</p>
                     {(item.size || item.measurement) && (
-                      <div className="flex flex-wrap items-center gap-2 mb-2 text-[10px] md:text-xs font-bold w-fit">
-                        {item.size && <span className="bg-primary/10 text-primary px-2 py-1 rounded-md shadow-sm">المقاس: {item.size}</span>}
-                        {item.measurement && <span className="bg-primary/10 text-primary px-2 py-1 rounded-md shadow-sm">الحجم/الوزن: {item.measurement}</span>}
+                      <div className="flex flex-wrap items-center gap-2 mb-2 text-xs md:text-sm font-bold w-fit">
+                        {item.size && <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg shadow-sm border border-primary/20">المقاس: {item.size}</span>}
+                        {item.measurement && <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg shadow-sm border border-primary/20">الحجم/الوزن: {item.measurement}</span>}
                       </div>
                     )}
                     <div className="font-mono font-bold text-primary text-sm md:text-base">{item.product.price.toLocaleString()} ج.س</div>
@@ -307,9 +307,11 @@ export default function Cart() {
                                   {banks?.find(b => b.id === checkoutData.bankId) && (
                                     <>
                                       <p className="text-xs text-muted-foreground font-bold">بيانات الحساب:</p>
-                                      <p className="text-sm font-black">{banks.find(b => b.id === checkoutData.bankId).accountName}</p>
-                                      <p className="font-mono text-sm">{banks.find(b => b.id === checkoutData.bankId).accountNumber}</p>
-                                      <p className="text-[10px] text-primary/60 mt-1">يرجى إرفاق إشعار التحويل في الواتساب عند الطلب.</p>
+                                      <p className="text-sm font-black text-primary">{banks.find(b => b.id === checkoutData.bankId).accountName}</p>
+                                      <p className="font-mono text-base font-bold bg-white/50 px-2 py-1 rounded-md border border-primary/10 inline-block mt-1">{banks.find(b => b.id === checkoutData.bankId).accountNumber}</p>
+                                      <p className="text-xs text-primary font-bold mt-2 flex items-center gap-1">
+                                        💡 يرجى إرفاق إشعار التحويل في الواتساب عند الطلب.
+                                      </p>
                                     </>
                                   )}
                                 </div>

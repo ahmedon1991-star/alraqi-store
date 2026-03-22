@@ -44,7 +44,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
     <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:-translate-y-1 relative" data-testid={`card-product-${id}`}>
       <div className="relative aspect-[1/1] overflow-hidden bg-white flex items-center justify-center">
         {badge && (
-          <Badge className="absolute top-1 right-1 z-10 bg-primary/90 hover:bg-primary text-[8px] sm:text-[10px] px-1.5 py-0 font-bold shadow-sm rounded-sm">
+          <Badge className="absolute top-1 right-1 z-10 bg-primary/90 hover:bg-primary text-[10px] sm:text-xs px-2 py-0.5 font-black shadow-lg rounded-full">
             {badge}
           </Badge>
         )}
@@ -69,34 +69,34 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         </Link>
       </div>
 
-      <CardContent className="p-2 sm:p-3 text-right">
-        <div className="flex items-center justify-between mb-0.5">
-          <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground uppercase tracking-tight truncate max-w-[60%]">{category}</span>
-          <div className="flex items-center gap-0.5 text-amber-400 text-[8px] sm:text-[10px] font-bold">
+      <CardContent className="p-2 sm:p-4 text-right bg-gradient-to-b from-white to-orange-50/30">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] sm:text-xs font-bold text-primary/70 uppercase tracking-tight truncate max-w-[60%] bg-primary/5 px-2 py-0.5 rounded-full">{category}</span>
+          <div className="flex items-center gap-0.5 text-amber-500 text-[10px] sm:text-xs font-black">
             <span>{rating ?? 0}</span>
-            <Star className="h-2 w-2 sm:h-2.5 sm:w-2.5 fill-current" />
+            <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" />
           </div>
         </div>
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-[11px] sm:text-base mb-0.5 text-foreground line-clamp-2 leading-tight h-[2.2em] hover:text-primary transition-colors cursor-pointer">
+          <h3 className="font-bold text-xs sm:text-lg mb-1.5 text-foreground line-clamp-2 leading-snug h-[2.5em] hover:text-primary transition-colors cursor-pointer group-hover:underline underline-offset-4 decoration-primary/30">
             {name}
           </h3>
         </Link>
-        <div className="font-black text-[13px] sm:text-lg text-primary font-mono mt-1">
-          {price.toLocaleString()} <span className="text-[8px] sm:text-xs font-medium text-muted-foreground">ج.س</span>
+        <div className="font-black text-sm sm:text-xl text-primary font-mono mt-2 flex items-baseline gap-1">
+          {price.toLocaleString()} <span className="text-[10px] sm:text-sm font-bold text-muted-foreground/80">ج.س</span>
         </div>
       </CardContent>
 
       <CardFooter className="p-2 sm:p-3 pt-0">
         <Button
-          className="w-full rounded-md font-bold h-7 sm:h-9 text-[10px] sm:text-sm gap-1 hover-elevate group-hover:bg-primary group-hover:text-primary-foreground transition-colors p-0 sm:p-2"
-          variant="outline"
+          className="w-full rounded-xl font-black h-8 sm:h-11 text-xs sm:text-base gap-2 shadow-sm hover:shadow-primary/20 hover-elevate transition-all duration-300"
+          variant="default"
           onClick={handleAddToCart}
           disabled={addToCart.isPending}
           data-testid={`button-add-to-cart-${id}`}
         >
-          <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4" />
-          إضافة
+          <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
+          إضافة للسلة
         </Button>
       </CardFooter>
     </Card>
