@@ -889,8 +889,12 @@ export default function AdminPage() {
                 <div key={category.id} className="rounded-2xl border border-border/60 bg-background/70 p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl">
-                        {category.icon || "•"}
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl overflow-hidden">
+                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/uploads")) ? (
+                          <img src={category.icon} alt={category.name} className="w-full h-full object-cover p-1.5" />
+                        ) : (
+                          category.icon || "•"
+                        )}
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{category.name}</p>
@@ -1691,9 +1695,16 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {categoriesQuery.data?.map((category) => (
                     <div key={category.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
-                      <div>
-                        <p className="font-bold">{category.name}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{category.id}</p>
+                      <div className="flex items-center gap-3">
+                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/uploads")) && (
+                          <div className="h-10 w-10 rounded-lg overflow-hidden bg-primary/5">
+                            <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold">{category.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{category.id}</p>
+                        </div>
                       </div>
                       <Button 
                         variant="ghost" 
