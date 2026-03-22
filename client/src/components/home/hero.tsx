@@ -11,6 +11,8 @@ export function Hero() {
           src="/images/hero-main.png" 
           alt="Sudanese Food Spread" 
           className="w-full h-full object-cover object-center"
+          loading="eager"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
       </div>
@@ -57,6 +59,8 @@ export function Hero() {
               src="/logo.png" 
               alt="الراقي" 
               className="relative w-full max-w-[200px] md:max-w-[480px] h-auto object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.3)] bg-white rounded-2xl md:rounded-[3rem] p-4 md:p-12 border border-white/10"
+              loading="eager"
+              fetchPriority="high"
             />
           </div>
         </div>
