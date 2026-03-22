@@ -121,6 +121,9 @@ export const adminSettings = pgTable("admin_settings", {
   facebook: text("facebook").notNull().default("https://facebook.com"),
   instagram: text("instagram").notNull().default("https://instagram.com"),
   twitter: text("twitter").notNull().default("https://twitter.com"),
+  shippingFee: integer("shipping_fee").notNull().default(0),
+  freeShippingThreshold: integer("free_shipping_threshold").notNull().default(50000),
+  announcementText: text("announcement_text").notNull().default("خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!"),
   passwordToken: text("password_token"),
 });
 

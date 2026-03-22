@@ -1,10 +1,19 @@
 import { Sparkles, Truck, Tag } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
 
 export function AnnouncementBar() {
+  const { data: settings } = useQuery<any>({
+    queryKey: ["/api/admin/settings"],
+    queryFn: () => apiRequest("/api/admin/settings"),
+  });
+
+  const announcement = settings?.announcementText || "خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!";
+
   const items = [
-    { text: "خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!", icon: Tag },
+    { text: announcement, icon: Tag },
     { text: "أفضل أنواع الصمغ العربي الهشاب الأصلي - متوفر الآن بكميات محدودة", icon: Sparkles },
-    { text: "شحن مجاني وسريع لكافة أنحاء الخرطوم للطلبات فوق 50 ألف ج.س", icon: Truck },
+    { text: settings?.freeShippingThreshold ? `شحن مجاني لكافة السودان للطلبات فوق ${Number(settings.freeShippingThreshold).toLocaleString()} ج.س` : "شحن مجاني وسريع لكافة أنحاء السودان للطلبات الكبيرة", icon: Truck },
     { text: "منتجات سودانية أصيلة 100% من قلب المزارع ليدك مباشرة", icon: Sparkles },
   ];
 

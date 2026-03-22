@@ -25,6 +25,7 @@ import {
   Boxes,
   ListOrdered,
   Phone,
+  Truck,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { Navbar } from "@/components/layout/navbar";
@@ -288,6 +289,9 @@ export default function AdminPage() {
       facebook?: string;
       instagram?: string;
       twitter?: string;
+      shippingFee?: number;
+      freeShippingThreshold?: number;
+      announcementText?: string;
     }) =>
       apiRequest("/api/admin/settings", {
         method: "POST",
@@ -1612,7 +1616,8 @@ export default function AdminPage() {
                 </TableHeader>
                 <TableBody>
                   {messagesQuery.data?.filter(msg => {
-                    const isArchived = msg.isArchived || (msg.isRead && (new Date().getTime() - new Date(msg.createdAt).getTime() > 24 * 60 * 60 * 1000));
+                    const m = msg as any;
+                    const isArchived = m.isArchived || (msg.isRead && (new Date().getTime() - new Date(msg.createdAt).getTime() > 24 * 60 * 60 * 1000));
                     return messageFilter === "archived" ? isArchived : !isArchived;
                   }).map((msg) => (
                     <TableRow key={msg.id} className={msg.isRead ? "opacity-70" : "bg-green-50/30"}>
@@ -1713,9 +1718,59 @@ export default function AdminPage() {
                       facebook: formData.get("facebook") as string,
                       instagram: formData.get("instagram") as string,
                       twitter: formData.get("twitter") as string,
+                      shippingFee: Number(formData.get("shippingFee")) || 0,
+                      freeShippingThreshold: Number(formData.get("freeShippingThreshold")) || 0,
+                      announcementText: formData.get("announcementText") as string,
                     });
                   }}
                 >
+                  {/* === Shipping & Promotions Section === */}
+                  <div className="rounded-2xl bg-primary/5 border border-primary/20 p-5 space-y-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Truck className="h-5 w-5 text-primary" />
+                      <h3 className="font-black text-lg text-foreground">إعدادات التوصيل والعروض</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold block text-right">سعر التوصيل (ج.س)</label>
+                        <Input
+                          name="shippingFee"
+                          type="number"
+                          min="0"
+                          defaultValue={settingsQuery.data?.shippingFee ?? 0}
+                          className="text-right h-11 rounded-xl"
+                          dir="ltr"
+                        />
+                        <p className="text-xs text-muted-foreground text-right">اكتب 0 لجعل التوصيل مجانياً دائماً.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold block text-right">توصيل مجاني عند شراء أكثر من (ج.س)</label>
+                        <Input
+                          name="freeShippingThreshold"
+                          type="number"
+                          min="0"
+                          defaultValue={settingsQuery.data?.freeShippingThreshold ?? 50000}
+                          className="text-right h-11 rounded-xl"
+                          dir="ltr"
+                        />
+                        <p className="text-xs text-muted-foreground text-right">اكتب 0 لتعطيل هذا الخيار.</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold block text-right">نص الشريط الإعلاني المتحرك</label>
+                      <Textarea
+                        name="announcementText"
+                        defaultValue={settingsQuery.data?.announcementText || "خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!"}
+                        className="text-right rounded-xl min-h-[80px]"
+                        placeholder="اكتب نص العرض الذي سيظهر في الشريط العلوي المتحرك..."
+                      />
+                      <p className="text-xs text-muted-foreground text-right">هذا النص يظهر في الشريط الأسود المتحرك في أعلى الموقع.</p>
+                    </div>
+                  </div>
+
+                  {/* === General Settings === */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold block text-right">البريد الإلكتروني للإشعارات</label>
                     <Input
@@ -1784,7 +1839,7 @@ export default function AdminPage() {
                     className="w-full text-lg font-bold h-12"
                     disabled={updateSettingsMutation.isPending}
                   >
-                    {updateSettingsMutation.isPending ? "جارٍ الحفظ..." : "حفظ الإعدادات"}
+                    {updateSettingsMutation.isPending ? "جارٍ الحفظ..." : "حفظ جميع الإعدادات"}
                   </Button>
                 </form>
               </CardContent>

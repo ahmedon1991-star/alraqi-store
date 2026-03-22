@@ -31,9 +31,18 @@ export default function Cart() {
   const removeItem = useRemoveFromCart();
   const { toast } = useToast();
 
+  const { data: adminSettings } = useQuery<any>({
+    queryKey: ["/api/admin/settings"],
+    queryFn: () => apiRequest("/api/admin/settings"),
+  });
+
   const cartItems = data?.items || [];
   const subtotal = cartItems.reduce((acc: number, item: any) => acc + item.product.price * item.quantity, 0);
-  const shipping = cartItems.length > 0 ? 1500 : 0;
+  
+  const shippingFeeBase = Number(adminSettings?.shippingFee) || 0;
+  const freeShippingThreshold = Number(adminSettings?.freeShippingThreshold) || 0;
+  const isFreeShipping = (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || shippingFeeBase === 0;
+  const shipping = cartItems.length > 0 && !isFreeShipping ? shippingFeeBase : 0;
   const total = subtotal + shipping;
 
   function handleRemove(id: string, name: string) {
@@ -183,8 +192,8 @@ export default function Cart() {
                     <span className="font-mono">{subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
+                    <span>{isFreeShipping ? <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-0.5 rounded-full">تهانينا! شحن مجاني 🎉</span> : <span className="font-mono">{shipping.toLocaleString()}</span>}</span>
                     <span>الشحن</span>
-                    <span className="font-mono">{shipping.toLocaleString()}</span>
                   </div>
                   <div className="h-px bg-border my-2"></div>
                   <div className="flex justify-between font-black text-xl">
