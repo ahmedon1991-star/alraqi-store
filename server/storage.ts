@@ -332,16 +332,21 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Database is not configured");
     }
 
-    const existing = await db
+    const existingItems = await db
       .select()
       .from(cartItems)
       .where(and(eq(cartItems.sessionId, item.sessionId), eq(cartItems.productId, item.productId)));
+      
+    // Find matching size and measurement
+    const matchingItem = existingItems.find(
+      e => (e.size || null) === (item.size || null) && (e.measurement || null) === (item.measurement || null)
+    );
 
-    if (existing.length > 0) {
+    if (matchingItem) {
       const [updated] = await db
         .update(cartItems)
-        .set({ quantity: existing[0].quantity + (item.quantity || 1) })
-        .where(eq(cartItems.id, existing[0].id))
+        .set({ quantity: matchingItem.quantity + (item.quantity || 1) })
+        .where(eq(cartItems.id, matchingItem.id))
         .returning();
       return updated;
     }

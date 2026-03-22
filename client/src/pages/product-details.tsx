@@ -21,6 +21,8 @@ export default function ProductDetails() {
   const { data: user } = useCurrentUser();
   const [hoverRating, setHoverRating] = useState(0);
   const { isInWishlist, toggleItem } = useWishlist();
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedMeasurement, setSelectedMeasurement] = useState<string>("");
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
@@ -30,8 +32,26 @@ export default function ProductDetails() {
 
   function handleAddToCart() {
     if (!product) return;
+    
+    const sizesList = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const measurementList = product.measurements ? product.measurements.split(',').map(m => m.trim()).filter(Boolean) : [];
+
+    if (sizesList.length > 0 && !selectedSize) {
+      toast({ title: "تنبيه", description: "يرجى اختيار المقاس المناسب قبل الإضافة للسلة", variant: "destructive" });
+      return;
+    }
+
+    if (measurementList.length > 0 && !selectedMeasurement) {
+      toast({ title: "تنبيه", description: "يرجى اختيار الحجم أو الوزن قبل الإضافة للسلة", variant: "destructive" });
+      return;
+    }
+
     for (let i = 0; i < quantity; i++) {
-      addToCart.mutate(product.id);
+      addToCart.mutate({ 
+        productId: product.id, 
+        size: selectedSize || undefined, 
+        measurement: selectedMeasurement || undefined 
+      });
     }
     toast({ title: "تمت الإضافة", description: `${product.name} (${quantity}) أُضيف إلى السلة` });
   }
@@ -134,6 +154,51 @@ export default function ProductDetails() {
                 </div>
               </div>
             </div>
+
+            {(() => {
+              const sizesList = product.sizes ? product.sizes.split(',').map(s => s.trim()).filter(Boolean) : [];
+              const measurementList = product.measurements ? product.measurements.split(',').map(m => m.trim()).filter(Boolean) : [];
+              
+              if (sizesList.length === 0 && measurementList.length === 0) return null;
+              
+              return (
+                <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm space-y-5 mt-2">
+                  {sizesList.length > 0 && (
+                    <div>
+                      <h3 className="font-bold text-lg mb-3">اختر المقاس:</h3>
+                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                        {sizesList.map((s, idx) => (
+                           <button 
+                             key={idx}
+                             onClick={() => setSelectedSize(s)}
+                             className={`min-w-12 h-10 px-4 rounded-xl border flex items-center justify-center transition-all ${selectedSize === s ? "border-primary bg-primary/10 text-primary font-bold scale-105" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                           >
+                             {s}
+                           </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {measurementList.length > 0 && (
+                    <div>
+                      <h3 className="font-bold text-lg mb-3">اختر الحجم / الوزن:</h3>
+                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                        {measurementList.map((m, idx) => (
+                           <button 
+                             key={idx}
+                             onClick={() => setSelectedMeasurement(m)}
+                             className={`min-w-12 h-10 px-4 rounded-xl border flex items-center justify-center transition-all ${selectedMeasurement === m ? "border-primary bg-primary/10 text-primary font-bold scale-105" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                           >
+                             {m}
+                           </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm mt-2">
               <h3 className="font-bold text-lg mb-3">قيم هذا المنتج</h3>

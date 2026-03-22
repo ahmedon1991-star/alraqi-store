@@ -2,7 +2,7 @@ import { Star, ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,15 +14,26 @@ interface ProductProps {
   category: string;
   rating: number | null;
   badge?: string | null;
+  sizes?: string | null;
+  measurements?: string | null;
 }
 
-export function ProductCard({ id, name, price, image, category, rating, badge }: ProductProps) {
+export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements }: ProductProps) {
   const addToCart = useAddToCart();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
-    addToCart.mutate(id, {
+    if (addToCart.isPending) return;
+
+    if (sizes || measurements) {
+      toast({ title: "مطلوب اختيار التفاصيل", description: "هذا المنتج يتطلب تحديد المقاس أو الحجم، سيتم نقلك لصفحة المنتج." });
+      setLocation(`/product/${id}`);
+      return;
+    }
+
+    addToCart.mutate({ productId: id }, {
       onSuccess: () => {
         toast({ title: "تمت الإضافة", description: `${name} أُضيف إلى السلة` });
       },

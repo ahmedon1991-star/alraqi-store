@@ -900,13 +900,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/cart", async (req: Request, res: Response) => {
     const sessionId = req.body.sessionId || getSessionId(req);
-    const { productId, quantity } = req.body as { productId?: string; quantity?: number };
+    const { productId, quantity, size, measurement } = req.body as { productId?: string; quantity?: number; size?: string; measurement?: string };
 
     if (!productId) {
       return res.status(400).json({ message: "معرف المنتج مطلوب" });
     }
 
-    const item = await storage.addToCart({ sessionId, productId, quantity: quantity || 1 });
+    const item = await storage.addToCart({ sessionId, productId, quantity: quantity || 1, size: size || null, measurement: measurement || null });
     const count = await storage.getCartCount(sessionId);
     res.json({ item, count, sessionId });
   });

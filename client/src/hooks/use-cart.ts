@@ -16,10 +16,16 @@ export function useCartCount() {
 
 export function useAddToCart() {
   return useMutation({
-    mutationFn: (productId: string) =>
+    mutationFn: (data: { productId: string; size?: string; measurement?: string }) =>
       apiRequest("/api/cart", {
         method: "POST",
-        body: JSON.stringify({ productId, sessionId: getSessionId(), quantity: 1 }),
+        body: JSON.stringify({ 
+          productId: data.productId, 
+          sessionId: getSessionId(), 
+          quantity: 1, 
+          size: data.size, 
+          measurement: data.measurement 
+        }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });

@@ -130,8 +130,14 @@ export default function Cart() {
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg truncate">{item.product.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-2">{item.product.category}</p>
-                    <div className="font-mono font-bold text-primary">{item.product.price.toLocaleString()} ج.س</div>
+                    <p className="text-muted-foreground text-sm mb-1">{item.product.category}</p>
+                    {(item.size || item.measurement) && (
+                      <div className="flex flex-wrap items-center gap-2 mb-2 text-[10px] md:text-xs font-bold w-fit">
+                        {item.size && <span className="bg-primary/10 text-primary px-2 py-1 rounded-md shadow-sm">المقاس: {item.size}</span>}
+                        {item.measurement && <span className="bg-primary/10 text-primary px-2 py-1 rounded-md shadow-sm">الحجم/الوزن: {item.measurement}</span>}
+                      </div>
+                    )}
+                    <div className="font-mono font-bold text-primary text-sm md:text-base">{item.product.price.toLocaleString()} ج.س</div>
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
