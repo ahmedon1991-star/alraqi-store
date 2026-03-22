@@ -55,7 +55,10 @@ function createDatabase() {
     console.log("🚀 STORAGE: DATABASE_URL detected. Initializing PostgreSQL pool...");
     const pool = new pg.Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
+      max: 20, // Limit connections to prevent exhaustion on Render
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
     });
     
     // Log errors on idle client
