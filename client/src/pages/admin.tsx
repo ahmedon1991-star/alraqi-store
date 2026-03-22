@@ -60,6 +60,8 @@ type AdminOverview = {
     categories: number;
     orders: number;
     pendingOrders: number;
+    messages: number;
+    unreadMessages: number;
     revenue: number;
   };
   orders: Array<{
@@ -235,7 +237,7 @@ export default function AdminPage() {
     queryKey: ["/api/admin/overview"],
     queryFn: () => apiRequest("/api/admin/overview"),
     enabled: authQuery.isSuccess,
-    refetchInterval: 30000, // 30 seconds polling for new orders/messages
+    refetchInterval: 10000, // 10 seconds polling for new orders/messages
   });
 
   const settingsQuery = useQuery({
@@ -396,29 +398,54 @@ export default function AdminPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Preload audio
-    audioRef.current = new Audio('/notification.wav');
-    audioRef.current.load();
-  }, []);
-
-  const playNotification = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(e => {
-        console.error("Audio play blocked - needs user interaction:", e);
-      });
+    // Initial audio setup
+    try {
+      audioRef.current = new Audio('/notification.wav');
+      audioRef.current.preload = 'auto';
+    } catch (err) {
+      console.error("Audio init failed:", err);
     }
   }, []);
+
+  const playNotification = useCallback((isTest = false) => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/notification.wav');
+    }
+    
+    // Most browsers require interaction to play. 
+    // This button fulfills that requirement.
+    audioRef.current.currentTime = 0;
+    audioRef.current.play()
+      .then(() => {
+        if (isTest) {
+          toast({
+            title: "🔊 النظام يعمل",
+            description: "تم تفعيل التنبيهات الصوتية بنجاح.",
+          });
+        }
+      })
+      .catch(e => {
+        console.error("Audio play failed:", e);
+        if (isTest) {
+          toast({
+            title: "🔇 التنبيهات معطلة",
+            description: "برجاء السماح للموقع بتشغيل الصوت من إعدادات المتصفح.",
+            variant: "destructive",
+          });
+        }
+      });
+  }, [toast]);
 
   useEffect(() => {
     const stats = overviewQuery.data?.stats;
     if (!stats) return;
 
     const currentOrdersCount = stats.orders;
-    const currentMessagesCount = (stats as any).messages;
+    const currentMessagesCount = stats.messages;
 
     // Handle NEW ORDERS
     if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
+      console.log("🔔 New order detected! Playing sound...");
       playNotification();
       toast({
         title: "🔔 طلب جديد وارد",
@@ -430,6 +457,7 @@ export default function AdminPage() {
 
     // Handle NEW MESSAGES
     if (prevMessagesCountRef.current !== null && currentMessagesCount > prevMessagesCountRef.current) {
+      console.log("📩 New message detected! Playing sound...");
       playNotification();
       toast({
         title: "📩 رسالة جديدة واردة",
@@ -929,7 +957,7 @@ export default function AdminPage() {
                 <Button 
                   variant="outline" 
                   className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base gap-2 border-primary/30 text-primary hover:bg-primary/5" 
-                  onClick={playNotification}
+                  onClick={() => playNotification(true)}
                 >
                   <Volume2 className="h-4 w-4" />
                   اختبار الصوت
