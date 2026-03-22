@@ -1033,11 +1033,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
     
     // Decrement stock for each item
+    console.log(`🛒 ORDER: Checking stock for ${currentCartItems.length} items...`);
     for (const item of currentCartItems) {
       try {
+        console.log(`🛒 ORDER: Processing "${item.product.name}" (ID: ${item.product.id}), Qty: ${item.quantity}`);
         await storage.decrementProductStock(item.product.id, item.quantity);
       } catch (err) {
-        console.error(`Failed to decrement stock for product ${item.product.id}:`, err);
+        console.error(`❌ ORDER: Failed to decrement stock for product ${item.product.id}:`, err);
         // We continue anyway so the order isn't lost, admin can fix stock manually
       }
     }

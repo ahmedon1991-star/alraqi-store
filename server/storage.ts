@@ -295,12 +295,14 @@ export class DatabaseStorage implements IStorage {
     if (!product) return;
     
     const newStock = Math.max(0, (product.stock || 0) - dx);
+    console.log(`📦 DB_STORAGE: Decrementing stock for "${product.name}" (${id}): ${product.stock} -> ${newStock}`);
     await db.update(products)
       .set({ 
         stock: newStock,
         inStock: newStock > 0 
       })
       .where(eq(products.id, id));
+    console.log(`✅ DB_STORAGE: Stock updated for "${product.name}"`);
   }
 
   async getCategories(): Promise<Category[]> {
