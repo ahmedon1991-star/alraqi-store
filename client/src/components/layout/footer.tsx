@@ -22,12 +22,16 @@ export function Footer() {
       <div className="container mx-auto px-4 py-16 pb-20 md:pb-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-1 flex flex-col gap-4">
+          <div className="col-span-1 md:col-span-1 flex flex-col gap-6">
             <div className="flex flex-col">
-              <img src="/logo.png" alt="الراقي" className="h-20 w-auto object-contain mb-1" />
+              <img src="/logo.png" alt="الراقي" className="h-20 w-auto object-contain mb-1 hidden md:block" />
+              <div className="md:hidden">
+                <span className="text-4xl font-black bg-gradient-to-l from-primary to-primary/70 bg-clip-text text-transparent">الراقي</span>
+                <p className="text-[10px] font-bold text-primary/60 tracking-[0.2em] -mt-1 uppercase">تميز وفخامة</p>
+              </div>
             </div>
-            <p className="text-muted-foreground leading-relaxed text-sm">
-              منصتك الأولى لتسوق المنتجات السودانية الأصيلة. نجمع لك خيرات السودان في مكان واحد، بجودة عالية وتوصيل سريع.
+            <p className="text-muted-foreground leading-relaxed text-sm font-medium">
+              منصتك الأولى لتسوق المنتجات السودانية الأصيلة. نجمع لك خيرات السودان في مكان واحد، بجودة عالية وتوصيل سريع يليق بعملائنا.
             </p>
             <div className="flex gap-2 mt-2">
               {settings?.facebook && (
