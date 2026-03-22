@@ -1236,26 +1236,26 @@ export default function AdminPage() {
                       )}
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-black text-foreground truncate">{product.name}</h3>
-                          <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-5 px-2">
+                        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                          <h3 className="font-black text-sm md:text-base text-foreground truncate max-w-[140px] md:max-w-none">{product.name}</h3>
+                          <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[9px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
                             {product.inStock ? "متوفر" : "غير متوفر"}
                           </Badge>
+                          <Badge variant="outline" className={cn("rounded-full text-[9px] h-5 px-2 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                            المخزون: {product.stock || 0}
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="font-bold text-primary/80">{getCategoryName(product.category)}</span>
-                          <span>•</span>
-                          <span className="font-black text-black">{formatPrice(product.price)}</span>
-                          <span className="mx-1">•</span>
-                          <span className="text-orange-600 font-bold">المخزون: {product.stock || 0}</span>
+                        <div className="flex items-center gap-x-2 gap-y-1 text-[10px] md:text-xs text-muted-foreground flex-wrap">
+                          <span className="font-bold text-primary/80 bg-primary/5 px-2 rounded-lg">{getCategoryName(product.category)}</span>
+                          <span className="font-black text-black/80">{formatPrice(product.price)}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="h-10 w-10 rounded-xl text-primary hover:bg-primary/10"
+                          className="h-10 w-10 rounded-xl text-primary bg-primary/5 md:bg-transparent hover:bg-primary/10"
                           onClick={(e) => {
                             e.stopPropagation();
                             openEditDialog(product);
