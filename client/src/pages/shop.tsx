@@ -13,7 +13,10 @@ import { apiRequest } from "@/lib/api";
 import { useState, useMemo, useEffect } from "react";
 import { useWishlist } from "@/hooks/use-wishlist";
 
+import { useLocation } from "wouter";
+
 export default function Shop() {
+  const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([100]);
@@ -33,13 +36,22 @@ export default function Shop() {
   const allProducts = productsData || [];
   const cats = categoriesData || [];
 
-  // Check URL params for wishlist filter
+  // Check URL params for filters
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("wishlist") === "true") {
       setShowWishlistOnly(true);
+    } else {
+      setShowWishlistOnly(false);
     }
-  }, []);
+    
+    const catId = params.get("category");
+    if (catId) {
+      setSelectedCategories([catId]);
+    } else {
+      setSelectedCategories([]);
+    }
+  }, [location]);
 
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
