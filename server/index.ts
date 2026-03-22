@@ -24,7 +24,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
-app.use("/uploads", express.static(path.join(process.cwd(), "dist", "public", "uploads")));
+app.use("/uploads", express.static(path.join(process.cwd(), "public", "uploads")));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

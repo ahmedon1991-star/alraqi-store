@@ -10,7 +10,7 @@ import path from "path";
 import fs from "fs";
 
 // Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), "dist", "public", "uploads");
+const uploadDir = path.join(process.cwd(), "public", "uploads");
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
