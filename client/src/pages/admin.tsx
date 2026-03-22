@@ -88,6 +88,7 @@ type AdminOverview = {
     description: string | null;
     sizes: string | null;
     measurements: string | null;
+    stock: number;
   }>;
   topCategories: Array<{
     id: string;
@@ -137,6 +138,7 @@ type ProductFormState = {
   inStock: boolean;
   sizes: string;
   measurements: string;
+  stock: string;
 };
 
 const initialForm: ProductFormState = {
@@ -150,6 +152,7 @@ const initialForm: ProductFormState = {
   inStock: true,
   sizes: "",
   measurements: "",
+  stock: "0",
 };
 
 const statusLabels: Record<string, string> = {
@@ -520,6 +523,7 @@ export default function AdminPage() {
           inStock: form.inStock,
           sizes: form.sizes,
           measurements: form.measurements,
+          stock: Number(form.stock) || 0,
         }),
       }),
     onSuccess: () => {
@@ -669,6 +673,7 @@ export default function AdminPage() {
       inStock: Boolean(product.inStock),
       sizes: product.sizes || "",
       measurements: product.measurements || "",
+      stock: String(product.stock || 0),
     });
     setIsDialogOpen(true);
   }
@@ -847,6 +852,17 @@ export default function AdminPage() {
                             value={form.price}
                             onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
                             className="text-right h-11 rounded-xl border-gray-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">الكمية المتوفرة (المخزون)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={form.stock}
+                            onChange={(e) => setForm((prev) => ({ ...prev, stock: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/50"
                           />
                         </div>
                         
@@ -1230,6 +1246,8 @@ export default function AdminPage() {
                           <span className="font-bold text-primary/80">{getCategoryName(product.category)}</span>
                           <span>•</span>
                           <span className="font-black text-black">{formatPrice(product.price)}</span>
+                          <span className="mx-1">•</span>
+                          <span className="text-orange-600 font-bold">المخزون: {product.stock || 0}</span>
                         </div>
                       </div>
 

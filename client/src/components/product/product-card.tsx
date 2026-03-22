@@ -16,9 +16,11 @@ interface ProductProps {
   badge?: string | null;
   sizes?: string | null;
   measurements?: string | null;
+  stock?: number | null;
+  inStock?: boolean | null;
 }
 
-export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements }: ProductProps) {
+export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements, stock, inStock }: ProductProps) {
   const addToCart = useAddToCart();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -46,6 +48,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         {badge && (
           <Badge className="absolute top-2 right-2 z-10 bg-primary/90 hover:bg-primary text-[9px] sm:text-xs px-2 sm:px-3 py-1 font-bold shadow-lg rounded-lg animate-in fade-in duration-300">
             {badge}
+          </Badge>
+        )}
+        {!inStock && (
+          <Badge variant="destructive" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 scale-125 px-4 py-2 font-black shadow-2xl rounded-xl rotate-12 backdrop-blur-sm border-2 border-white/20">
+            نفذت الكمية
+          </Badge>
+        )}
+        {inStock && stock !== undefined && stock !== null && stock > 0 && stock <= 5 && (
+          <Badge className="absolute bottom-2 left-2 z-10 bg-orange-600 text-white text-[8px] sm:text-[10px] px-2 py-0.5 font-bold rounded-lg animate-pulse">
+            كمية محدودة: {stock}
           </Badge>
         )}
         <Button
@@ -89,13 +101,19 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
 
       <CardFooter className="p-2 sm:p-3 pt-0">
         <Button
-          className="w-full rounded-xl font-black h-9 sm:h-11 text-[10px] sm:text-base px-2 sm:px-4 gap-1.5 sm:gap-2 shadow-sm hover:shadow-primary/20 hover-elevate transition-all duration-300 overflow-hidden whitespace-nowrap"
-          variant="default"
+          className={`w-full rounded-xl font-black h-9 sm:h-11 text-[10px] sm:text-base px-2 sm:px-4 gap-1.5 sm:gap-2 shadow-sm transition-all duration-300 overflow-hidden whitespace-nowrap ${!inStock ? 'grayscale opacity-80' : 'hover:shadow-primary/20 hover-elevate'}`}
+          variant={inStock ? "default" : "secondary"}
           onClick={handleAddToCart}
-          disabled={addToCart.isPending}
+          disabled={addToCart.isPending || !inStock}
         >
-          <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0" />
-          <span className="truncate">أضف للسلة</span>
+          {inStock ? (
+            <>
+              <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0" />
+              <span className="truncate">أضف للسلة</span>
+            </>
+          ) : (
+            <span className="truncate">نفذت الكمية</span>
+          )}
         </Button>
       </CardFooter>
     </Card>

@@ -109,6 +109,7 @@ export interface IStorage {
   deleteProduct(id: string): Promise<Product | undefined>;
   rateProduct(id: string, rating: number): Promise<Product | undefined>;
   reorderProducts(ids: string[]): Promise<void>;
+  decrementProductStock(id: string, quantity: number): Promise<void>;
 
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
@@ -286,6 +287,20 @@ export class DatabaseStorage implements IStorage {
     for (let i = 0; i < ids.length; i++) {
       await db.update(products).set({ sortOrder: i }).where(eq(products.id, ids[i]));
     }
+  }
+
+  async decrementProductStock(id: string, dx: number): Promise<void> {
+    if (!db) return;
+    const product = await this.getProductById(id);
+    if (!product) return;
+    
+    const newStock = Math.max(0, (product.stock || 0) - dx);
+    await db.update(products)
+      .set({ 
+        stock: newStock,
+        inStock: newStock > 0 
+      })
+      .where(eq(products.id, id));
   }
 
   async getCategories(): Promise<Category[]> {
@@ -649,6 +664,7 @@ export class MemoryStorage implements IStorage {
       inStock: product.inStock ?? true,
       sizes: product.sizes ?? null,
       measurements: product.measurements ?? null,
+      stock: product.stock ?? 0,
       sortOrder: product.sortOrder ?? 0,
     };
     this.products.set(created.id, created);
@@ -673,6 +689,7 @@ export class MemoryStorage implements IStorage {
       reviews: product.reviews ?? existing.reviews,
       sizes: product.sizes ?? existing.sizes,
       measurements: product.measurements ?? existing.measurements,
+      stock: product.stock ?? existing.stock,
     };
     this.products.set(id, updated);
     return updated;
@@ -936,12 +953,24 @@ export class MemoryStorage implements IStorage {
       m.userId === userId && m.createdAt && m.createdAt >= yesterday
     ).length;
   }
+
   async reorderProducts(ids: string[]): Promise<void> {
     ids.forEach((id, index) => {
       const product = this.products.get(id);
       if (product) {
         this.products.set(id, { ...product, sortOrder: index });
       }
+    });
+  }
+
+  async decrementProductStock(id: string, dx: number): Promise<void> {
+    const product = this.products.get(id);
+    if (!product) return;
+    const newStock = Math.max(0, (product.stock || 0) - dx);
+    this.products.set(id, { 
+      ...product, 
+      stock: newStock,
+      inStock: newStock > 0 
     });
   }
 }

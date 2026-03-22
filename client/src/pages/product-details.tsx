@@ -2,7 +2,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2 } from "lucide-react";
+import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2, Package } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -111,6 +111,13 @@ export default function ProductDetails() {
                   {product.badge}
                 </Badge>
               )}
+              {!product.inStock && (
+                <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                  <Badge variant="destructive" className="text-2xl px-8 py-3 font-black shadow-2xl rounded-2xl rotate-12 border-4 border-white/30 animate-in zoom-in duration-300">
+                    نفذت الكمية
+                  </Badge>
+                </div>
+              )}
               <img
                 src={product.image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=800"}
                 alt={product.name}
@@ -137,6 +144,13 @@ export default function ProductDetails() {
                 <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
                 <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
               </div>
+              
+              {product.inStock && product.stock !== undefined && product.stock !== null && product.stock > 0 && product.stock <= 5 && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-2xl text-orange-700 animate-pulse mb-4">
+                  <Package className="h-5 w-5" />
+                  <span className="font-bold">سارع بالطلب! المتبقي {product.stock} فقط في المخزون</span>
+                </div>
+              )}
             </div>
 
             <div className="bg-muted/30 p-6 rounded-2xl space-y-4 border border-border/50">
@@ -246,13 +260,23 @@ export default function ProductDetails() {
 
               <Button
                 size="lg"
-                className="flex-1 h-14 rounded-full text-lg font-bold gap-2 shadow-lg hover:shadow-primary/25 transition-all"
+                className={`flex-1 h-14 rounded-full text-lg font-bold gap-2 shadow-lg transition-all ${!product.inStock ? 'opacity-80' : 'hover:shadow-primary/25'}`}
                 onClick={handleAddToCart}
-                disabled={addToCart.isPending}
+                disabled={addToCart.isPending || !product.inStock}
                 data-testid="button-add-to-cart"
+                variant={product.inStock ? "default" : "secondary"}
               >
-                <ShoppingCart className="h-5 w-5" />
-                إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
+                {product.inStock ? (
+                  <>
+                    <ShoppingCart className="h-5 w-5" />
+                    إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
+                  </>
+                ) : (
+                  <>
+                    <Package className="h-5 w-5" />
+                    نفذت الكمية حالياً
+                  </>
+                )}
               </Button>
 
               <Button

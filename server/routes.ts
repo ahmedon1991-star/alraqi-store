@@ -1031,6 +1031,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       paymentMethod: paymentMethod || "cod",
       bankId: bankId || null,
     });
+    
+    // Decrement stock for each item
+    for (const item of currentCartItems) {
+      try {
+        await storage.decrementProductStock(item.product.id, item.quantity);
+      } catch (err) {
+        console.error(`Failed to decrement stock for product ${item.product.id}:`, err);
+        // We continue anyway so the order isn't lost, admin can fix stock manually
+      }
+    }
 
     await storage.clearCart(sessionId);
 
