@@ -754,6 +754,8 @@ export class MemoryStorage implements IStorage {
       sessionId: item.sessionId,
       productId: item.productId,
       quantity: item.quantity || 1,
+      size: item.size || null,
+      measurement: item.measurement || null,
     };
     this.cartItems.set(created.id, created);
     return created;
@@ -802,6 +804,8 @@ export class MemoryStorage implements IStorage {
       paymentMethod: order.paymentMethod ?? "cod",
       bankId: order.bankId ?? null,
       createdAt: new Date(),
+      updatedAt: null,
+      isArchived: false,
     };
     this.orders.set(created.id, created);
     return created;
@@ -846,10 +850,13 @@ export class MemoryStorage implements IStorage {
         facebook: "https://facebook.com",
         instagram: "https://instagram.com",
         twitter: "https://twitter.com",
+        shippingFee: 0,
+        freeShippingThreshold: 50000,
+        announcementText: "",
         passwordToken: null,
       };
     }
-    return this.adminSettings;
+    return this.adminSettings ?? undefined;
   }
 
   async updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings> {
@@ -900,6 +907,7 @@ export class MemoryStorage implements IStorage {
       message: message.message,
       id: createId(),
       isRead: false,
+      isArchived: false,
       createdAt: new Date(),
     };
     this.messages.set(created.id, created);
