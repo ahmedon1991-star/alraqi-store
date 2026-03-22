@@ -22,12 +22,12 @@ export function Navbar() {
   const [mobileSearchTerm, setMobileSearchTerm] = useState("");
   const [, setLocation] = useLocation();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mobileSearchTerm.trim()) {
-      setLocation(`/shop?search=${encodeURIComponent(mobileSearchTerm.trim())}`);
-      setIsSearchOpen(false);
-      setMobileSearchTerm("");
+  const handleSearch = (val: string) => {
+    setMobileSearchTerm(val);
+    if (val.trim()) {
+      setLocation(`/shop?search=${encodeURIComponent(val.trim())}`);
+    } else if (location.startsWith("/shop")) {
+      setLocation("/shop");
     }
   };
 
@@ -67,12 +67,13 @@ export function Navbar() {
           </div>
 
           <div className="relative mx-4 hidden w-full max-w-sm items-center lg:flex">
-            <form onSubmit={(e) => { e.preventDefault(); const val = (e.target as any).search.value; if (val) setLocation(`/shop?search=${val}`); }} className="w-full relative">
+            <form onSubmit={(e) => e.preventDefault()} className="w-full relative">
                <Input
                  name="search"
                  type="search"
                  placeholder="ابحث عن منتج مخصص..."
                  className="rounded-full border-primary/20 bg-muted/30 pl-4 pr-10 focus-visible:ring-primary/20 h-10 transition-all focus:bg-white text-right"
+                 onChange={(e) => handleSearch(e.target.value)}
                />
                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </form>
@@ -128,13 +129,13 @@ export function Navbar() {
         {/* Mobile Search Overlay */}
         {isSearchOpen && (
           <div className="md:hidden pb-4 px-2 animate-in slide-in-from-top-4 duration-300">
-             <form onSubmit={handleSearch} className="relative">
+             <form onSubmit={(e) => e.preventDefault()} className="relative">
                 <Input
                   autoFocus
                   placeholder="ابحث عن المنتجات السودانية..."
                   className="rounded-2xl border-primary/20 bg-muted/30 focus-visible:ring-primary/20 h-12 pr-10 text-right"
                   value={mobileSearchTerm}
-                  onChange={(e) => setMobileSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearch(e.target.value)}
                 />
                 <Search className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
              </form>
