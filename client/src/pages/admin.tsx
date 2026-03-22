@@ -620,32 +620,56 @@ export default function AdminPage() {
     );
   }
 
-  const summaryCards = [
-    {
-      title: "إجمالي المبيعات",
-      value: formatPrice(data?.stats?.revenue || 0),
-      icon: CreditCard,
-      tone: "from-orange-500/15 to-orange-500/5 text-orange-700",
-    },
-    {
-      title: "الطلبات",
-      value: (data?.stats?.orders ?? 0).toLocaleString("ar-EG"),
-      icon: ShoppingBag,
-      tone: "from-teal-500/15 to-teal-500/5 text-teal-700",
-    },
-    {
-      title: "طلبات معلقة",
-      value: (data?.stats?.pendingOrders ?? 0).toLocaleString("ar-EG"),
-      icon: Clock3,
-      tone: "from-amber-500/15 to-amber-500/5 text-amber-700",
-    },
-    {
-      title: "المنتجات",
-      value: (data?.stats?.products ?? 0).toLocaleString("ar-EG"),
-      icon: Package,
-      tone: "from-sky-500/15 to-sky-500/5 text-sky-700",
-    },
-  ];
+  const [revenueFilter, setRevenueFilter] = useState<"today" | "week" | "month" | "all">("all");
+
+  const revenueData = useMemo(() => {
+    if (!data?.orders) return { total: 0, chartData: [] };
+    
+    const now = new Date();
+    // Midnight of today
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    
+    // Start of current week (assuming Sunday as first day, or 7 days ago if we want rolling week)
+    // Rolling 7 days is usually more useful for graphs
+    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const filteredTotal = data.orders.reduce((acc, order) => {
+      // Assuming valid orders contribute to revenue. Usually completed or all.
+      // the existing API sums all orders unconditionally. We'll do the same.
+      const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+      
+      if (revenueFilter === "today" && orderTime >= startOfToday) return acc + order.total;
+      if (revenueFilter === "week" && orderTime >= past7Days) return acc + order.total;
+      if (revenueFilter === "month" && orderTime >= startOfMonth) return acc + order.total;
+      if (revenueFilter === "all") return acc + order.total;
+      
+      return acc;
+    }, 0);
+
+    // Build chart data for the last 7 days regardless of filter (or match filter later)
+    const chartData = Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0, 0, 0, 0);
+      const dayStart = d.getTime();
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      
+      const dayTotal = data.orders.reduce((acc, order) => {
+          const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+          if (t >= dayStart && t < dayEnd) return acc + order.total;
+          return acc;
+      }, 0);
+      
+      return { 
+          label: d.toLocaleDateString('ar-EG', { weekday: 'long' }).substring(0, 3), 
+          value: dayTotal 
+      };
+    });
+
+    return { total: filteredTotal, chartData };
+  }, [data?.orders, revenueFilter]);
 
   return (
     <div className="flex min-h-screen flex-col relative overflow-hidden bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(248,244,238,1))]">
@@ -907,27 +931,108 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="overview" className="space-y-8">
-            <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {summaryCards.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Card key={item.title} className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
-                <CardContent className="p-0">
-                  <div className={`rounded-xl bg-gradient-to-br p-6 ${item.tone}`}>
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
-                        <Icon className="h-5 w-5" />
+            <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] md:col-span-2 xl:col-span-2">
+                <CardContent className="p-0 h-full">
+                  <div className="rounded-xl bg-gradient-to-br from-orange-500/15 to-orange-500/5 p-6 flex flex-col h-full">
+                    <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-2xl bg-white/80 p-3 shadow-sm text-orange-700">
+                          <CreditCard className="h-5 w-5" />
+                        </div>
+                        <p className="font-bold text-gray-800">إجمالي المبيعات</p>
                       </div>
-                      <BarChart3 className="h-5 w-5 opacity-40" />
+                      <div className="flex bg-white/60 rounded-lg p-1">
+                        {[
+                          { id: 'today', label: 'اليوم' },
+                          { id: 'week', label: 'الأسبوع' },
+                          { id: 'month', label: 'الشهر' },
+                          { id: 'all', label: 'الكل' }
+                        ].map((f) => (
+                           <button 
+                             key={f.id} 
+                             onClick={() => setRevenueFilter(f.id as any)}
+                             className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-900")}
+                           >
+                              {f.label}
+                           </button>
+                        ))}
+                      </div>
                     </div>
-                    <p className="mb-1 text-sm font-medium text-muted-foreground">{item.title}</p>
-                    <p className="text-3xl font-black tracking-tight text-foreground">{item.value}</p>
+                    <p className="text-3xl md:text-4xl font-black tracking-tight text-orange-950 mb-6">{formatPrice(revenueData.total)}</p>
+                    
+                    <div className="mt-auto flex items-end justify-between gap-2 h-24 pt-4 border-t border-orange-500/10">
+                      {revenueData.chartData.map((d, i) => {
+                         const maxVal = Math.max(...revenueData.chartData.map(c => c.value), 1);
+                         return (
+                          <div key={i} className="flex flex-col items-center flex-1 gap-2 group">
+                              <div className="w-full relative h-[60px] flex items-end justify-center rounded overflow-hidden bg-orange-500/10 transition-all group-hover:bg-orange-500/20">
+                                  <div className="w-full bg-orange-500 rounded-t-sm transition-all duration-500 ease-out min-h-[4px]" style={{ height: `${(d.value / maxVal) * 100}%` }}></div>
+                                  <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-1 bg-gray-900 text-white text-[10px] p-1 rounded font-bold whitespace-nowrap z-10 pointer-events-none transition-opacity">{formatPrice(d.value)}</div>
+                              </div>
+                              <span className="text-[10px] text-gray-600 font-bold">{d.label}</span>
+                          </div>
+                         );
+                      })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </section>
+
+              {/* Card 2 */}
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+                <CardContent className="p-0 h-full">
+                  <div className="rounded-xl bg-gradient-to-br p-6 from-teal-500/15 to-teal-500/5 text-teal-700 h-full flex flex-col justify-between">
+                    <div className="mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                        <ShoppingBag className="h-5 w-5" />
+                      </div>
+                      <BarChart3 className="h-5 w-5 opacity-40" />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-teal-800/60">الطلبات الكلية</p>
+                      <p className="text-3xl font-black tracking-tight text-teal-900">{(data.stats.orders ?? 0).toLocaleString("ar-EG")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 3 */}
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+                <CardContent className="p-0 h-full">
+                  <div className="rounded-xl bg-gradient-to-br p-6 from-amber-500/15 to-amber-500/5 text-amber-700 h-full flex flex-col justify-between">
+                    <div className="mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                        <Clock3 className="h-5 w-5" />
+                      </div>
+                      <BarChart3 className="h-5 w-5 opacity-40" />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-amber-800/60">طلبات معلقة</p>
+                      <p className="text-3xl font-black tracking-tight text-amber-900">{(data.stats.pendingOrders ?? 0).toLocaleString("ar-EG")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 4 */}
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+                <CardContent className="p-0 h-full">
+                  <div className="rounded-xl bg-gradient-to-br p-6 from-sky-500/15 to-sky-500/5 text-sky-700 h-full flex flex-col justify-between">
+                    <div className="mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                        <Package className="h-5 w-5" />
+                      </div>
+                      <BarChart3 className="h-5 w-5 opacity-40" />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-sky-800/60">إجمالي المنتجات</p>
+                      <p className="text-3xl font-black tracking-tight text-sky-900">{(data.stats.products ?? 0).toLocaleString("ar-EG")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
 
         <section className="grid grid-cols-1 gap-6">
           <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
