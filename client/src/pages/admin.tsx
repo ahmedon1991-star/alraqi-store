@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest, clearAdminToken, getAdminToken } from "@/lib/api";
-import { formatCategoryLabel, formatPrice } from "@/lib/utils";
+import { cn, formatCategoryLabel, formatPrice } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
