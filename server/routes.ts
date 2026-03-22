@@ -690,37 +690,45 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.get("/api/admin/overview", requireAdmin, async (_req: Request, res: Response) => {
-    const [products, categories, allOrders] = await Promise.all([
-      storage.getProducts(),
-      storage.getCategories(),
-      storage.getAllOrders(),
-    ]);
+    try {
+      const [products, categories, allOrders] = await Promise.all([
+        storage.getProducts(),
+        storage.getCategories(),
+        storage.getAllOrders(),
+      ]);
 
-    const sortedOrders = [...allOrders].sort((a: Order, b: Order) => {
-      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return bTime - aTime;
-    });
+      const sortedOrders = [...allOrders].sort((a: Order, b: Order) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
 
-    const revenue = allOrders.reduce((sum: number, order: Order) => sum + order.total, 0);
-    const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
-    const topCategories = categories.map((category: Category) => ({
-      ...category,
-      productCount: products.filter((product: Product) => product.category === category.id).length,
-    }));
+      const revenue = allOrders.reduce((sum: number, order: Order) => sum + order.total, 0);
+      const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
+      const topCategories = categories.map((category: Category) => ({
+        ...category,
+        productCount: products.filter((product: Product) => product.category === category.id).length,
+      }));
 
-    res.json({
-      stats: {
-        products: products.length,
-        categories: categories.length,
-        orders: allOrders.length,
-        pendingOrders: pendingOrders.length,
-        revenue,
-      },
-      orders: sortedOrders,
-      products,
-      topCategories,
-    });
+      res.json({
+        stats: {
+          products: products.length,
+          categories: categories.length,
+          orders: allOrders.length,
+          pendingOrders: pendingOrders.length,
+          revenue,
+        },
+        orders: sortedOrders,
+        products,
+        topCategories,
+      });
+    } catch (error) {
+      console.error("❌ Error in /api/admin/overview:", error);
+      res.status(500).json({ 
+        message: "فشل تحميل بيانات لوحة التحقق. قد يكون هناك مشكلة في الاتصال بقاعدة البيانات.",
+        error: String(error)
+      });
+    }
   });
 
   app.patch("/api/admin/orders/:id", requireAdmin, async (req: Request, res: Response) => {

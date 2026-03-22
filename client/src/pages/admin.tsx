@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -233,6 +233,7 @@ export default function AdminPage() {
     queryKey: ["/api/admin/overview"],
     queryFn: () => apiRequest("/api/admin/overview"),
     enabled: authQuery.isSuccess,
+    refetchInterval: 30000, // 30 seconds polling for new orders/messages
   });
 
   const settingsQuery = useQuery({
@@ -384,6 +385,43 @@ export default function AdminPage() {
       setLocation("/admin-login");
     }
   }, [authQuery.error, setLocation]);
+
+  const prevOrdersCountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const currentOrdersCount = overviewQuery.data?.stats?.orders;
+    if (currentOrdersCount !== undefined) {
+      if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
+        try {
+          const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+
+          oscillator.type = 'sine';
+          // Play a nice ping sound (A5 note dropping)
+          oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
+          oscillator.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.5); 
+
+          gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+          oscillator.start(audioCtx.currentTime);
+          oscillator.stop(audioCtx.currentTime + 0.5);
+          
+          toast({
+            title: "🔔 طلب جديد الوارد",
+            description: "تم استلام طلب جديد من أحد العملاء، يرجى مراجعته.",
+          });
+        } catch (e) {
+          console.error("Audio play failed, user interaction may be required:", e);
+        }
+      }
+      prevOrdersCountRef.current = currentOrdersCount;
+    }
+  }, [overviewQuery.data?.stats?.orders, toast]);
 
   const updateOrderMutation = useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
@@ -548,8 +586,38 @@ export default function AdminPage() {
     );
   }
 
-  if (authQuery.isError) {
-    return null; // The useEffect will handle redirect
+  if (overviewQuery.isError) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background text-center p-20 gap-8">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] shadow-2xl max-w-lg w-full">
+                <h2 className="text-3xl font-black text-rose-600 mb-4">تعذر تحميل البيانات</h2>
+                <p className="text-rose-800/80 font-medium mb-6">
+                    {(overviewQuery.error as any)?.message || "حدث خطأ غير متوقع أثناء الاتصال بسيرفر قاعدة البيانات."}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button 
+                        size="lg"
+                        className="rounded-2xl font-black px-8 bg-rose-600 hover:bg-rose-700" 
+                        onClick={() => overviewQuery.refetch()}
+                    >
+                        إعادة المحاولة
+                    </Button>
+                    <Button 
+                        size="lg"
+                        variant="ghost" 
+                        className="rounded-2xl font-bold" 
+                        onClick={() => (window.location.href = "/admin-login")}
+                    >
+                        تسجيل الخروج
+                    </Button>
+                </div>
+            </div>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   if (!data) {
@@ -827,7 +895,7 @@ export default function AdminPage() {
 
         <Tabs defaultValue="overview" className="w-full space-y-6 md:space-y-8">
           <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:mx-0 md:px-0">
-            <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-7 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
+            <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-9 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
               <TabsTrigger value="overview" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الرئيسية</TabsTrigger>
               <TabsTrigger value="orders" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-2">
                 الطلبات
