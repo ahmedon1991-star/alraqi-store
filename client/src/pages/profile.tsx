@@ -303,19 +303,7 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="p-5 md:p-6">
-                                       <div className="flex items-center gap-4 overflow-x-auto pb-4 invisible-scrollbar">
-                                          {items.map((item: any, idx: number) => (
-                                            <div key={idx} className="flex-shrink-0 relative">
-                                               <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center p-2 text-xs font-bold text-gray-400 overflow-hidden">
-                                                  <ImageIcon className="h-6 w-6 opacity-30" />
-                                               </div>
-                                               <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white">{item.quantity}</span>
-                                            </div>
-                                          ))}
-                                          {items.length > 4 && (
-                                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-500 font-black text-xs">+{items.length - 4}</div>
-                                          )}
-                                       </div>
+
 
                                        <div className="flex items-center justify-between mt-4">
                                           <div className="text-right">
