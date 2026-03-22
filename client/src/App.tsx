@@ -16,10 +16,12 @@ import { CustomerService } from "@/components/shared/CustomerService";
 import { SplashScreen } from "@/components/SplashScreen";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { useState, useCallback } from "react";
+import { AnnouncementBar } from "@/components/layout/announcement-bar";
 
 function Router() {
   return (
     <div className="min-h-screen w-full font-sans" dir="rtl">
+      <AnnouncementBar />
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/shop" component={Shop} />
