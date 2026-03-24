@@ -4,7 +4,7 @@ services:
     env: node
     autoDeploy: true
     branch: main
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run db:push || true && npm run start
     envVars:
       - key: DATABASE_URL
