@@ -1289,19 +1289,19 @@ export default function AdminPage() {
                   <CardTitle className="text-2xl font-black">قائمة المنتجات</CardTitle>
                   <CardDescription>اسحب وأفلت لترتيب المنتجات في المتجر.</CardDescription>
                 </div>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="relative">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                  <div className="relative w-full lg:w-64">
                     <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
                       placeholder="بحث في المنتجات..."
-                      className="w-full sm:w-64 pr-9 h-12 rounded-2xl border-border/60 bg-background/50"
+                      className="w-full pr-9 h-12 rounded-2xl border-border/60 bg-background/50"
                     />
                   </div>
-                  <Button onClick={openCreateDialog} className="h-12 px-6 rounded-2xl shadow-lg shadow-primary/20 gap-2 font-black">
-                    <PlusCircle className="h-5 w-5" />
-                    إضافة منتج
+                  <Button onClick={openCreateDialog} className="h-14 lg:h-12 w-full lg:w-auto px-8 rounded-2xl shadow-lg shadow-primary/20 gap-2 font-black text-lg lg:text-base">
+                    <PlusCircle className="h-5 w-5 lg:h-4 lg:w-4" />
+                    إضافة منتج جديد
                   </Button>
                 </div>
               </div>
@@ -1333,49 +1333,52 @@ export default function AdminPage() {
                     value={product}
                     className="group rounded-3xl border border-border/40 bg-white/50 backdrop-blur-sm p-4 hover:border-primary/30 transition-all active:scale-[0.99] cursor-grab active:cursor-grabbing"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="text-muted-foreground/30 group-hover:text-primary/50 transition-colors">
-                        <GripVertical className="h-5 w-5" />
-                      </div>
-                      
-                      {product.image && (
-                        <div className="h-16 w-16 rounded-2xl overflow-hidden border shrink-0">
-                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="text-muted-foreground/30 group-hover:text-primary/50 transition-colors shrink-0">
+                          <GripVertical className="h-5 w-5" />
                         </div>
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                          <h3 className="font-black text-sm md:text-base text-foreground truncate max-w-[140px] md:max-w-none">{product.name}</h3>
-                          <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[9px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
-                            {product.inStock ? "متوفر" : "غير متوفر"}
-                          </Badge>
-                          <Badge variant="outline" className={cn("rounded-full text-[9px] h-5 px-2 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
-                            المخزون: {product.stock || 0}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-x-2 gap-y-1 text-[10px] md:text-xs text-muted-foreground flex-wrap">
-                          <span className="font-bold text-primary/80 bg-primary/5 px-2 rounded-lg">{getCategoryName(product.category)}</span>
-                          <span className="font-black text-black/80">{formatPrice(product.price)}</span>
+                        
+                        {product.image && (
+                          <div className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-primary/5 shrink-0 shadow-sm">
+                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                          </div>
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-black text-base md:text-lg text-foreground mb-1 block leading-tight">{product.name}</h3>
+                          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                             <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
+                               {product.inStock ? "متوفر" : "غير متوفر"}
+                             </Badge>
+                             <Badge variant="outline" className={cn("rounded-full text-[10px] h-5 px-2 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                               المخزون: {product.stock || 0}
+                             </Badge>
+                             <Badge variant="ghost" className="text-primary/70 bg-primary/5 rounded-full h-5 text-[10px] font-bold">
+                               {getCategoryName(product.category)}
+                             </Badge>
+                          </div>
+                          <div className="text-sm font-black text-black/80">{formatPrice(product.price)}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity border-t sm:border-0 border-border/20 mt-1 sm:mt-0">
                         <Button 
                           variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-primary bg-primary/5 md:bg-transparent hover:bg-primary/10"
+                          size="sm"
+                          className="flex-1 sm:flex-none h-10 px-4 rounded-xl gap-2 font-bold text-primary bg-primary/5 sm:bg-transparent hover:bg-primary/10"
                           onClick={(e) => {
                             e.stopPropagation();
                             openEditDialog(product);
                           }}
                         >
                           <Pencil className="h-4 w-4" />
+                          تعديل
                         </Button>
                         <Button 
                           variant="ghost" 
-                          size="icon" 
-                          className="h-10 w-10 rounded-xl text-red-500 hover:bg-red-50"
+                          size="sm"
+                          className="flex-1 sm:flex-none h-10 px-4 rounded-xl gap-2 font-bold text-red-500 bg-red-50 sm:bg-transparent hover:bg-red-100"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
@@ -1384,6 +1387,7 @@ export default function AdminPage() {
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
+                          حذف
                         </Button>
                       </div>
                     </div>
