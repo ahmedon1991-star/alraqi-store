@@ -2022,7 +2022,7 @@ export default function AdminPage() {
                   {categoriesQuery.data?.map((category) => (
                     <div key={category.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex items-center gap-3">
-                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/uploads")) && (
+                        {category.icon && (
                           <div className="h-10 w-10 rounded-lg overflow-hidden bg-primary/5">
                             <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
                           </div>
