@@ -104,7 +104,14 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-3 w-full md:w-auto">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
-                <span>{settings?.address || "المملكة العربية السعودية - جدة"}</span>
+                <a 
+                  href="https://maps.app.goo.gl/Lx5mCA3y7RiCjo8bA" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors cursor-pointer text-right underline underline-offset-4 decoration-primary/30"
+                >
+                  {settings?.address || "المملكة العربية السعودية - جدة - حي الروابي - شارع السبعين"}
+                </a>
               </li>
             </ul>
           </div>
