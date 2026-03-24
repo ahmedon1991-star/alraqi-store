@@ -602,7 +602,9 @@ export default function AdminPage() {
     
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    const filteredTotal = data.orders.reduce((acc, order) => {
+    const revenueOrders = data.orders.filter(order => order.status !== "cancelled");
+    
+    const filteredTotal = revenueOrders.reduce((acc, order) => {
       const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
       const amount = Number(order.total) || 0;
       
@@ -622,7 +624,7 @@ export default function AdminPage() {
       const dayStart = d.getTime();
       const dayEnd = dayStart + 24 * 60 * 60 * 1000;
       
-      const dayTotal = data.orders.reduce((acc, order) => {
+      const dayTotal = revenueOrders.reduce((acc, order) => {
           const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
           if (t >= dayStart && t < dayEnd) return acc + (Number(order.total) || 0);
           return acc;
@@ -1140,8 +1142,28 @@ export default function AdminPage() {
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-sky-800/60">إجمالي المنتجات</p>
+                      <p className="mb-1 text-sm font-medium text-sky-800/60">أنواع المنتجات</p>
                       <p className="text-3xl font-black tracking-tight text-sky-900">{(data.stats.products ?? 0).toLocaleString("ar-EG")}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card 5 */}
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+                <CardContent className="p-0 h-full">
+                  <div className="rounded-xl bg-gradient-to-br p-6 from-indigo-500/15 to-indigo-500/5 text-indigo-700 h-full flex flex-col justify-between">
+                    <div className="mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                        <Boxes className="h-5 w-5" />
+                      </div>
+                      <BarChart3 className="h-5 w-5 opacity-40" />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-sm font-medium text-indigo-800/60">إجمالي المخزون</p>
+                      <p className="text-3xl font-black tracking-tight text-indigo-900">
+                        {((data.products || []).reduce((sum, p) => sum + (p.stock || 0), 0)).toLocaleString("ar-EG")}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -1163,7 +1185,7 @@ export default function AdminPage() {
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl overflow-hidden">
-                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/uploads")) ? (
+                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/") || category.icon.startsWith("data:")) ? (
                           <img src={category.icon} alt={category.name} className="w-full h-full object-cover p-1.5" />
                         ) : (
                           category.icon || "•"
