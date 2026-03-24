@@ -965,10 +965,10 @@ export class MemoryStorage implements IStorage {
       this.adminSettings = {
         id: 1,
         email: "admin@example.com",
-        phone: "+249912345678",
+        phone: "+966 56 927 6152",
         username: process.env.ADMIN_USERNAME || "admin",
         password: process.env.ADMIN_PASSWORD || "admin12345",
-        address: "الخرطوم، السودان - شارع النيل",
+        address: "المملكة العربية السعودية، جدة، حي الروابي، شارع السمو",
         facebook: "https://facebook.com",
         instagram: "https://instagram.com",
         twitter: "https://twitter.com",
