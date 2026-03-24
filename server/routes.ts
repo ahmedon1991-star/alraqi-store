@@ -1233,7 +1233,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/sitemap.xml", async (_req, res) => {
     const products = await storage.getProducts();
     const categories = await storage.getCategories();
-    const baseUrl = `${_req.protocol}://${_req.get('host')}`;
+    const protocol = _req.headers["x-forwarded-proto"] || "https";
+    const baseUrl = `${protocol}://${_req.get('host')}`;
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
     <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
