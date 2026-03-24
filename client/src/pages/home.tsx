@@ -48,7 +48,7 @@ export default function Home() {
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
                 <div className="group cursor-pointer flex flex-col items-center gap-2 p-3 md:p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
                   <div className="w-16 h-16 md:w-24 md:h-24 rounded-3xl bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10 overflow-hidden shadow-sm group-hover:shadow-primary/20">
-                    {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/uploads") || cat.icon.startsWith("/images")) ? (
+                    {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
                       <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/3081/3081840.png"; }} />
                     ) : (
                       cat.icon || "•"
