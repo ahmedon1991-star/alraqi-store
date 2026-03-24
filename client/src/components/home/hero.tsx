@@ -8,9 +8,9 @@ export function Hero() {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img 
-          src="/images/hero.png" 
-          alt="Sudanese Food Spread" 
-          className="w-full h-full object-cover object-center scale-105 animate-pulse-slow font-display"
+          src="/images/hero-main.png" 
+          alt="Food Products Spread" 
+          className="w-full h-full object-cover object-center scale-105 animate-pulse-slow font-display text-transparent"
           loading="eager"
           fetchPriority="high"
         />
