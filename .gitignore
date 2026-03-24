@@ -7,3 +7,7 @@ vite.config.ts.*
 .env
 .replit
 .local
+public/uploads
+client/public/uploads
+build_output.txt
+# Keeping assets like WAV but ignoring user-uploaded content

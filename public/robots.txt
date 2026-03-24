@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /product/
+Disallow: /admin
+Disallow: /api/admin/
+Disallow: /admin-login
+
+Sitemap: https://alraqi-store.onrender.com/sitemap.xml

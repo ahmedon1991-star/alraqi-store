@@ -1,0 +1,26 @@
+{
+  "name": "الراقي للمنتجات الغذائية",
+  "short_name": "الراقي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1b705c",
+  "description": "وجهتك الأولى للمنتجات الغذائية والأصيلة. تسوق التوابل، الأغذية، والمنتجات الطبيعية بجودة عالية وتوصيل سريع.",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "ar"
+}

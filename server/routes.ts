@@ -9,8 +9,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Configure multer for file uploads
-const uploadDir = path.join(process.cwd(), "public", "uploads");
+const uploadDir = path.resolve(process.cwd(), "public", "uploads");
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -26,11 +25,15 @@ const multerStorage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    const cleanName = file.originalname.replace(/[^a-zA-Z0-9.]/g, "_");
+    cb(null, `${uniqueSuffix}-${cleanName}`);
   },
 });
 
-const upload = multer({ storage: multerStorage });
+const upload = multer({ 
+  storage: multerStorage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
@@ -227,18 +230,86 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // Public Diagnostic route (top of routes for high priority)
+  app.get("/api/public-debug", async (_req, res) => {
+    const rootUploadDir = path.resolve(process.cwd(), "public", "uploads");
+    const clientUploadDir = path.resolve(process.cwd(), "client", "public", "uploads");
+    res.json({
+      timestamp: new Date().toISOString(),
+      cwd: process.cwd(),
+      env: process.env.NODE_ENV,
+      rootUploads: {
+        path: rootUploadDir,
+        exists: fs.existsSync(rootUploadDir),
+        files: fs.existsSync(rootUploadDir) ? fs.readdirSync(rootUploadDir) : []
+      },
+      clientUploads: {
+        path: clientUploadDir,
+        exists: fs.existsSync(clientUploadDir),
+        files: fs.existsSync(clientUploadDir) ? fs.readdirSync(clientUploadDir) : []
+      }
+    });
+  });
+
+  // --- SEO SITEMAP ---
+  app.get("/sitemap.xml", async (_req, res) => {
+    const products = await storage.getProducts();
+    const categories = await storage.getCategories();
+    const protocol = _req.headers["x-forwarded-proto"] || "https";
+    const baseUrl = `${protocol}://${_req.get('host')}`;
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+      <url>
+        <loc>${baseUrl}/</loc>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+      <url>
+        <loc>${baseUrl}/shop</loc>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+      </url>
+      ${categories.map(cat => `
+      <url>
+        <loc>${baseUrl}/shop?category=${cat.id}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+      </url>`).join('')}
+      ${products.map(product => `
+      <url>
+        <loc>${baseUrl}/product/${product.id}</loc>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+        ${product.image ? `
+        <image:image>
+          <image:loc>${product.image.startsWith('http') ? product.image : baseUrl + product.image}</image:loc>
+          <image:title>${product.name}</image:title>
+        </image:image>` : ''}
+      </url>`).join('')}
+    </urlset>`;
+
+    res.header("Content-Type", "application/xml");
+    res.send(sitemap.trim());
+  });
   // Diagnostic route for storage status
   app.get("/api/admin/debug-storage", async (_req, res) => {
     const mode = (storage as any).mode || "unknown";
     const hasEnv = !!process.env.DATABASE_URL;
     const lastError = getDbLastError();
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+
     res.json({
       mode: mode,
       hasDatabaseUrl: hasEnv,
       lastError: lastError || null,
       message: mode === "DATABASE"
         ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL."
-        : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة.")
+        : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة."),
+      cwd: process.cwd(),
+      uploadDir,
+      uploadDirExists: fs.existsSync(uploadDir),
+      filesInUploadDir: fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : []
     });
   });
 
@@ -560,8 +631,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/admin/upload", requireAdmin, upload.single("image"), (req: Request, res: Response) => {
     if (!req.file) {
+      console.warn("⚠️ Upload attempted without file");
       return res.status(400).json({ message: "يرجى اختيار ملف لرفعه" });
     }
+    console.log(`✅ File uploaded successfully: ${req.file.filename} to ${req.file.path}`);
     const imageUrl = `/uploads/${req.file.filename}`;
     res.json({ url: imageUrl });
   });
@@ -729,26 +802,44 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           return order.status !== "cancelled" && t >= resetDate;
         })
         .reduce((sum: number, order: Order) => sum + order.total, 0);
-      const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
+
+      const pendingOrdersCount = allOrders.filter((order: Order) => order.status === "pending").length;
       const unreadMessages = allMessages.filter((msg) => !msg.isRead).length;
-      
+
+      // Optimize: Pre-calculate product counts per category once
+      const productCountMap: Record<string, number> = {};
+      products.forEach(p => {
+        if (p.category) {
+          productCountMap[p.category] = (productCountMap[p.category] || 0) + 1;
+        }
+      });
+
       const topCategories = categories.map((category: Category) => ({
         ...category,
-        productCount: products.filter((product: Product) => product.category === category.id).length,
+        productCount: productCountMap[category.id] || 0,
       }));
+
+      // Sort and slice orders to keep response payload small
+      const recentOrders = [...allOrders]
+        .sort((a: Order, b: Order) => {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bTime - aTime;
+        })
+        .slice(0, 50); // Only return 50 most recent for performance
 
       res.json({
         stats: {
           products: products.length,
           categories: categories.length,
           orders: allOrders.length,
-          pendingOrders: pendingOrders.length,
+          pendingOrders: pendingOrdersCount,
           messages: allMessages.length,
           unreadMessages,
           revenue,
         },
-        orders: sortedOrders,
-        products,
+        orders: recentOrders,
+        products: products, // Returning all products for management is okay for now, but consider pagination if > 1000
         topCategories,
       });
     } catch (error) {
@@ -1029,8 +1120,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "السلة فارغة" });
     }
 
-    const total = currentCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-    const shipping = 1500;
+    const subtotal = currentCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    
+    // Fetch dynamic shipping settings
+    const adminSettings = await storage.getAdminSettings();
+    const shippingFeeBase = Number(adminSettings?.shippingFee) || 0;
+    const freeShippingThreshold = Number(adminSettings?.freeShippingThreshold) || 0;
+    
+    // Logic for free shipping (matches cart.tsx)
+    const isFreeShipping = (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || shippingFeeBase === 0;
+    const shipping = isFreeShipping ? 0 : shippingFeeBase;
+    
     const itemsData = currentCartItems.map(item => ({
       id: item.product.id,
       name: item.product.name,
@@ -1042,7 +1142,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const order = await storage.createOrder({
       sessionId,
       userId,
-      total: total + shipping,
+      total: subtotal + shipping,
       status: "pending",
       name,
       phone,
@@ -1067,7 +1167,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     await storage.clearCart(sessionId);
 
     // Generate Professional WhatsApp Invoice
-    const adminSettings = await storage.getAdminSettings();
     const adminPhoneRaw = adminSettings?.phone || process.env.ADMIN_PHONE || "249912345678";
     const sanitizedAdminPhone = adminPhoneRaw.replace(/[^0-9]/g, '');
 
@@ -1101,9 +1200,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       `━━━━━━━━━━━━━━━━━━%0A` +
       `📦 *المنتجات المطلوبة:*%0A%0A${itemsText}%0A%0A` +
       `━━━━━━━━━━━━━━━━━━%0A` +
-      `💰 المجموع: ${total.toLocaleString()} ج.س%0A` +
-      `🚚 التوصيل: ${shipping.toLocaleString()} ج.س%0A` +
-      `⭐ *الإجمالي النهائي: ${(total + shipping).toLocaleString()} ج.س*%0A` +
+      `💰 المجموع الفرعي: ${subtotal.toLocaleString()} ج.س%0A` +
+      `🚚 التوصيل: ${isFreeShipping ? "مجااااني 🎉" : `${shipping.toLocaleString()} ج.س`}%0A` +
+      `⭐ *الإجمالي النهائي: ${(subtotal + shipping).toLocaleString()} ج.س*%0A` +
       `━━━━━━━━━━━━━━━━━━%0A%0A` +
       `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.%0A` +
       `www.alraqi-store.com`;
@@ -1229,42 +1328,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ message: "تمت إضافة البيانات بنجاح", seeded: true });
   });
 
-  // --- SEO SITEMAP ---
-  app.get("/sitemap.xml", async (_req, res) => {
-    const products = await storage.getProducts();
-    const categories = await storage.getCategories();
-    const protocol = _req.headers["x-forwarded-proto"] || "https";
-    const baseUrl = `${protocol}://${_req.get('host')}`;
 
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-      <url>
-        <loc>${baseUrl}/</loc>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-      </url>
-      <url>
-        <loc>${baseUrl}/shop</loc>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-      </url>
-      ${categories.map(cat => `
-      <url>
-        <loc>${baseUrl}/shop?category=${cat.id}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-      </url>`).join('')}
-      ${products.map(product => `
-      <url>
-        <loc>${baseUrl}/product/${product.id}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-      </url>`).join('')}
-    </urlset>`;
-
-    res.header("Content-Type", "application/xml");
-    res.send(sitemap);
-  });
 
   return httpServer;
 }
