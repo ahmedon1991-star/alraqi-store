@@ -126,6 +126,8 @@ export const adminSettings = pgTable("admin_settings", {
   freeShippingThreshold: integer("free_shipping_threshold").notNull().default(50000),
   announcementText: text("announcement_text").notNull().default("خصم حصري 20% لفترة محدودة على كافة التوابل والبهارات!"),
   passwordToken: text("password_token"),
+  revenueResetDate: timestamp("revenue_reset_date").defaultNow(),
+  revenueResetCode: text("revenue_reset_code").notNull().default("1234"),
 });
 
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true });

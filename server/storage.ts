@@ -131,6 +131,7 @@ export interface IStorage {
 
   getAdminSettings(): Promise<AdminSettings | undefined>;
   updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings>;
+  resetRevenue(): Promise<void>;
 
   getBanks(): Promise<Bank[]>;
   createBank(bank: InsertBank): Promise<Bank>;
@@ -534,6 +535,11 @@ export class DatabaseStorage implements IStorage {
       }).returning();
       return created;
     }
+  }
+
+  async resetRevenue(): Promise<void> {
+    if (!db) return;
+    await db.update(adminSettings).set({ revenueResetDate: new Date() }).where(eq(adminSettings.id, 1));
   }
 
   async getBanks(): Promise<Bank[]> {
@@ -960,6 +966,8 @@ export class MemoryStorage implements IStorage {
         freeShippingThreshold: 50000,
         announcementText: "",
         passwordToken: null,
+        revenueResetDate: new Date(),
+        revenueResetCode: "1234",
       };
     }
     return this.adminSettings ?? undefined;
@@ -970,6 +978,13 @@ export class MemoryStorage implements IStorage {
     const updated = { ...current, ...settings } as AdminSettings;
     this.adminSettings = updated;
     return updated;
+  }
+
+  async resetRevenue(): Promise<void> {
+    const current = await this.getAdminSettings();
+    if (current) {
+      this.adminSettings = { ...current, revenueResetDate: new Date() };
+    }
   }
 
   async getBanks(): Promise<Bank[]> {

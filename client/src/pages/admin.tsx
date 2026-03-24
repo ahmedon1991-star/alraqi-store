@@ -248,6 +248,26 @@ export default function AdminPage() {
     enabled: authQuery.isSuccess,
   });
 
+  const [resetCode, setResetCode] = useState("");
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+
+  const resetRevenueMutation = useMutation({
+    mutationFn: (code: string) =>
+      apiRequest("/api/admin/reset-revenue", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      setIsResetDialogOpen(false);
+      setResetCode("");
+      toast({ title: "تم تصفير الإيرادات", description: "بدأت فترة حسابية جديدة بنجاح" });
+    },
+    onError: (err: any) => {
+      toast({ title: "العملية مرفوضة", description: "الرمز السري غير صحيح", variant: "destructive" });
+    }
+  });
+
   const categoriesQuery = useQuery<Array<{ id: string; name: string; icon: string | null }>>({
     queryKey: ["/api/categories"],
     queryFn: () => apiRequest("/api/categories"),
@@ -602,7 +622,11 @@ export default function AdminPage() {
     
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    const revenueOrders = data.orders.filter(order => order.status !== "cancelled");
+    const resetDate = settingsQuery.data?.revenueResetDate ? new Date(settingsQuery.data.revenueResetDate).getTime() : 0;
+    const revenueOrders = data.orders.filter(order => {
+      const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+      return order.status !== "cancelled" && t >= resetDate;
+    });
     
     const filteredTotal = revenueOrders.reduce((acc, order) => {
       const orderTime = order.createdAt ? new Date(order.createdAt).getTime() : 0;
@@ -637,7 +661,7 @@ export default function AdminPage() {
     });
 
     return { total: filteredTotal, chartData };
-  }, [data?.orders, revenueFilter]);
+  }, [data?.orders, revenueFilter, settingsQuery.data]);
 
   const getCategoryName = (id: string) => {
     return data?.topCategories.find((c) => c.id === id)?.name || id;
@@ -1058,21 +1082,61 @@ export default function AdminPage() {
                         </div>
                         <p className="font-bold text-gray-800">إجمالي المبيعات</p>
                       </div>
-                      <div className="flex bg-white/60 rounded-lg p-1">
-                        {[
-                          { id: 'today', label: 'اليوم' },
-                          { id: 'week', label: 'الأسبوع' },
-                          { id: 'month', label: 'الشهر' },
-                          { id: 'all', label: 'الكل' }
-                        ].map((f) => (
-                           <button 
-                             key={f.id} 
-                             onClick={() => setRevenueFilter(f.id as any)}
-                             className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-900")}
-                           >
-                              {f.label}
-                           </button>
-                        ))}
+                      <div className="flex items-center gap-2">
+                        <div className="flex bg-white/60 rounded-lg p-1">
+                          {[
+                            { id: 'today', label: 'اليوم' },
+                            { id: 'week', label: 'الأسبوع' },
+                            { id: 'month', label: 'الشهر' },
+                            { id: 'all', label: 'الكل' }
+                          ].map((f) => (
+                             <button 
+                               key={f.id} 
+                               onClick={() => setRevenueFilter(f.id as any)}
+                               className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-900")}
+                             >
+                                {f.label}
+                             </button>
+                          ))}
+                        </div>
+                        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/40 text-orange-700 hover:bg-white hover:text-orange-900 border border-white/50 shadow-sm transition-all" title="تصفير الإيرادات">
+                              <RotateCcw className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-[400px] w-[95%] rounded-[1.5rem] md:rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
+                            <DialogHeader className="text-right sm:text-right space-y-2">
+                              <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700 w-fit">
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                إجراء حساس
+                              </div>
+                              <DialogTitle className="text-xl md:text-2xl font-black text-foreground">تصفير الإيرادات</DialogTitle>
+                              <DialogDescription className="text-sm font-medium leading-relaxed">
+                                سيتم استثناء جميع الطلبات السابقة من حساب الإيرادات والبدء في دورة حسابية جديدة من الصفر. يرجى إدخال الرمز السري للتأكيد.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-6 space-y-5">
+                              <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700 block pr-1">الرمز السري</label>
+                                <Input 
+                                  type="password" 
+                                  placeholder="أدخل رمز التصفير" 
+                                  value={resetCode} 
+                                  onChange={(e) => setResetCode(e.target.value)}
+                                  className="text-center h-12 rounded-xl border-gray-200 focus:border-orange-300 text-lg tracking-widest"
+                                />
+                              </div>
+                              <Button 
+                                onClick={() => resetRevenueMutation.mutate(resetCode)} 
+                                disabled={resetRevenueMutation.isPending || !resetCode}
+                                className="w-full h-12 rounded-xl font-black text-lg shadow-lg bg-orange-600 hover:bg-orange-700 shadow-orange-200 transition-all hover:scale-[1.02]"
+                              >
+                                {resetRevenueMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "تأكيد وبدء دورة جديدة"}
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     </div>
                     <p className="text-3xl md:text-4xl font-black tracking-tight text-orange-950 mb-6">{formatPrice(revenueData.total)}</p>
@@ -1856,6 +1920,7 @@ export default function AdminPage() {
                       shippingFee: Number(formData.get("shippingFee")) || 0,
                       freeShippingThreshold: Number(formData.get("freeShippingThreshold")) || 0,
                       announcementText: formData.get("announcementText") as string,
+                      revenueResetCode: formData.get("revenueResetCode") as string,
                     });
                   }}
                 >
@@ -1939,6 +2004,18 @@ export default function AdminPage() {
                       required
                       className="text-right"
                     />
+                  </div>
+
+                  <div className="space-y-2 border-t pt-4">
+                    <label className="text-sm font-bold block text-right">رمز تصفير الإيرادات (سري)</label>
+                    <Input
+                      name="revenueResetCode"
+                      defaultValue={settingsQuery.data?.revenueResetCode || "1234"}
+                      required
+                      className="text-right"
+                      placeholder="أدخل رمزاً سرياً للتصفير"
+                    />
+                    <p className="text-xs text-muted-foreground text-right">استخدم هذا الرمز عندما تريد "بدء دورة أرباح جديدة" من لوحة التحكم.</p>
                   </div>
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div className="space-y-2">

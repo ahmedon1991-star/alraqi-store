@@ -707,12 +707,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/admin/overview", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const [products, categories, allOrders, allMessages] = await Promise.all([
+      const [products, categories, allOrders, allMessages, settings] = await Promise.all([
         storage.getProducts(),
         storage.getCategories(),
         storage.getAllOrders(),
         storage.getMessages(),
+        storage.getAdminSettings(),
       ]);
+
+      const resetDate = settings?.revenueResetDate ? new Date(settings.revenueResetDate).getTime() : 0;
 
       const sortedOrders = [...allOrders].sort((a: Order, b: Order) => {
         const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -721,7 +724,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
 
       const revenue = allOrders
-        .filter((order: Order) => order.status !== "cancelled")
+        .filter((order: Order) => {
+          const t = order.createdAt ? new Date(order.createdAt).getTime() : 0;
+          return order.status !== "cancelled" && t >= resetDate;
+        })
         .reduce((sum: number, order: Order) => sum + order.total, 0);
       const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
       const unreadMessages = allMessages.filter((msg) => !msg.isRead).length;
@@ -860,6 +866,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(404).json({ message: "المنتج غير موجود" });
     }
 
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/reset-revenue", requireAdmin, async (req: Request, res: Response) => {
+    const { code } = req.body as { code?: string };
+    const settings = await storage.getAdminSettings();
+    if (!settings || code !== settings.revenueResetCode) {
+      return res.status(403).json({ message: "الرمز السري غير صحيح" });
+    }
+    await storage.resetRevenue();
     res.json({ success: true });
   });
 
