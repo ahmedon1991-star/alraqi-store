@@ -27,6 +27,8 @@ import {
   Phone,
   Truck,
   Volume2,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { Navbar } from "@/components/layout/navbar";
@@ -317,6 +319,7 @@ export default function AdminPage() {
       shippingFee?: number;
       freeShippingThreshold?: number;
       announcementText?: string;
+      revenueResetCode?: string;
     }) =>
       apiRequest("/api/admin/settings", {
         method: "POST",
@@ -1354,7 +1357,7 @@ export default function AdminPage() {
                              <Badge variant="outline" className={cn("rounded-full text-[10px] h-5 px-2 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
                                المخزون: {product.stock || 0}
                              </Badge>
-                             <Badge variant="ghost" className="text-primary/70 bg-primary/5 rounded-full h-5 text-[10px] font-bold">
+                             <Badge variant="secondary" className="text-primary/70 bg-primary/5 rounded-full h-5 text-[10px] font-bold">
                                {getCategoryName(product.category)}
                              </Badge>
                           </div>
