@@ -124,8 +124,10 @@ export interface IStorage {
 
   createOrder(order: InsertOrder): Promise<Order>;
   getOrders(sessionId: string): Promise<Order[]>;
+  getOrderById(id: string): Promise<Order | undefined>;
   getAllOrders(): Promise<Order[]>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
+  incrementProductStock(id: string, quantity: number): Promise<void>;
 
   getAdminSettings(): Promise<AdminSettings | undefined>;
   updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings>;
@@ -429,6 +431,12 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(orders).where(eq(orders.sessionId, sessionId));
   }
 
+  async getOrderById(id: string): Promise<Order | undefined> {
+    if (!db) return undefined;
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
   async getAllOrders(): Promise<Order[]> {
     if (!db) {
       return [];
@@ -437,9 +445,50 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(orders);
   }
 
+  async incrementProductStock(id: string, dx: number): Promise<void> {
+    if (!db) return;
+    const product = await this.getProductById(id);
+    if (!product) return;
+    
+    const newStock = (product.stock || 0) + dx;
+    console.log(`📦 DB_STORAGE: Restoring stock for "${product.name}" (${id}): ${product.stock} -> ${newStock}`);
+    await db.update(products)
+      .set({ 
+        stock: newStock,
+        inStock: newStock > 0 
+      })
+      .where(eq(products.id, id));
+  }
+
   async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
-    if (!db) {
-      return undefined;
+    if (!db) return undefined;
+
+    const order = await this.getOrderById(id);
+    if (!order) return undefined;
+
+    const previousStatus = order.status;
+    
+    // Logic for returning/deducting stock based on status changes
+    if (status === "cancelled" && previousStatus !== "cancelled") {
+      try {
+        const itemsData = JSON.parse(order.items || "[]");
+        console.log(`📦 DB_STORAGE: Order ${id} cancelled. Restoring stock for ${itemsData.length} items.`);
+        for (const item of itemsData) {
+          if (item.id) await this.incrementProductStock(item.id, item.quantity || 1);
+        }
+      } catch (e) {
+        console.error("Error restoring stock on cancellation:", e);
+      }
+    } else if (previousStatus === "cancelled" && status !== "cancelled") {
+      try {
+        const itemsData = JSON.parse(order.items || "[]");
+        console.log(`📦 DB_STORAGE: Order ${id} restored from cancelled. Deducting stock again.`);
+        for (const item of itemsData) {
+          if (item.id) await this.decrementProductStock(item.id, item.quantity || 1);
+        }
+      } catch (e) {
+        console.error("Error decrementing stock on order restore:", e);
+      }
     }
 
     const [updated] = await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id)).returning();
@@ -834,14 +883,52 @@ export class MemoryStorage implements IStorage {
     return Array.from(this.orders.values()).filter((order) => order.sessionId === sessionId);
   }
 
+  async getOrderById(id: string): Promise<Order | undefined> {
+    return this.orders.get(id);
+  }
+
   async getAllOrders(): Promise<Order[]> {
     return Array.from(this.orders.values());
+  }
+
+  async incrementProductStock(id: string, dx: number): Promise<void> {
+    const product = this.products.get(id);
+    if (!product) return;
+    const newStock = (product.stock || 0) + dx;
+    this.products.set(id, { 
+      ...product, 
+      stock: newStock,
+      inStock: newStock > 0 
+    });
   }
 
   async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
     const existing = this.orders.get(id);
     if (!existing) {
       return undefined;
+    }
+
+    const previousStatus = existing.status;
+    
+    // Status Logic for Stock
+    if (status === "cancelled" && previousStatus !== "cancelled") {
+      try {
+        const itemsData = JSON.parse(existing.items || "[]");
+        for (const item of itemsData) {
+          if (item.id) await this.incrementProductStock(item.id, item.quantity || 1);
+        }
+      } catch (e) {
+        console.error("Error restoring stock on cancellation:", e);
+      }
+    } else if (previousStatus === "cancelled" && status !== "cancelled") {
+      try {
+        const itemsData = JSON.parse(existing.items || "[]");
+        for (const item of itemsData) {
+          if (item.id) await this.decrementProductStock(item.id, item.quantity || 1);
+        }
+      } catch (e) {
+        console.error("Error decrementing stock on order restore:", e);
+      }
     }
 
     const updated: Order = { ...existing, status, updatedAt: new Date() };

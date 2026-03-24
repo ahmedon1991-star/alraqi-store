@@ -720,7 +720,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return bTime - aTime;
       });
 
-      const revenue = allOrders.reduce((sum: number, order: Order) => sum + order.total, 0);
+      const revenue = allOrders
+        .filter((order: Order) => order.status !== "cancelled")
+        .reduce((sum: number, order: Order) => sum + order.total, 0);
       const pendingOrders = allOrders.filter((order: Order) => order.status === "pending");
       const unreadMessages = allMessages.filter((msg) => !msg.isRead).length;
       
