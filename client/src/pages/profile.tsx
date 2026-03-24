@@ -127,7 +127,7 @@ export default function ProfilePage() {
       const credential = await navigator.credentials.create({
         publicKey: {
           challenge: new Uint8Array([1, 2, 3, 4]).buffer,
-          rp: { name: "الراقي للمنتجات السودانية" },
+          rp: { name: "الراقي للمنتجات الغذائية" },
           user: {
             id: new Uint8Array([1, 2, 3, 4]).buffer,
             name: user?.email || "user",

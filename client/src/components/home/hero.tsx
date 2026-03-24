@@ -22,7 +22,7 @@ export function Hero() {
         <div className="flex flex-col gap-8 text-white max-w-2xl order-2 lg:order-1 text-center lg:text-right">
           <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary/30 text-white w-fit mx-auto lg:mx-0 text-sm md:text-base font-black backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-top duration-1000 shadow-2xl">
             <Sparkles className="h-5 w-5 text-amber-400" />
-            <span>وجهتك الأولى للمنتجات السودانية الأصيلة</span>
+            <span>وجهتك الأولى للمنتجات الغذائية الأصيلة</span>
           </div>
           
           <div className="space-y-6">
@@ -35,7 +35,7 @@ export function Hero() {
           </div>
           
           <p className="text-sm md:text-2xl text-gray-100/90 leading-relaxed font-bold animate-in fade-in slide-in-from-right duration-1000 delay-600 max-w-xl lg:mr-0 lg:ml-auto drop-shadow-md">
-            نقدم لكم أجود أنواع التوابل والأغذية والمنتجات الطبيعية من قلب السودان مباشرة إلى منزلكم. 
+            نقدم لكم أجود أنواع التوابل والأغذية والمنتجات الطبيعية والغذائية المختارة بعناية فائقة مباشرة إلى منزلكم. 
             أصالة الطعم، جودة التغليف، وسرعة التوصيل.
           </p>
           

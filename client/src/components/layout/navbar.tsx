@@ -132,7 +132,7 @@ export function Navbar() {
              <form onSubmit={(e) => e.preventDefault()} className="relative">
                 <Input
                   autoFocus
-                  placeholder="ابحث عن المنتجات السودانية..."
+                  placeholder="ابحث عن المنتجات الغذائية..."
                   className="rounded-2xl border-primary/20 bg-muted/30 focus-visible:ring-primary/20 h-12 pr-10 text-right"
                   value={mobileSearchTerm}
                   onChange={(e) => handleSearch(e.target.value)}

@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       injectRegister: "auto",
       manifest: {
-        name: "الراقي للمنتجات السودانية",
+        name: "الراقي للمنتجات الغذائية",
         short_name: "الراقي",
-        description: "متجرك الأول للمنتجات السودانية الأصيلة من قلب المزارع مباشرة",
+        description: "متجرك الأول للمنتجات الغذائية الأصيلة من قلب المزارع مباشرة",
         theme_color: "#1B705C",
         background_color: "#FDFBF7",
         display: "standalone",

@@ -140,7 +140,7 @@ export default function AdminLoginPage() {
               
               <div className="mt-8 text-center">
                 <p className="text-xs text-muted-foreground font-medium">
-                  © {new Date().getFullYear()} متجر الراقي السوداني. جميع الحقوق محفوظة.
+                  © {new Date().getFullYear()} متجر الراقي الغذائي. جميع الحقوق محفوظة.
                 </p>
               </div>
             </CardContent>

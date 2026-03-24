@@ -1087,7 +1087,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
 
-    const message = `🌿 *الراقي للمنتجات السودانية*%0A🔖 *للتميز والفخامة*%0A%0A` +
+    const message = `🌿 *الراقي للمنتجات الغذائية*%0A🔖 *للتميز والفخامة*%0A%0A` +
       `━━━━━━━━━━━━━━━━━━%0A` +
       `📋 *فاتورة طلب جديدة*%0A` +
       `🔢 رقم الطلب: *${orderNumber}*%0A` +

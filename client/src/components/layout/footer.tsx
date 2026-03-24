@@ -31,7 +31,7 @@ export function Footer() {
               </div>
             </div>
             <p className="text-muted-foreground leading-relaxed text-sm font-medium">
-              منصتك الأولى لتسوق المنتجات السودانية الأصيلة. نجمع لك خيرات السودان في مكان واحد، بجودة عالية وتوصيل سريع يليق بعملائنا.
+              منصتك الأولى لتسوق أجود المنتجات الغذائية والطبيعية. نجمع لك أفضل المنتجات في مكان واحد، بجودة عالية وتوصيل سريع يليق بعملائنا.
             </p>
             <div className="flex gap-2 mt-2">
               {settings?.facebook && (
@@ -100,11 +100,11 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-primary" />
-                <span>{settings?.email || "info@alraqi-sudanese.com"}</span>
+                <span>{settings?.email || "info@alraqi-store.com"}</span>
               </li>
               <li className="flex items-start gap-3 w-full md:w-auto">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
-                <span>{settings?.address || "الخرطوم، السودان - شارع النيل"}</span>
+                <span>{settings?.address || "المملكة العربية السعودية - جدة"}</span>
               </li>
             </ul>
           </div>
@@ -114,7 +114,7 @@ export function Footer() {
       {/* Bottom Bar */}
       <div className="border-t py-6 pb-24 md:pb-6 bg-gray-50/50">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium text-muted-foreground">
-          <p>© 2024 الراقي للمنتجات السودانية. جميع الحقوق محفوظة.</p>
+          <p>© 2024 الراقي للمنتجات الغذائية. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-primary">سياسة الخصوصية</a>
             <a href="#" className="hover:text-primary">الشروط والأحكام</a>

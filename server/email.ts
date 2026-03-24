@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_FROM = process.env.SMTP_FROM || '"الراقي للمنتجات السودانية" <noreply@alraqi-store.com>';
+const SMTP_FROM = process.env.SMTP_FROM || '"الراقي للمنتجات الغذائية" <noreply@alraqi-store.com>';
 
 const transporter = (SMTP_HOST && SMTP_USER && SMTP_PASS) 
   ? nodemailer.createTransport({
@@ -44,7 +44,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string, u
         <p style="font-size: 14px; color: #888;">إذا لم تطلب هذا التغيير، يمكنك تجاهل هذه الرسالة بأمان.</p>
       </div>
       <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e1e7ec;">
-        <p style="font-size: 12px; color: #999; margin: 0;">&copy; 2026 الراقي للمنتجات السودانية. جميع الحقوق محفوظة.</p>
+        <p style="font-size: 12px; color: #999; margin: 0;">&copy; 2026 الراقي للمنتجات الغذائية. جميع الحقوق محفوظة.</p>
       </div>
     </div>
   `;

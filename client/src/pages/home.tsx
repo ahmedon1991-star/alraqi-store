@@ -108,7 +108,7 @@ export default function Home() {
                 <Truck className="h-6 w-6 md:h-10 md:w-10" />
               </div>
               <h3 className="text-xs md:text-2xl font-black mb-1 md:mb-4 text-slate-800">شحن سريع</h3>
-              <p className="text-[10px] md:text-lg text-muted-foreground/80 leading-relaxed font-medium">توصيل آمن لكل ولايات السودان</p>
+              <p className="text-[10px] md:text-lg text-muted-foreground/80 leading-relaxed font-medium">توصيل آمن وبسرعة فائقة حتى باب بيتك</p>
             </div>
             <div className="flex flex-col items-center text-center p-4 md:p-10 rounded-3xl md:rounded-[2rem] bg-white border border-border/50 hover:shadow-2xl hover:border-primary/20 transition-all duration-500 shadow-sm hover:-translate-y-2">
               <div className="w-12 h-12 md:w-20 md:h-20 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 md:mb-8 shadow-inner">
