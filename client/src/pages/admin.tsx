@@ -202,32 +202,38 @@ export default function AdminPage() {
 
     setIsUploading(true);
     
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        
-        try {
-          if (target === "product") {
-            setForm(prev => ({ ...prev, image: base64String }));
-          }
-          toast({ title: "تم معالجة الصورة بنجاح" });
-          resolve(base64String);
-        } catch (err: any) {
-          toast({ title: "خطأ في معالجة الصورة", description: err.message, variant: "destructive" });
-          resolve(undefined);
-        } finally {
-          setIsUploading(false);
+    return new Promise(async (resolve) => {
+      try {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: {
+            "x-admin-token": getAdminToken() || "",
+          },
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error("فشل رفع الصورة");
         }
-      };
 
-      reader.onerror = () => {
-        toast({ title: "خطأ في قراءة ملف الصورة", variant: "destructive" });
-        setIsUploading(false);
+        const data = await res.json();
+        const imageUrl = data.url;
+
+        if (target === "product") {
+          setForm(prev => ({ ...prev, image: imageUrl }));
+        }
+        
+        toast({ title: "تم رفع الصورة بنجاح" });
+        resolve(imageUrl);
+      } catch (err: any) {
+        toast({ title: "خطأ في رفع الصورة", description: err.message, variant: "destructive" });
         resolve(undefined);
-      };
-
-      reader.readAsDataURL(file);
+      } finally {
+        setIsUploading(false);
+      }
     });
   };
 

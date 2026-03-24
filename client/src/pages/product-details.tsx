@@ -11,7 +11,7 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { useCurrentUser } from "@/hooks/use-auth";
-import { useWishlist } from "../hooks/use-wishlist";
+import { useWishlist } from "@/hooks/use-wishlist";
 
 export default function ProductDetails() {
   const [, params] = useRoute("/product/:id");
