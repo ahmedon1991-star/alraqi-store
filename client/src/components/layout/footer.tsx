@@ -113,7 +113,7 @@ export function Footer() {
               <li className="flex items-start gap-3 w-full md:w-auto">
                 <MapPin className="h-5 w-5 text-primary shrink-0" />
                 <span className="text-right">
-                  {settings?.address || "جمهورية السودان، الخرطوم"}
+                  {settings?.address || "السودان، دنقلا، سوق البرقيق"}
                 </span>
               </li>
             </ul>

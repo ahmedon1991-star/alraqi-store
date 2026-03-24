@@ -968,7 +968,7 @@ export class MemoryStorage implements IStorage {
         phone: "+249 11 558 8350",
         username: process.env.ADMIN_USERNAME || "admin",
         password: process.env.ADMIN_PASSWORD || "admin12345",
-        address: "جمهورية السودان، الخرطوم، شارع النيل",
+        address: "السودان، دنقلا، سوق البرقيق",
         facebook: "https://facebook.com",
         instagram: "https://instagram.com",
         twitter: "https://twitter.com",
