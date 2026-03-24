@@ -11,8 +11,8 @@ import { useEffect } from "react";
 
 export default function Home() {
   const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["/api/products"],
-    queryFn: () => apiRequest("/api/products"),
+    queryKey: ["/api/products", { limit: 12 }],
+    queryFn: () => apiRequest("/api/products?limit=12"),
   });
 
   const { data: categoriesData } = useQuery({
@@ -24,7 +24,7 @@ export default function Home() {
     seedDatabase().catch(() => {});
   }, []);
 
-  const featuredProducts = (productsData || []).slice(0, 4);
+  const featuredProducts = productsData || [];
   const cats = categoriesData || [];
 
   return (

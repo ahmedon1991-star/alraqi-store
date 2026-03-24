@@ -43,6 +43,10 @@ export async function runMigrations() {
     // admin_settings: add password_token if missing
     await pool.query(`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS password_token text`);
 
+    // admin_settings: add revenue_reset_date and revenue_reset_code if missing
+    await pool.query(`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS revenue_reset_date timestamp DEFAULT now()`);
+    await pool.query(`ALTER TABLE admin_settings ADD COLUMN IF NOT EXISTS revenue_reset_code text NOT NULL DEFAULT '1234'`);
+
     // users: add biometric_token if missing
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS biometric_token text`);
     await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS biometric_enabled boolean DEFAULT false`);
@@ -60,9 +64,9 @@ export async function runMigrations() {
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
 
     await pool.query(`
-      INSERT INTO admin_settings (id, username, password, email, phone, address, facebook, instagram, twitter, shipping_fee, free_shipping_threshold, announcement_text)
-      VALUES (1, $1, $2, 'admin@example.com', '+249912345678', 'الخرطوم، السودان', 'https://facebook.com', 'https://instagram.com', 'https://twitter.com', 0, 50000, 'خصم حصري 20% لفترة محدودة!')
-      ON CONFLICT (id) DO UPDATE SET username = $1, password = $2
+      INSERT INTO admin_settings (id, username, password, email, phone, address, facebook, instagram, twitter, shipping_fee, free_shipping_threshold, announcement_text, revenue_reset_code)
+      VALUES (1, $1, $2, 'admin@example.com', '+249912345678', 'الخرطوم، السودان', 'https://facebook.com', 'https://instagram.com', 'https://twitter.com', 0, 50000, 'خصم حصري 20% لفترة محدودة!', '1234')
+      ON CONFLICT (id) DO UPDATE SET username = $1, password = $2, revenue_reset_code = COALESCE(admin_settings.revenue_reset_code, '1234')
     `, [ADMIN_USERNAME, ADMIN_PASSWORD]);
 
     console.log(`✅ MIGRATIONS: All migrations complete. Admin: ${ADMIN_USERNAME}`);

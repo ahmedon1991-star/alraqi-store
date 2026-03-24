@@ -898,7 +898,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
       const category = req.query.category as string | undefined;
-      const result = category ? await storage.getProductsByCategory(category) : await storage.getProducts();
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const result = category ? await storage.getProductsByCategory(category, limit) : await storage.getProducts(limit);
       res.json(result);
     } catch (error) {
       console.error("❌ Database connection error fetching products:", error);

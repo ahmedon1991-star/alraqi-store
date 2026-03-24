@@ -1314,7 +1314,7 @@ export default function AdminPage() {
                 axis="y"
                 values={filteredProducts}
                 onReorder={(newOrder) => {
-                   // Optimistic update
+                   // Local optimistic update
                    queryClient.setQueryData(["/api/admin/overview"], (prev: any) => ({
                      ...prev,
                      products: prev.products.map((p: any) => {
@@ -1322,11 +1322,17 @@ export default function AdminPage() {
                         return newIdx !== -1 ? newOrder[newIdx] : p;
                      })
                    }));
-                   // Call API
-                   apiRequest("/api/admin/products/reorder", {
-                     method: "POST",
-                     body: JSON.stringify({ ids: newOrder.map(p => p.id) })
-                   });
+
+                   // Debounced API call to prevent spamming during drag
+                   const timer = (window as any).reorderTimer;
+                   if (timer) clearTimeout(timer);
+                   
+                   (window as any).reorderTimer = setTimeout(() => {
+                      apiRequest("/api/admin/products/reorder", {
+                        method: "POST",
+                        body: JSON.stringify({ ids: newOrder.map(p => p.id) })
+                      });
+                   }, 500);
                 }}
                 className="space-y-4"
               >

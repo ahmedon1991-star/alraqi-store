@@ -101,9 +101,9 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   updateUserLastActive(id: string): Promise<void>;
 
-  getProducts(): Promise<Product[]>;
+  getProducts(limit?: number): Promise<Product[]>;
   getProductById(id: string): Promise<Product | undefined>;
-  getProductsByCategory(category: string): Promise<Product[]>;
+  getProductsByCategory(category: string, limit?: number): Promise<Product[]>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<Product | undefined>;
@@ -215,12 +215,16 @@ export class DatabaseStorage implements IStorage {
     await db.update(users).set({ lastActive: new Date() }).where(eq(users.id, id));
   }
 
-  async getProducts(): Promise<Product[]> {
+  async getProducts(limit?: number): Promise<Product[]> {
     if (!db) {
       return [];
     }
 
-    return db.select().from(products).orderBy(asc(products.sortOrder));
+    let query = db.select().from(products).orderBy(asc(products.sortOrder));
+    if (limit) {
+      return query.limit(limit);
+    }
+    return query;
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
@@ -232,12 +236,16 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
+  async getProductsByCategory(category: string, limit?: number): Promise<Product[]> {
     if (!db) {
       return [];
     }
 
-    return db.select().from(products).where(eq(products.category, category)).orderBy(asc(products.sortOrder));
+    let query = db.select().from(products).where(eq(products.category, category)).orderBy(asc(products.sortOrder));
+    if (limit) {
+      return query.limit(limit);
+    }
+    return query;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
@@ -692,18 +700,20 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  async getProducts(limit?: number): Promise<Product[]> {
+    const all = Array.from(this.products.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return limit ? all.slice(0, limit) : all;
   }
 
   async getProductById(id: string): Promise<Product | undefined> {
     return this.products.get(id);
   }
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
-    return Array.from(this.products.values())
+  async getProductsByCategory(category: string, limit?: number): Promise<Product[]> {
+    const filtered = Array.from(this.products.values())
       .filter((product) => product.category === category)
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return limit ? filtered.slice(0, limit) : filtered;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {
