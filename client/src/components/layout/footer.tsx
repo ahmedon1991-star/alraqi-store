@@ -94,9 +94,17 @@ export function Footer() {
           <div className="col-span-1">
             <h3 className="font-bold text-lg mb-6 text-foreground">تواصل معنا</h3>
             <ul className="flex flex-wrap gap-x-8 gap-y-4 md:block md:space-y-4 text-sm text-muted-foreground font-medium text-right">
-              <li className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-primary" />
-                <span dir="ltr">{settings?.phone || "+249 91 234 5678"}</span>
+              <li className="flex items-center gap-3 group">
+                <Phone className="h-5 w-5 text-primary group-hover:scale-110 transition-transform" />
+                <a 
+                  href={`https://wa.me/249115588350`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors cursor-pointer"
+                  dir="ltr"
+                >
+                  {settings?.phone || "+249 11 558 8350"} (واتساب)
+                </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-primary" />
