@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://alraqi-store.onrender.com/sitemap.xml
