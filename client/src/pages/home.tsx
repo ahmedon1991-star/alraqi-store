@@ -10,9 +10,9 @@ import { apiRequest, seedDatabase } from "@/lib/api";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ["/api/products", { limit: 12 }],
-    queryFn: () => apiRequest("/api/products?limit=12"),
+  const { data: productsData, isLoading: productsLoading } = useQuery<any[]>({
+    queryKey: ["/api/products"],
+    queryFn: () => apiRequest("/api/products"),
   });
 
   const { data: categoriesData } = useQuery({
@@ -66,24 +66,57 @@ export default function Home() {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 pointer-events-none" />
 
           <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-primary font-bold tracking-wider text-sm uppercase mb-2 block">منتجات مختارة</span>
-              <h2 className="text-4xl font-black text-foreground mb-4">الأكثر طلباً هذا الأسبوع</h2>
-              <p className="text-muted-foreground text-lg">تشكيلة مميزة من المنتجات التي نالت استحسان عملائنا</p>
+            {/* الأقسام السحابية - عرض المنتجات حسب كل قسم */}
+        <section className="py-8 md:py-16 container mx-auto px-4 space-y-16">
+          {cats.map((cat: any) => {
+            const categoryProducts = featuredProducts?.filter((p: any) => p.category === cat.id) || [];
+            if (categoryProducts.length === 0) return null;
+
+            return (
+              <div key={cat.id} className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl md:text-2xl shadow-sm">
+                      {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
+                        <img src={cat.icon} alt={cat.name} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                      ) : (
+                        cat.icon || "📦"
+                      )}
+                    </div>
+                    <h2 className="text-xl md:text-2xl font-black text-foreground">{cat.name}</h2>
+                  </div>
+                  <Link href={`/shop?category=${cat.id}`}>
+                    <Button variant="ghost" className="text-primary font-bold hover:bg-primary/5 rounded-full px-4">
+                      عرض الكل <ArrowLeft className="mr-2 h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-4 snap-x">
+                  {categoryProducts.map((product: any) => (
+                    <div key={product.id} className="flex-shrink-0 w-[160px] md:w-[240px] snap-start mb-2">
+                      <ProductCard {...product} />
+                    </div>
+                  ))}
+                  <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[140px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-4 rounded-[2rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group cursor-pointer h-full min-h-[220px] md:min-h-[350px]">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <ArrowLeft className="h-6 w-6 md:h-8 md:h-8" />
+                    </div>
+                    <span className="font-bold text-sm md:text-base text-primary">مشاهدة المزيد</span>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </section>
+
+        {productsLoading && (
+          <section className="py-20 container mx-auto px-4">
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-10 w-10 animate-spin text-primary" />
             </div>
-
-            {productsLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                {featuredProducts.map((product: any) => (
-                  <ProductCard key={product.id} {...product} />
-                ))}
-              </div>
-            )}
-
+          </section>
+        )}
             <div className="mt-16 text-center">
               <Link href="/shop">
                 <Button size="lg" className="rounded-full px-8 h-12 text-lg font-bold shadow-lg shadow-primary/20">

@@ -41,7 +41,11 @@ export default function Cart() {
   
   const shippingFeeBase = Number(adminSettings?.shippingFee) || 0;
   const freeShippingThreshold = Number(adminSettings?.freeShippingThreshold) || 0;
-  const isFreeShipping = (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || shippingFeeBase === 0;
+  
+  // Logic: Congratulations only if a threshold was SET and MET
+  const isThresholdMet = freeShippingThreshold > 0 && subtotal >= freeShippingThreshold;
+  // Final shipping is 0 if threshold met OR if base fee is 0
+  const isFreeShipping = isThresholdMet || shippingFeeBase === 0;
   const shipping = cartItems.length > 0 && !isFreeShipping ? shippingFeeBase : 0;
   const total = subtotal + shipping;
 
@@ -191,8 +195,14 @@ export default function Cart() {
                     <span>المجموع الفرعي</span>
                     <span className="font-mono">{subtotal.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>{isFreeShipping ? <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-0.5 rounded-full">تهانينا! شحن مجاني 🎉</span> : <span className="font-mono">{shipping.toLocaleString()}</span>}</span>
+                  <div className="flex justify-between text-muted-foreground items-center">
+                    <span>
+                      {isThresholdMet ? (
+                        <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-0.5 rounded-full border border-green-200">تهانينا! شحن مجاني 🎉</span>
+                      ) : (
+                        isFreeShipping ? <span className="text-green-600 font-bold">مجاني</span> : <span className="font-mono">{shipping.toLocaleString()}</span>
+                      )}
+                    </span>
                     <span>الشحن</span>
                   </div>
                   <div className="h-px bg-border my-2"></div>
