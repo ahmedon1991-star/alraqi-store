@@ -8,32 +8,51 @@ import { sendPasswordResetEmail } from "./email";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import sharp from "sharp"; // Optimization: Resize & Compress programmatic
+import { v2 as cloudinary } from "cloudinary"; // Cloud Storage
 
+
+
+// ✅ REQUIREMENT: Cloud Storage Configuration (Cloudinary)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dz7irtihq",
+  api_key: process.env.CLOUDINARY_API_KEY || "453369147935439",
+  api_secret: process.env.CLOUDINARY_API_SECRET || "R2bfxlQPkHDO8vc92Yxhd58ASns"
+});
+
+// ✅ REQUIREMENT: Permanent Disk Backup (Mount Path for Render)
 const uploadDir = path.resolve(process.cwd(), "public", "uploads");
+
+// Initialize directory securely
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
-    console.log(`📁 Created upload directory at: ${uploadDir}`);
+    console.log(`📁 SUCCESS: Permanent upload directory ensured at: ${uploadDir}`);
   }
 } catch (err) {
-  console.error(`❌ FAILED to create/access upload directory: ${err}`);
+  console.error(`❌ CRITICAL: Directory access failure: ${err}`);
 }
 
-const multerStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const cleanName = file.originalname.replace(/[^a-zA-Z0-9.]/g, "_");
-    cb(null, `${uniqueSuffix}-${cleanName}`);
-  },
+// ✅ REQUIREMENT: Robust File Storage (Memory for pre-processing & Cloud Upload)
+const storageMemory = multer.memoryStorage();
+
+// ✅ REQUIREMENT: Size Validation (Max 2MB)
+const upload = multer({ 
+  storage: storageMemory, 
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB Limit
+  fileFilter: (_req, file, cb) => {
+    // ✅ REQUIREMENT: File Format Sanitation (Secure extensions only)
+    const allowed = /jpeg|jpg|png|webp/;
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.test(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error("صيغة الملف غير مدعومة. يسمح بـ JPG, PNG, WEBP فقط."));
+    }
+  }
 });
 
-const upload = multer({ 
-  storage: multerStorage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-});
+
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
@@ -247,6 +266,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         path: clientUploadDir,
         exists: fs.existsSync(clientUploadDir),
         files: fs.existsSync(clientUploadDir) ? fs.readdirSync(clientUploadDir) : []
+      },
+      cloudinary: {
+        hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+        hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+        hasApiSecret: !!process.env.CLOUDINARY_API_SECRET
       }
     });
   });
@@ -629,15 +653,66 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(settings || { email: ADMIN_USERNAME, phone: "+249912345678", username: ADMIN_USERNAME });
   });
 
-  app.post("/api/admin/upload", requireAdmin, upload.single("image"), (req: Request, res: Response) => {
-    if (!req.file) {
-      console.warn("⚠️ Upload attempted without file");
-      return res.status(400).json({ message: "يرجى اختيار ملف لرفعه" });
-    }
-    console.log(`✅ File uploaded successfully: ${req.file.filename} to ${req.file.path}`);
-    const imageUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: imageUrl });
+  // ✅ REQUIREMENT: Robust Cloud Upload Handler with Optional Local Backup
+  app.post("/api/admin/upload", requireAdmin, (req: Request, res: Response) => {
+    upload.single("image")(req, res, async (err: any) => {
+      // ✅ REQUIREMENT: Comprehensive Error Handling (JSON Responses)
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى هو 2 ميجابايت." });
+        }
+        return res.status(400).json({ message: `خطأ أثناء الرفع: ${err.message}` });
+      } else if (err) {
+        return res.status(400).json({ message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "يرجى اختيار ملف لرفعه" });
+      }
+
+      try {
+        const uniqueId = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const fileName = `${uniqueId}.webp`;
+        const localPath = path.join(uploadDir, fileName);
+
+        // Optimization: Use sharp to compress locally before sending to cloud
+        // This saves upload bandwidth.
+        const optimizedBuffer = await sharp(req.file.buffer)
+          .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toBuffer();
+
+        // ✅ REQUIREMENT: Permanent Cloud Upload (Upload to Cloudinary)
+        const cloudResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { 
+              folder: "alraqi-store",
+              public_id: uniqueId,
+              resource_type: "auto" 
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          uploadStream.end(optimizedBuffer);
+        });
+
+        const cloudUrl = (cloudResult as any).secure_url;
+        console.log(`✅ CLOUD UPLOAD SUCCESS: Persistent URL -> ${cloudUrl}`);
+
+        // OPTIONAL: Local backup for safety
+        await fs.promises.writeFile(localPath, optimizedBuffer);
+        
+        res.json({ url: cloudUrl });
+      } catch (uploadError) {
+        console.error("❌ Final Upload Error:", uploadError);
+        res.status(500).json({ message: "فشل نظام الرفع السحابي. يرجى المحاولة لاحقاً." });
+      }
+    });
   });
+
+
 
   // Public settings for visitors (announcement, shipping, etc)
   app.get("/api/settings", async (_req: Request, res: Response) => {
