@@ -13,13 +13,15 @@ import { apiRequest } from "@/lib/api";
 import { useState, useMemo, useEffect } from "react";
 import { useWishlist } from "@/hooks/use-wishlist";
 
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 export default function Shop() {
   const [location] = useLocation();
+  const search = useSearch();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([100]);
+  const [maxPriceValue] = useState(10000000); // no hard cap
   const [showWishlistOnly, setShowWishlistOnly] = useState(false);
   const [showOffersOnly, setShowOffersOnly] = useState(false);
   const { items: wishlistItems } = useWishlist();
@@ -39,7 +41,7 @@ export default function Shop() {
 
   // Check URL params for filters
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(search);
     if (params.get("wishlist") === "true") {
       setShowWishlistOnly(true);
     } else {
@@ -53,9 +55,9 @@ export default function Shop() {
       setSelectedCategories([]);
     }
 
-    const search = params.get("search");
-    if (search) {
-      setSearchTerm(search);
+    const searchParam = params.get("search");
+    if (searchParam) {
+      setSearchTerm(searchParam);
     } else {
       setSearchTerm("");
     }
@@ -65,7 +67,7 @@ export default function Shop() {
     } else {
       setShowOffersOnly(false);
     }
-  }, [location]);
+  }, [location, search]);
 
   const filteredProducts = useMemo(() => {
     let filtered = allProducts;
@@ -77,8 +79,11 @@ export default function Shop() {
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((p: any) => selectedCategories.includes(p.category));
     }
-    const maxPrice = priceRange[0] * 100;
-    filtered = filtered.filter((p: any) => p.price <= maxPrice);
+    // No price filter by default (slider is 0-100 mapped to 0-maxPriceValue)
+    if (priceRange[0] < 100) {
+      const maxPrice = (priceRange[0] / 100) * maxPriceValue;
+      filtered = filtered.filter((p: any) => p.price <= maxPrice);
+    }
 
     if (showWishlistOnly) {
       filtered = filtered.filter((p: any) => wishlistItems.includes(p.id));
@@ -154,11 +159,11 @@ export default function Shop() {
         </div>
       </div>
       <div className="space-y-4">
-        <h3 className="font-bold text-lg">السعر</h3>
+        <h3 className="font-bold text-lg">السعر (أقصى حد)</h3>
         <Slider value={priceRange} onValueChange={setPriceRange} max={100} step={1} className="py-4" />
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>0 ج.س</span>
-          <span>{(priceRange[0] * 100).toLocaleString()} ج.س</span>
+          <span>بدون حد</span>
+          <span>{priceRange[0] < 100 ? `${Math.round((priceRange[0] / 100) * maxPriceValue).toLocaleString()} ج.س` : "الكل"}</span>
         </div>
       </div>
     </div>
