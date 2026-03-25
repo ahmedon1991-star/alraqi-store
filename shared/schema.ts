@@ -51,6 +51,7 @@ export const products = pgTable("products", {
   measurements: text("measurements"), // e.g., "Weight: 1kg, Length: 50cm"
   stock: integer("stock").notNull().default(0),
   sortOrder: integer("sort_order").default(0),
+  originalPrice: integer("original_price"),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });

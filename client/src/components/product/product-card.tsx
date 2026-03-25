@@ -18,12 +18,17 @@ interface ProductProps {
   measurements?: string | null;
   stock?: number | null;
   inStock?: boolean | null;
+  originalPrice?: number | null;
 }
 
-export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements, stock, inStock }: ProductProps) {
+export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements, stock, inStock, originalPrice }: ProductProps) {
   const addToCart = useAddToCart();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  const discountBadge = originalPrice && originalPrice > price 
+    ? `${Math.round(((originalPrice - price) / originalPrice) * 100)}%` 
+    : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,14 +76,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         )}
 
         {/* Status Badges */}
-        {badge && (
-          <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[8px] md:text-xs font-black px-2 py-1 rounded-bl-xl md:rounded-bl-3xl shadow-md">
-            {badge}
+        {(discountBadge || badge) && (
+          <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[8px] md:text-sm font-black px-2 py-0.5 md:px-3 md:py-1 rounded-bl-xl md:rounded-bl-3xl shadow-md flex flex-col items-center">
+            {discountBadge && <span className="leading-none">{discountBadge}</span>}
+            {discountBadge && <span className="text-[6px] md:text-[10px] leading-tight">خصم</span>}
+            {!discountBadge && badge && <span>{badge}</span>}
           </div>
         )}
         
         {!inStock && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/5 opacity-80">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/5 opacity-80 backdrop-blur-[1px]">
             <Badge variant="destructive" className="font-black text-[10px] md:text-base border-2 border-white/20">منتهي</Badge>
           </div>
         )}
@@ -108,8 +115,15 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           </p>
         )}
 
-        <div className="font-black text-sm md:text-2xl text-slate-800 mt-auto pt-1 flex items-baseline gap-1">
-          {price.toLocaleString()} <span className="text-[10px] md:text-sm font-bold text-muted-foreground/60">ج.س</span>
+        <div className="mt-auto pt-1">
+          {originalPrice && originalPrice > price && (
+            <div className="text-[9px] md:text-sm text-muted-foreground/50 line-through font-bold mb-[-4px]">
+              {originalPrice.toLocaleString()} ج.س
+            </div>
+          )}
+          <div className="font-black text-sm md:text-2xl text-slate-800 flex items-baseline gap-1">
+            {price.toLocaleString()} <span className="text-[10px] md:text-sm font-bold text-muted-foreground/60 font-medium">ج.س</span>
+          </div>
         </div>
       </CardContent>
     </Card>

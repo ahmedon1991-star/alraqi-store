@@ -134,6 +134,7 @@ type ProductFormState = {
   nameEn: string;
   category: string;
   price: string;
+  originalPrice: string;
   image: string;
   badge: string;
   description: string;
@@ -148,6 +149,7 @@ const initialForm: ProductFormState = {
   nameEn: "",
   category: "",
   price: "",
+  originalPrice: "",
   image: "",
   badge: "",
   description: "",
@@ -590,6 +592,7 @@ export default function AdminPage() {
           nameEn: form.nameEn,
           category: form.category,
           price: Number(form.price),
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
           image: form.image,
           badge: form.badge,
           description: form.description,
@@ -746,6 +749,7 @@ export default function AdminPage() {
       nameEn: product.nameEn || "",
       category: product.category,
       price: String(product.price),
+      originalPrice: product.originalPrice ? String(product.originalPrice) : "",
       image: product.image || "",
       badge: product.badge || "",
       description: product.description || "",
@@ -924,14 +928,29 @@ export default function AdminPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">السعر (SDG)</label>
+                          <label className="text-sm font-bold text-gray-700 block pr-1">سعر العرض (الحالي)</label>
                           <Input
                             type="number"
-                            placeholder="0.00"
+                            placeholder="مثال: 5000"
                             value={form.price}
                             onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200"
+                            className="text-right h-11 rounded-xl border-emerald-200 bg-emerald-50/30 focus:border-emerald-500 font-black"
                           />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">السعر الأصلي (قبل الخصم - اختياري)</label>
+                          <Input
+                            type="number"
+                            placeholder="مثال: 7500"
+                            value={form.originalPrice}
+                            onChange={(e) => setForm((prev) => ({ ...prev, originalPrice: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                          />
+                          {form.originalPrice && Number(form.originalPrice) > Number(form.price) && (
+                            <div className="text-[10px] font-bold text-emerald-600 animate-in fade-in slide-in-from-top-1">
+                              خصم بقيمة: {Math.round(((Number(form.originalPrice) - Number(form.price)) / Number(form.originalPrice)) * 100)}%
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-bold text-gray-700 block pr-1">الكمية المتوفرة (المخزون)</label>
