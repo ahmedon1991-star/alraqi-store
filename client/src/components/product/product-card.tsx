@@ -92,37 +92,39 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       </div>
 
       {/* Content Area */}
-      <CardContent className="p-2 md:p-4 text-right flex flex-col flex-1 space-y-1">
+      <CardContent className="p-1.5 md:p-4 text-right flex flex-col flex-1 space-y-0.5 md:space-y-1">
         <div className="flex items-center justify-between">
-           <span className="text-[8px] md:text-xs font-bold text-muted-foreground uppercase opacity-60">{category}</span>
+           <span className="text-[7px] md:text-xs font-bold text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{category}</span>
            {rating && rating > 0 && (
              <div className="flex items-center gap-0.5 text-amber-500 text-[8px] md:text-xs font-black">
                <span>{rating}</span>
-               <Star className="h-2.5 w-2.5 md:h-3.5 md:w-3.5 fill-current" />
+               <Star className="h-2 w-2 md:h-3.5 md:w-3.5 fill-current" />
              </div>
            )}
         </div>
 
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-xs md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
+          <h3 className="font-bold text-[10px] md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
             {name}
           </h3>
         </Link>
         
         {measurements && (
-          <p className="text-[10px] md:text-sm font-medium text-muted-foreground/80 line-clamp-1">
+          <p className="text-[8px] md:text-sm font-medium text-muted-foreground/80 line-clamp-1">
             {measurements}
           </p>
         )}
 
-        <div className="mt-auto pt-1">
+        <div className="mt-auto pt-0.5">
           {originalPrice && originalPrice > price && (
-            <div className="text-[9px] md:text-sm text-muted-foreground/50 line-through font-bold mb-[-4px]">
-              {originalPrice.toLocaleString()} ج.س
+            <div className="text-[8px] md:text-sm text-muted-foreground/50 line-through font-bold mb-[-3px] flex items-center gap-1">
+              <span>{originalPrice.toLocaleString()}</span>
+              <span className="text-[6px] md:text-[10px]">ج.س</span>
             </div>
           )}
-          <div className="font-black text-sm md:text-2xl text-slate-800 flex items-baseline gap-1">
-            {price.toLocaleString()} <span className="text-[10px] md:text-sm font-bold text-muted-foreground/60 font-medium">ج.س</span>
+          <div className="font-black text-xs md:text-2xl text-slate-800 flex items-baseline gap-0.5">
+            <span className="font-outfit">{price.toLocaleString()}</span>
+            <span className="text-[8px] md:text-sm font-bold text-muted-foreground/60">ج.س</span>
           </div>
         </div>
       </CardContent>

@@ -4,7 +4,7 @@ import { Link } from "wouter";
 
 export function Hero() {
   return (
-    <div className="relative w-full h-[550px] md:h-[750px] overflow-hidden flex items-center">
+    <div className="relative w-full h-[380px] md:h-[750px] overflow-hidden flex items-center">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -18,59 +18,53 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="flex flex-col gap-8 text-white max-w-2xl order-2 lg:order-1 text-center lg:text-right">
-          <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary/30 text-white w-fit mx-auto lg:mx-0 text-sm md:text-base font-black backdrop-blur-xl border border-white/20 animate-in fade-in slide-in-from-top duration-1000 shadow-2xl">
-            <Sparkles className="h-5 w-5 text-amber-400" />
-            <span>وجهتك الأولى للمنتجات الغذائية الأصيلة</span>
+      <div className="container mx-auto px-4 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
+        <div className="flex flex-col gap-3 text-white max-w-2xl order-2 lg:order-1 text-center lg:text-right">
+          <div className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-primary/40 text-white w-fit mx-auto lg:mx-0 text-[10px] md:text-base font-black backdrop-blur-xl border border-white/10 animate-in fade-in slide-in-from-top duration-700">
+            <Sparkles className="h-3 w-3 text-amber-400" />
+            <span>منتجات غذائية سودانية أصيلة</span>
           </div>
           
-          <div className="space-y-6">
-            <h1 className="text-5xl md:text-8xl font-black leading-[1] tracking-tighter text-white animate-in fade-in slide-in-from-right duration-1000 delay-200 drop-shadow-2xl">
-              متجر <span className="text-primary italic drop-shadow-[0_0_20px_rgba(25,112,92,0.4)]">الراقي</span>
+          <div className="space-y-2 md:space-y-6">
+            <h1 className="text-3xl md:text-8xl font-black leading-tight text-white drop-shadow-lg">
+              متجر <span className="text-primary italic">الراقي</span>
             </h1>
-            <p className="text-2xl md:text-4xl font-black text-amber-500 animate-in fade-in slide-in-from-right duration-1000 delay-400 uppercase tracking-[0.2em] drop-shadow-lg">
+            <p className="text-lg md:text-4xl font-black text-amber-500 uppercase tracking-wider drop-shadow-md">
               للتميز والفخامة
             </p>
           </div>
           
-          <p className="text-sm md:text-2xl text-gray-100/90 leading-relaxed font-bold animate-in fade-in slide-in-from-right duration-1000 delay-600 max-w-xl lg:mr-0 lg:ml-auto drop-shadow-md">
-            نقدم لكم أجود أنواع التوابل والأغذية والمنتجات الطبيعية والغذائية المختارة بعناية فائقة مباشرة إلى منزلكم. 
-            أصالة الطعم، جودة التغليف، وسرعة التوصيل.
+          <p className="text-[10px] md:text-2xl text-gray-200 leading-relaxed font-bold max-w-xl lg:mr-0 lg:ml-auto">
+            أجود أنواع التوابل والأغذية والمنتجات الطبيعية مباشرة إلى باب بيتك بجودة عالية وسعر منافس.
           </p>
           
-          <div className="flex flex-wrap gap-4 mt-6 justify-center lg:justify-start animate-in fade-in slide-in-from-bottom duration-1000 delay-800">
+          <div className="flex flex-wrap gap-2 mt-2 justify-center lg:justify-start">
             <Link href="/shop">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white font-black text-xl md:text-2xl px-10 md:px-14 h-14 md:h-20 rounded-2xl md:rounded-3xl shadow-[0_25px_60px_rgba(25,112,92,0.4)] hover:scale-110 active:scale-95 transition-all duration-500 border-b-4 border-emerald-900">
+              <Button size="sm" className="md:size-lg bg-primary hover:bg-primary/90 text-white font-black text-xs md:text-2xl px-6 md:px-14 h-9 md:h-20 rounded-xl md:rounded-3xl shadow-lg hover:scale-105 transition-all duration-300">
                 تسوق الآن
-                <ArrowLeft className="mr-4 h-6 w-6 md:h-8 md:w-8" />
+                <ArrowLeft className="mr-2 h-4 w-4 md:h-8 md:w-8" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="bg-white/10 hover:bg-white/20 text-white border-white/40 backdrop-blur-2xl font-black text-lg md:text-xl px-10 md:px-14 h-14 md:h-20 rounded-2xl md:rounded-3xl border-2 transition-all duration-500 shadow-xl">
-              عروض حصرية
+            <Button variant="outline" size="sm" className="md:size-lg bg-white/10 text-white border-white/20 backdrop-blur-md font-black text-[10px] md:text-xl px-4 md:px-14 h-9 md:h-20 rounded-xl md:rounded-3xl border transition-all">
+              عروضنا
             </Button>
           </div>
         </div>
 
-        <div className="relative order-1 lg:order-2 flex justify-center items-center group animate-in zoom-in duration-1000">
-          <div className="absolute inset-0 bg-primary/30 blur-[100px] md:blur-[160px] rounded-full group-hover:bg-primary/40 transition-all duration-700 animate-pulse" />
-          <div className="relative transform group-hover:scale-110 transition-transform duration-700 hover:rotate-2">
-            <div className="absolute -inset-2 bg-gradient-to-tr from-primary/60 via-amber-500/40 to-transparent rounded-3xl md:rounded-[4rem] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
+        <div className="relative order-1 lg:order-2 flex justify-center items-center">
+          <div className="absolute inset-0 bg-primary/20 blur-[60px] md:blur-[160px] rounded-full" />
+          <div className="relative transform hover:scale-105 transition-transform duration-500">
             <img 
               src="/logo.png" 
               alt="الراقي" 
-              className="relative w-full max-w-[220px] md:max-w-[520px] h-auto object-contain drop-shadow-[0_40px_40px_rgba(0,0,0,0.5)] bg-white/95 backdrop-blur-md rounded-3xl md:rounded-[4rem] p-6 md:p-14 border border-white/20 shadow-2xl"
-              loading="eager"
-              fetchPriority="high"
+              className="relative w-full max-w-[140px] md:max-w-[520px] h-auto object-contain bg-white/95 backdrop-blur-md rounded-2xl md:rounded-[4rem] p-3 md:p-14 border border-white/20 shadow-xl"
             />
-            {/* Glossy overlay on logo */}
-            <div className="absolute inset-0 rounded-3xl md:rounded-[4rem] bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
           </div>
         </div>
       </div>
 
-      {/* Modern Wave Divider at Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent z-20" />
+      {/* Modern Wave Divider at Bottom - Slimmer */}
+      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/40 to-transparent z-20" />
     </div>
   );
 }
