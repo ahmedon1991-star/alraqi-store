@@ -54,7 +54,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[2.5rem] bg-white border border-border/10 shadow-sm transition-transform duration-300 group-hover:shadow-md">
         <Link href={`/product/${id}`}>
           <img
-            src={image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400"}
+            src={image || "/images/product-spices.png"}
             alt={name}
             loading="lazy"
             className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"

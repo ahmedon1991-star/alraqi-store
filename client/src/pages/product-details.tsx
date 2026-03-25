@@ -119,7 +119,7 @@ export default function ProductDetails() {
                 </div>
               )}
               <img
-                src={product.image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=800"}
+                src={product.image || "/images/product-spices.png"}
                 alt={product.name}
                 className="w-full h-full object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
