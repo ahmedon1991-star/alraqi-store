@@ -51,7 +51,7 @@ export function Navbar() {
             <div className="cursor-pointer flex items-center justify-center flex-1 md:flex-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0">
               <img
                 src="/logo.png"
-                alt="الراقي"
+                alt="متجر الراقي للمنتجات السودانية والأغذية"
                 className="h-12 md:h-16 w-auto object-contain transition-all hover:scale-105 duration-300"
               />
             </div>
