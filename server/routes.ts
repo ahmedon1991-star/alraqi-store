@@ -753,21 +753,41 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/admin/settings", requireAdmin, async (req: Request, res: Response) => {
-    const { email, phone, address, facebook, instagram, twitter } = req.body as {
+    const { 
+      email, 
+      phone, 
+      address, 
+      facebook, 
+      instagram, 
+      twitter, 
+      shippingFee, 
+      freeShippingThreshold, 
+      announcementText,
+      revenueResetCode
+    } = req.body as {
       email?: string;
       phone?: string;
       address?: string;
       facebook?: string;
       instagram?: string;
       twitter?: string;
+      shippingFee?: number;
+      freeShippingThreshold?: number;
+      announcementText?: string;
+      revenueResetCode?: string;
     };
+
     const settings = await storage.updateAdminSettings({
       email,
       phone,
       address,
       facebook,
       instagram,
-      twitter
+      twitter,
+      shippingFee,
+      freeShippingThreshold,
+      announcementText,
+      revenueResetCode
     });
     res.json(settings);
   });
