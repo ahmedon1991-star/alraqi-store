@@ -90,13 +90,13 @@ export default function Home() {
                     </Link>
                   </div>
 
-                  <div className="flex overflow-x-auto no-scrollbar gap-2.5 md:gap-6 pb-2 snap-x pr-1">
+                  <div className="flex overflow-x-auto no-scrollbar gap-1.5 md:gap-6 pb-2 snap-x pr-1">
                     {categoryProducts.slice(0, 10).map((product: any) => (
-                      <div key={product.id} className="flex-shrink-0 w-[130px] md:w-[260px] snap-start mb-1 h-full">
+                      <div key={product.id} className="flex-shrink-0 w-[110px] md:w-[260px] snap-start mb-1 h-full">
                         <ProductCard {...product} />
                       </div>
                     ))}
-                    <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[80px] md:w-[150px] snap-start flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer self-stretch">
+                    <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[60px] md:w-[150px] snap-start flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer self-stretch">
                       <div className="w-8 h-8 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <ArrowLeft className="h-4 w-4 md:h-6 md:w-6" />
                       </div>

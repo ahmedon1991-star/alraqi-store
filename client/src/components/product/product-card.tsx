@@ -51,13 +51,13 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   return (
     <Card className="group overflow-hidden border-none shadow-none bg-transparent relative flex flex-col h-full" data-testid={`card-product-${id}`}>
       {/* Image Area */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[2.5rem] bg-white border border-border/10 shadow-sm transition-transform duration-300 group-hover:shadow-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[0.8rem] md:rounded-[2.5rem] bg-white border border-border/10 shadow-sm transition-transform duration-300 group-hover:shadow-md">
         <Link href={`/product/${id}`}>
           <img
             src={image || "/images/product-spices.png"}
             alt={name}
             loading="lazy"
-            className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+            className="w-full h-full object-contain p-1 md:p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/images/category-spices.png";
             }}
@@ -69,9 +69,9 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           <button
             onClick={handleAddToCart}
             disabled={addToCart.isPending}
-            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
+            className="absolute bottom-1 left-1 z-20 w-6 h-6 md:w-12 md:h-12 flex items-center justify-center rounded-lg md:rounded-2xl border border-primary/20 bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
           >
-            {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-4 w-4 md:h-6 md:w-6 stroke-[3]" />}
+            {addToCart.isPending ? <Loader2 className="h-3 w-3 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-3 w-3 md:h-6 md:w-6 stroke-[3]" />}
           </button>
         )}
 
@@ -92,7 +92,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       </div>
 
       {/* Content Area */}
-      <CardContent className="p-1.5 md:p-4 text-right flex flex-col flex-1 space-y-0.5 md:space-y-1">
+      <CardContent className="p-1 md:p-4 text-right flex flex-col flex-1 space-y-0.5 md:space-y-1">
         <div className="flex items-center justify-between">
            <span className="text-[7px] md:text-xs font-bold text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{category}</span>
            {rating && rating > 0 && (
@@ -104,7 +104,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         </div>
 
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-[10px] md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
+          <h3 className="font-bold text-[9px] md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
             {name}
           </h3>
         </Link>
@@ -122,7 +122,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
               <span className="text-[6px] md:text-[10px]">ج.س</span>
             </div>
           )}
-          <div className="font-black text-xs md:text-2xl text-slate-800 flex items-baseline gap-0.5">
+          <div className="font-black text-[10px] md:text-2xl text-slate-800 flex items-baseline gap-0.5">
             <span className="font-outfit">{price.toLocaleString()}</span>
             <span className="text-[8px] md:text-sm font-bold text-muted-foreground/60">ج.س</span>
           </div>
