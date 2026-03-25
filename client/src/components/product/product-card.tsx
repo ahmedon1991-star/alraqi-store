@@ -1,7 +1,7 @@
-import { Star, ShoppingCart, Heart } from "lucide-react";
+import { Star, Plus, Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Link, useLocation } from "wouter";
 import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
@@ -25,12 +25,13 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  function handleAddToCart(e: React.MouseEvent) {
+  const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (addToCart.isPending) return;
 
-    if (sizes || measurements) {
-      toast({ title: "مطلوب اختيار التفاصيل", description: "هذا المنتج يتطلب تحديد المقاس أو الحجم، سيتم نقلك لصفحة المنتج." });
+    if (sizes || (measurements && measurements.includes(','))) {
+      toast({ title: "مطلوب اختيار التفاصيل", description: "هذا المنتج يتطلب تحديد المقاس أو الحجم." });
       setLocation(`/product/${id}`);
       return;
     }
@@ -40,82 +41,77 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         toast({ title: "تمت الإضافة", description: `${name} أُضيف إلى السلة` });
       },
     });
-  }
+  };
 
   return (
-    <Card className="group overflow-hidden border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white hover:-translate-y-1 relative" data-testid={`card-product-${id}`}>
-      <div className="relative aspect-[1/1] overflow-hidden bg-white flex items-center justify-center">
-        {badge && (
-          <Badge className="absolute top-2 right-2 z-10 bg-primary/90 hover:bg-primary text-[9px] sm:text-xs px-2 sm:px-3 py-1 font-bold shadow-lg rounded-lg animate-in fade-in duration-300">
-            {badge}
-          </Badge>
-        )}
-        {!inStock && (
-          <Badge variant="destructive" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 scale-125 px-4 py-2 font-black shadow-2xl rounded-xl rotate-12 backdrop-blur-sm border-2 border-white/20">
-            نفذت الكمية
-          </Badge>
-        )}
-        {inStock && stock !== undefined && stock !== null && stock > 0 && stock <= 5 && (
-          <Badge className="absolute bottom-2 left-2 z-10 bg-orange-600 text-white text-[8px] sm:text-[10px] px-2 py-0.5 font-bold rounded-lg animate-pulse">
-            كمية محدودة: {stock}
-          </Badge>
-        )}
-        <Button
-          size="sm"
-          variant="secondary"
-          className="absolute top-1 left-1 z-10 w-6 h-6 sm:w-8 sm:h-8 opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/80 backdrop-blur-sm text-gray-700 hover:text-red-500 hover:bg-white p-0"
-          data-testid={`button-wishlist-${id}`}
-        >
-          <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
+    <Card className="group overflow-hidden border-none shadow-none bg-transparent relative flex flex-col h-full" data-testid={`card-product-${id}`}>
+      {/* Image Area */}
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[2.5rem] bg-white border border-border/10 shadow-sm transition-transform duration-300 group-hover:shadow-md">
         <Link href={`/product/${id}`}>
           <img
             src={image || "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400"}
             alt={name}
             loading="lazy"
-            className="w-full h-full object-contain p-0.5 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+            className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400";
             }}
           />
         </Link>
+
+        {/* Floating Add Button (HungerStation Style) */}
+        {inStock && (
+          <button
+            onClick={handleAddToCart}
+            disabled={addToCart.isPending}
+            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
+          >
+            {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-4 w-4 md:h-6 md:w-6 stroke-[3]" />}
+          </button>
+        )}
+
+        {/* Status Badges */}
+        {badge && (
+          <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[8px] md:text-xs font-black px-2 py-1 rounded-bl-xl md:rounded-bl-3xl shadow-md">
+            {badge}
+          </div>
+        )}
+        
+        {!inStock && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/5 opacity-80">
+            <Badge variant="destructive" className="font-black text-[10px] md:text-base border-2 border-white/20">منتهي</Badge>
+          </div>
+        )}
       </div>
 
-      <CardContent className="p-2 sm:p-4 text-right bg-gradient-to-b from-white to-orange-50/30">
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] sm:text-xs font-bold text-primary/70 uppercase tracking-tight truncate max-w-[60%] bg-primary/5 px-2 py-0.5 rounded-full">{category}</span>
-          <div className="flex items-center gap-0.5 text-amber-500 text-[10px] sm:text-xs font-black">
-            <span>{rating ?? 0}</span>
-            <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" />
-          </div>
+      {/* Content Area */}
+      <CardContent className="p-2 md:p-4 text-right flex flex-col flex-1 space-y-1">
+        <div className="flex items-center justify-between">
+           <span className="text-[8px] md:text-xs font-bold text-muted-foreground uppercase opacity-60">{category}</span>
+           {rating && rating > 0 && (
+             <div className="flex items-center gap-0.5 text-amber-500 text-[8px] md:text-xs font-black">
+               <span>{rating}</span>
+               <Star className="h-2.5 w-2.5 md:h-3.5 md:w-3.5 fill-current" />
+             </div>
+           )}
         </div>
+
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-xs sm:text-lg mb-1.5 text-foreground line-clamp-2 leading-snug h-[2.5em] hover:text-primary transition-colors cursor-pointer group-hover:underline underline-offset-4 decoration-primary/30">
+          <h3 className="font-bold text-xs md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
             {name}
           </h3>
         </Link>
-        <div className="font-black text-sm sm:text-xl text-primary font-mono mt-2 flex items-baseline gap-1">
-          {price.toLocaleString()} <span className="text-[10px] sm:text-sm font-bold text-muted-foreground/80">ج.س</span>
+        
+        {measurements && (
+          <p className="text-[10px] md:text-sm font-medium text-muted-foreground/80 line-clamp-1">
+            {measurements}
+          </p>
+        )}
+
+        <div className="font-black text-sm md:text-2xl text-slate-800 mt-auto pt-1 flex items-baseline gap-1">
+          {price.toLocaleString()} <span className="text-[10px] md:text-sm font-bold text-muted-foreground/60">ج.س</span>
         </div>
       </CardContent>
-
-      <CardFooter className="p-2 sm:p-3 pt-0">
-        <Button
-          className={`w-full rounded-xl font-black h-9 sm:h-11 text-[10px] sm:text-base px-2 sm:px-4 gap-1.5 sm:gap-2 shadow-sm transition-all duration-300 overflow-hidden whitespace-nowrap ${!inStock ? 'grayscale opacity-80' : 'hover:shadow-primary/20 hover-elevate'}`}
-          variant={inStock ? "default" : "secondary"}
-          onClick={handleAddToCart}
-          disabled={addToCart.isPending || !inStock}
-        >
-          {inStock ? (
-            <>
-              <ShoppingCart className="h-3.5 w-3.5 sm:h-5 sm:w-5 shrink-0" />
-              <span className="truncate">أضف للسلة</span>
-            </>
-          ) : (
-            <span className="truncate">نفذت الكمية</span>
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

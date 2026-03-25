@@ -76,14 +76,13 @@ export default function Home() {
               <div key={cat.id} className="space-y-4 md:space-y-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 md:gap-4 group">
-                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-2xl bg-white flex items-center justify-center text-primary shadow-sm border border-border/50 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                       {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
                         <img 
                           src={cat.icon} 
                           alt={cat.name} 
                           className="w-6 h-6 md:w-10 md:h-10 object-contain p-1" 
                           onError={(e) => {
-                            // Fallback to Icon if image loads but fails
                             (e.target as HTMLImageElement).style.display = 'none';
                             const parent = (e.target as HTMLImageElement).parentElement;
                             if (parent) {
@@ -103,23 +102,23 @@ export default function Home() {
                     </div>
                   </div>
                   <Link href={`/shop?category=${cat.id}`}>
-                    <Button variant="link" className="text-primary font-bold hover:no-underline px-0 text-sm md:text-lg">
-                      <span className="ml-2">عرض الكل</span> <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
+                    <Button variant="link" className="text-rose-500 font-bold hover:no-underline px-0 text-sm md:text-lg flex items-center gap-1">
+                      <span>عرض الكل</span> <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
                   </Link>
                 </div>
 
                 <div className="flex overflow-x-auto no-scrollbar gap-3 md:gap-8 pb-4 snap-x">
                   {categoryProducts.slice(0, 10).map((product: any) => (
-                    <div key={product.id} className="flex-shrink-0 w-[150px] md:w-[280px] snap-start mb-1 h-full">
+                    <div key={product.id} className="flex-shrink-0 w-[140px] md:w-[280px] snap-start mb-1 h-full">
                       <ProductCard {...product} />
                     </div>
                   ))}
-                  <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[100px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-3 rounded-2xl md:rounded-[3rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group cursor-pointer h-auto self-stretch">
-                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-12 transition-transform shadow-inner">
-                      <ArrowLeft className="h-5 w-5 md:h-8 md:w-8" />
+                  <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[100px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-2 rounded-2xl md:rounded-[3rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group cursor-pointer h-auto self-stretch">
+                    <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-12 transition-transform shadow-inner">
+                      <ArrowLeft className="h-5 w-5 md:h-7 md:w-7" />
                     </div>
-                    <span className="font-bold text-[10px] md:text-lg text-primary text-center px-1">عرض المزيد</span>
+                    <span className="font-bold text-[10px] md:text-lg text-primary text-center px-1">المزيد</span>
                   </Link>
                 </div>
               </div>
