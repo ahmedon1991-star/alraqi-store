@@ -33,28 +33,28 @@ export default function Home() {
       <Hero />
 
       <main className="flex-1">
-        <section className="py-20 container mx-auto px-4">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-3xl font-black text-foreground">تصفح الأقسام</h2>
+        <section className="py-12 md:py-20 container mx-auto px-4 overflow-hidden">
+          <div className="flex items-center justify-between mb-8 md:mb-10">
+            <h2 className="text-2xl md:text-3xl font-black text-foreground">تصفح الأقسام</h2>
             <Link href="/shop">
-              <Button variant="link" className="text-primary font-bold">
+              <Button variant="link" className="text-primary font-bold pr-0">
                 عرض الكل <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
+          <div className="flex md:grid md:grid-cols-5 gap-3 md:gap-6 overflow-x-auto no-scrollbar pb-4 md:pb-0 snap-x">
             {cats.map((cat: any) => (
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
-                <div className="group cursor-pointer flex flex-col items-center gap-2 p-3 md:p-6 rounded-2xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1" data-testid={`card-category-${cat.id}`}>
-                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-3xl bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10 overflow-hidden shadow-sm group-hover:shadow-primary/20">
+                <div className="flex-shrink-0 w-24 md:w-auto group cursor-pointer flex flex-col items-center gap-2 p-2 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-border/50 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300 hover:-translate-y-1 snap-start" data-testid={`card-category-${cat.id}`}>
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-full md:rounded-3xl bg-primary/5 flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform duration-300 group-hover:bg-primary/10 overflow-hidden shadow-sm group-hover:shadow-primary/20">
                     {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
                       <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/3081/3081840.png"; }} />
                     ) : (
                       cat.icon || "•"
                     )}
                   </div>
-                  <h3 className="font-bold text-center text-xs md:text-lg text-foreground group-hover:text-primary transition-colors leading-tight">{cat.name}</h3>
+                  <h3 className="font-bold text-center text-[10px] md:text-lg text-foreground group-hover:text-primary transition-colors leading-tight truncate w-full px-1">{cat.name}</h3>
                 </div>
               </Link>
             ))}

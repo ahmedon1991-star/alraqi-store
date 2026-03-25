@@ -439,31 +439,35 @@ export default function AdminPage() {
   }, []);
 
   const playNotification = useCallback((isTest = false) => {
-    // Create new audio instance on user gesture for better mobile support
     try {
       const audio = new Audio('/notification.wav');
       audio.volume = 1.0;
+      audio.loop = true; // ✅ REQUIREMENT: Continuous looping like HungerStation
       
       const playPromise = audio.play();
       
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            // Success! Store this for future use if needed, but gestured play is best
-            audioRef.current = audio;
+            // Stop looping after 30 seconds to prevent infinite noise
+            setTimeout(() => {
+              audio.pause();
+              audio.currentTime = 0;
+            }, 30000);
+
             if (isTest) {
               toast({
-                title: "🔊 النظام يعمل",
-                description: "تم تفعيل التنبيهات الصوتية بنجاح على هذا الجهاز.",
+                title: "🔊 اختبار نظام التنبيه",
+                description: "الصوت يعمل وسوف يتكرر لضمان سماعه.",
               });
             }
           })
           .catch(e => {
-            console.error("Audio play failed logic:", e);
+            console.error("Audio play failed:", e);
             if (isTest) {
               toast({
-                title: "🔇 التنبيهات معطلة",
-                description: "المتصفح يمنع تشغيل الصوت. برجاء النقر على \"السماح بالصوت\" في إعدادات المتصفح أو المحاولة مرة أخرى.",
+                title: "🔇 تنبيه",
+                description: "يرجى تفعيل السماح بالصوت من المتصفح.",
                 variant: "destructive",
               });
             }
@@ -473,6 +477,7 @@ export default function AdminPage() {
       console.error("Audio instance error:", err);
     }
   }, [toast]);
+
 
   useEffect(() => {
     const stats = overviewQuery.data?.stats;
@@ -485,10 +490,25 @@ export default function AdminPage() {
     if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
       console.log("🔔 New order detected! Playing sound...");
       playNotification();
+      
+      // ✅ REQUIREMENT: Title Flashing
+      const originalTitle = document.title;
+      let isFlashing = true;
+      const flashInterval = setInterval(() => {
+        document.title = isFlashing ? "⚠️ طلب جديد وارد!" : originalTitle;
+        isFlashing = !isFlashing;
+      }, 1000);
+
+      // Stop flashing after 60 seconds or user click
+      setTimeout(() => {
+        clearInterval(flashInterval);
+        document.title = originalTitle;
+      }, 60000);
+
       toast({
         title: "🔔 طلب جديد وارد",
         description: `تم استلام طلب جديد رقم ${currentOrdersCount} من أحد العملاء.`,
-        className: "bg-primary text-white font-bold",
+        className: "bg-primary text-white font-bold animate-pulse",
       });
     }
     prevOrdersCountRef.current = currentOrdersCount;
@@ -503,6 +523,7 @@ export default function AdminPage() {
         className: "bg-blue-600 text-white font-bold",
       });
     }
+
     prevMessagesCountRef.current = currentMessagesCount;
     prevOrdersCountRef.current = currentOrdersCount;
 
