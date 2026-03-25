@@ -216,7 +216,7 @@ async function verifyGoogleCredential(credential: string): Promise<GoogleTokenIn
 function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertProduct> | null {
   const {
     name, nameEn, description, price, image, category,
-    rating, reviews, badge, inStock, sizes, measurements, stock
+    rating, reviews, badge, inStock, sizes, measurements, stock, originalPrice
   } = body;
 
   if (!name || typeof name !== "string") {
@@ -236,6 +236,7 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
     nameEn: typeof nameEn === "string" && nameEn.trim() ? nameEn : null,
     description: typeof description === "string" && description.trim() ? description : null,
     price,
+    originalPrice: typeof originalPrice === "number" && !Number.isNaN(originalPrice) ? originalPrice : null,
     image: typeof image === "string" && image.trim() ? image : null,
     category,
     rating: typeof rating === "number" ? rating : 0,
