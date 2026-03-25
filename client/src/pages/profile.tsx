@@ -124,12 +124,20 @@ export default function ProfilePage() {
         return;
       }
 
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+      
+      const userIdBuffer = new TextEncoder().encode(user.id);
+
       const credential = await navigator.credentials.create({
         publicKey: {
-          challenge: new Uint8Array([1, 2, 3, 4]).buffer,
-          rp: { name: "الراقي للمنتجات الغذائية" },
+          challenge: challenge.buffer,
+          rp: { 
+            name: "الراقي للمنتجات الغذائية",
+            id: window.location.hostname === "localhost" ? undefined : window.location.hostname
+          },
           user: {
-            id: new Uint8Array([1, 2, 3, 4]).buffer,
+            id: userIdBuffer,
             name: user?.email || "user",
             displayName: user?.name || "User",
           },

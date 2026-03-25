@@ -59,7 +59,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
             loading="lazy"
             className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?q=80&w=400";
+              (e.target as HTMLImageElement).src = "/images/category-spices.png";
             }}
           />
         </Link>

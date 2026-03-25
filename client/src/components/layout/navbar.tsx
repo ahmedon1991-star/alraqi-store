@@ -31,49 +31,67 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-md shadow-sm transition-all duration-300">
-      <div className="container mx-auto px-2 md:px-4">
-        <div className="flex h-14 md:h-20 items-center justify-between gap-1 md:gap-4 flex-row-reverse">
+    <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)] transition-all duration-300">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="flex h-16 md:h-24 items-center justify-between gap-2 md:gap-8 flex-row-reverse">
           
-          {/* Right: Brand Logo (Primary for RTL) */}
-          <div className="flex flex-1 justify-end items-center">
+          {/* Right: Brand Logo */}
+          <div className="flex h-full items-center justify-end">
             <Link href="/">
-              <div className="flex items-center gap-2 cursor-pointer transition-transform active:scale-95">
+              <div className="group relative flex items-center cursor-pointer">
+                <div className="absolute -inset-2 rounded-xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100" />
                 <img
                   src="/logo.png"
                   alt="متجر الراقي"
-                  className="h-10 md:h-16 w-auto object-contain"
+                  className="h-11 md:h-20 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px]"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
                 />
               </div>
             </Link>
           </div>
 
           {/* Middle: Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-10 text-[15px] font-bold justify-center flex-1">
-            <Link href="/" className={`transition-all hover:text-primary relative group py-2 ${location === "/" ? "text-primary border-b-2 border-primary" : "text-gray-600"}`}>
-              الرئيسية
-            </Link>
-            <Link href="/shop" className={`transition-all hover:text-primary relative group py-2 ${location.startsWith("/shop") ? "text-primary border-b-2 border-primary" : "text-gray-600"}`}>
-              المتجر
-            </Link>
+          <div className="hidden md:flex items-center gap-12 text-[16px] font-black justify-center flex-1">
+            {[
+              { label: "الرئيسية", path: "/" },
+              { label: "المتجر", path: "/shop" },
+              { label: "العروض", path: "/shop?offers=true" },
+            ].map((link) => {
+              const isActive = location === link.path || (link.path.includes("?") && location.includes(link.path.split("?")[0]));
+              return (
+                <Link key={link.label} href={link.path} className={cn(
+                  "relative py-2 transition-all duration-300 group",
+                  isActive ? "text-primary" : "text-gray-500 hover:text-primary"
+                )}>
+                  {link.label}
+                  <span className={cn(
+                    "absolute bottom-0 right-0 h-0.5 bg-primary transition-all duration-300 rounded-full",
+                    isActive ? "w-full" : "w-0 group-hover:w-full"
+                  )} />
+                </Link>
+              );
+            })}
           </div>
 
           {/* Left Actions (Cart, Search, Profile) */}
-          <div className="flex items-center gap-1 md:gap-3 flex-1 justify-start">
+          <div className="flex items-center gap-2 md:gap-4 justify-start">
              <Button 
                 variant="ghost" 
                 size="icon" 
-                className={cn("h-9 w-9 text-gray-700 hover:text-primary transition-all rounded-full bg-slate-50 border border-transparent hover:border-primary/20", isSearchOpen ? "bg-primary/10 text-primary border-primary/30" : "")}
+                className={cn(
+                  "h-10 w-10 md:h-12 md:w-12 text-gray-700 hover:text-primary transition-all rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:shadow-sm",
+                  isSearchOpen ? "bg-primary/10 text-primary border-primary/30" : ""
+                )}
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
-              {isSearchOpen ? <X className="h-4 w-4" /> : <Search className="h-4.5 w-4.5" />}
+              {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
 
             <Link href="/cart">
-              <div className="relative p-2 rounded-full hover:bg-slate-50 transition-colors cursor-pointer group">
+              <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:bg-white hover:shadow-sm transition-all cursor-pointer group">
                 <ShoppingCart className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
                 {cartCount > 0 && (
-                  <Badge className="absolute -left-0 -top-0 flex h-4 w-4 items-center justify-center bg-primary p-0 text-[10px] border-2 border-white ring-1 ring-primary/10 font-bold">
+                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-primary p-0 text-[10px] border-2 border-white shadow-md font-black animate-in zoom-in">
                     {cartCount}
                   </Badge>
                 )}
@@ -81,15 +99,17 @@ export function Navbar() {
             </Link>
 
             <Link href="/profile">
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-gray-700 hover:text-primary rounded-full hover:bg-slate-50">
-                <User className="h-4.5 w-4.5" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-gray-700 hover:text-primary rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:bg-white hover:shadow-sm transition-all group">
+                {user ? (
+                  user.avatar ? <img src={user.avatar} className="h-5 w-5 rounded-full object-cover" /> : <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                ) : <User className="h-5 w-5" />}
               </Button>
             </Link>
             
             {getAdminToken() && (
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-orange-600 hover:bg-orange-50 rounded-full">
-                  <Shield className="h-4.5 w-4.5" />
+                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-orange-600 hover:bg-orange-50 rounded-2xl border border-orange-100 animate-pulse">
+                  <Shield className="h-5 w-5" />
                 </Button>
               </Link>
             )}

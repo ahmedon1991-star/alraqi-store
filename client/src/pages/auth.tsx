@@ -129,17 +129,23 @@ export default function AuthPage() {
 
       if (window.PublicKeyCredential) {
         try {
+          const challenge = new Uint8Array(32);
+          window.crypto.getRandomValues(challenge);
+          
           await navigator.credentials.get({
             publicKey: {
-              challenge: new Uint8Array([1,2,3,4]).buffer,
+              challenge: challenge.buffer,
               timeout: 60000,
               userVerification: "required",
               allowCredentials: []
             }
           });
-        } catch (e) {
-          console.error("Biometric prompt error:", e);
-          if ((e as Error).name === "NotAllowedError") return;
+        } catch (e: any) {
+          console.error("Biometric prompt error:", e.name, e.message);
+          // Only stop if user explicitly cancelled or denied
+          if (e.name === "NotAllowedError" || e.name === "AbortError") return;
+          // For other errors (like no credentials), we can still proceed with the stored token if valid
+          // but usually it's better to show a warning.
         }
       }
 
@@ -273,16 +279,22 @@ export default function AuthPage() {
                       control={loginForm.control}
                       name="remember"
                       render={({ field }) => (
-                        <div className="flex items-center justify-between -mt-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox 
-                              id="remember" 
-                              checked={field.value} 
-                              onCheckedChange={field.onChange} 
-                            />
-                            <Label htmlFor="remember" className="text-sm font-bold text-gray-600 cursor-pointer">تذكرني</Label>
-                          </div>
-                          <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
+                        <div className="flex items-center justify-between -mt-1 py-1">
+                          <label 
+                            htmlFor="remember" 
+                            className="flex items-center gap-3 cursor-pointer group select-none"
+                          >
+                            <div className="relative flex items-center justify-center">
+                              <Checkbox 
+                                id="remember" 
+                                checked={field.value} 
+                                onCheckedChange={field.onChange}
+                                className="h-5 w-5 rounded-md border-2 border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:border-primary/50"
+                              />
+                            </div>
+                            <span className="text-sm font-black text-gray-600 group-hover:text-gray-900 transition-colors">تذكرني على هذا الجهاز</span>
+                          </label>
+                          <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold text-sm" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
                         </div>
                       )}
                     />

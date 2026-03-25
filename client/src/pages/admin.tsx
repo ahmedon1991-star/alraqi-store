@@ -191,6 +191,7 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("active");
   const [productSearch, setProductSearch] = useState("");
+  const [orderTimeFilter, setOrderTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -702,6 +703,11 @@ export default function AdminPage() {
 
   const filteredOrders = useMemo(() => {
     const orders = data?.orders || [];
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
     return orders.filter((order) => {
       const matchesSearch =
         !orderSearch ||
@@ -710,17 +716,42 @@ export default function AdminPage() {
         order.address?.toLowerCase().includes(orderSearch.toLowerCase());
         
       const timeReference = order.updatedAt || order.createdAt;
+      const t = timeReference ? new Date(timeReference).getTime() : 0;
       const isOlderThan24h = timeReference ? new Date().getTime() - new Date(timeReference).getTime() > 24 * 60 * 60 * 1000 : false;
       const isArchived = order.isArchived || (order.status === "completed" && isOlderThan24h);
 
+      const matchesTime = (() => {
+        if (orderTimeFilter === "today") return t >= startOfToday;
+        if (orderTimeFilter === "week") return t >= past7Days;
+        if (orderTimeFilter === "month") return t >= startOfMonth;
+        return true;
+      })();
+
       if (statusFilter === "archived") {
-        return matchesSearch && isArchived;
+        return matchesSearch && isArchived && matchesTime;
       }
       
       const matchesStatus = statusFilter === "all" ? true : order.status === statusFilter;
-      return matchesSearch && matchesStatus && !isArchived;
+      return matchesSearch && matchesStatus && !isArchived && matchesTime;
     });
-  }, [data?.orders, orderSearch, statusFilter]);
+  }, [data?.orders, orderSearch, statusFilter, orderTimeFilter]);
+
+  const orderStats = useMemo(() => {
+    if (!data?.orders) return { today: 0, week: 0, month: 0, all: 0 };
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+    const activeOrders = data.orders.filter(o => !o.isArchived);
+
+    return {
+      today: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= startOfToday).length,
+      week: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= past7Days).length,
+      month: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= startOfMonth).length,
+      all: activeOrders.length
+    };
+  }, [data?.orders]);
 
   const filteredProducts = useMemo(() => {
     const products = data?.products || [];
@@ -1299,7 +1330,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl overflow-hidden">
                         {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/") || category.icon.startsWith("data:")) ? (
-                          <img src={category.icon} alt={category.name} className="w-full h-full object-cover p-1.5" />
+                          <img src={category.icon} alt={category.name} className="w-full h-full object-cover p-1.5" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
                         ) : (
                           category.icon || "•"
                         )}
@@ -1396,7 +1427,7 @@ export default function AdminPage() {
                         
                         {product.image && (
                           <div className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-primary/5 shrink-0 shadow-sm">
-                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
                           </div>
                         )}
                         
@@ -1475,6 +1506,31 @@ export default function AdminPage() {
                   <CardTitle className="text-2xl font-black">سجل الطلبات</CardTitle>
                   <CardDescription>تابع طلبات العملاء وحالات التوصيل من مكان واحد.</CardDescription>
                 </div>
+
+                {/* Orders Stats Summary Card */}
+                <div className="flex bg-white/60 p-1.5 rounded-2xl border border-white/40 shadow-sm backdrop-blur-sm">
+                  {[
+                    { id: 'today', label: 'اليوم', count: orderStats.today },
+                    { id: 'week', label: 'الأسبوع', count: orderStats.week },
+                    { id: 'month', label: 'الشهر', count: orderStats.month },
+                    { id: 'all', label: 'الكل', count: orderStats.all }
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setOrderTimeFilter(f.id as any)}
+                      className={cn(
+                        "flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-300 min-w-[70px]",
+                        orderTimeFilter === f.id 
+                          ? "bg-white text-primary shadow-md border-b-2 border-primary" 
+                          : "text-muted-foreground hover:bg-white/40 opacity-70 hover:opacity-100"
+                      )}
+                    >
+                      <span className="text-[10px] font-bold mb-1">{f.label}</span>
+                      <span className="text-sm font-black">{f.count.toLocaleString("ar-EG")}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <div className="relative">
                     <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

@@ -35,9 +35,9 @@ export default function Home() {
 
       <main className="flex-1">
         {/* Categories Section - Compact Grid */}
-        <section className="py-6 md:py-10 container mx-auto px-4 overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl md:text-3xl font-black text-foreground">تصفح الأقسام</h2>
+        <section className="py-2 md:py-4 container mx-auto px-4 overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl md:text-2xl font-black text-foreground">تصفح الأقسام</h2>
             <Link href="/shop">
               <Button variant="link" className="text-primary font-bold pr-0 h-auto py-0">
                 عرض الكل <ArrowLeft className="mr-2 h-4 w-4" />
@@ -51,7 +51,7 @@ export default function Home() {
                 <div className="flex-shrink-0 w-20 md:w-32 group cursor-pointer flex flex-col items-center gap-1.5 p-1.5 md:p-4 rounded-xl md:rounded-3xl bg-white border border-border/50 shadow-sm hover:shadow-lg transition-all duration-300 snap-start">
                   <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary/5 flex items-center justify-center text-xl md:text-3xl group-hover:scale-110 transition-transform">
                     {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
-                      <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn-icons-png.flaticon.com/512/3081/3081840.png"; }} />
+                      <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }} />
                     ) : (
                       cat.icon || "•"
                     )}
@@ -65,7 +65,7 @@ export default function Home() {
 
         {/* Cloud Product Sections */}
         <section className="bg-secondary/5 relative">
-          <div className="container mx-auto px-2 md:px-4 space-y-4 md:space-y-8 py-4 md:py-10">
+          <div className="container mx-auto px-2 md:px-4 space-y-3 md:space-y-6 py-2 md:py-6">
             {cats.map((cat: any) => {
               const categoryProducts = featuredProducts?.filter((p: any) => p.category === cat.id) || [];
               if (categoryProducts.length === 0) return null;
@@ -76,7 +76,7 @@ export default function Home() {
                     <div className="flex items-center gap-2 md:gap-4">
                       <div className="w-8 h-8 md:w-14 md:h-14 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm border border-border/50">
                         {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
-                          <img src={cat.icon} alt={cat.name} className="w-5 h-5 md:w-8 md:w-8 object-contain" />
+                          <img src={cat.icon} alt={cat.name} className="w-5 h-5 md:w-8 md:h-8 object-contain" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
                         ) : (
                           <ShoppingBag className="h-5 w-5 md:h-8 md:w-8" />
                         )}

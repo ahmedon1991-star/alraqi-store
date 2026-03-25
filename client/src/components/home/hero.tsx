@@ -4,7 +4,7 @@ import { Link } from "wouter";
 
 export function Hero() {
   return (
-    <div className="relative w-full h-[380px] md:h-[750px] overflow-hidden flex items-center">
+    <div className="relative w-full h-[300px] md:h-[650px] overflow-hidden flex items-center">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -45,9 +45,11 @@ export function Hero() {
                 <ArrowLeft className="mr-2 h-4 w-4 md:h-8 md:w-8" />
               </Button>
             </Link>
-            <Button variant="outline" size="sm" className="md:size-lg bg-white/10 text-white border-white/20 backdrop-blur-md font-black text-[10px] md:text-xl px-4 md:px-14 h-9 md:h-20 rounded-xl md:rounded-3xl border transition-all">
-              عروضنا
-            </Button>
+            <Link href="/shop?offers=true">
+              <Button variant="outline" size="sm" className="md:size-lg bg-white/10 text-white border-white/20 backdrop-blur-md font-black text-[10px] md:text-xl px-4 md:px-14 h-9 md:h-20 rounded-xl md:rounded-3xl border transition-all">
+                عروضنا
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -64,7 +66,7 @@ export function Hero() {
       </div>
 
       {/* Modern Wave Divider at Bottom - Slimmer */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background via-background/40 to-transparent z-20" />
+      <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-background via-background/40 to-transparent z-20" />
     </div>
   );
 }
