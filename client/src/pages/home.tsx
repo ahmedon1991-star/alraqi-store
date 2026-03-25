@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/home/hero";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, ShieldCheck, Headphones, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck, Headphones, Loader2, Send, ShoppingBag } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, seedDatabase } from "@/lib/api";
@@ -67,42 +67,59 @@ export default function Home() {
 
           <div className="container mx-auto px-4 relative z-10">
             {/* الأقسام السحابية - عرض المنتجات حسب كل قسم */}
-        <section className="py-8 md:py-16 container mx-auto px-4 space-y-16">
+        <section className="py-8 md:py-16 container mx-auto px-4 space-y-10 md:space-y-20">
           {cats.map((cat: any) => {
             const categoryProducts = featuredProducts?.filter((p: any) => p.category === cat.id) || [];
             if (categoryProducts.length === 0) return null;
 
             return (
-              <div key={cat.id} className="space-y-6">
+              <div key={cat.id} className="space-y-4 md:space-y-8">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl md:text-2xl shadow-sm">
+                  <div className="flex items-center gap-2 md:gap-4 group">
+                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                       {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
-                        <img src={cat.icon} alt={cat.name} className="w-6 h-6 md:w-8 md:h-8 object-contain" />
+                        <img 
+                          src={cat.icon} 
+                          alt={cat.name} 
+                          className="w-6 h-6 md:w-10 md:h-10 object-contain p-1" 
+                          onError={(e) => {
+                            // Fallback to Icon if image loads but fails
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            const parent = (e.target as HTMLImageElement).parentElement;
+                            if (parent) {
+                              const icon = document.createElement('i');
+                              icon.className = "lucide lucide-shopping-bag h-5 w-5 md:h-8 md:w-8";
+                              parent.appendChild(icon);
+                            }
+                          }}
+                        />
                       ) : (
-                        cat.icon || "📦"
+                        <ShoppingBag className="h-5 w-5 md:h-8 md:w-8" />
                       )}
                     </div>
-                    <h2 className="text-xl md:text-2xl font-black text-foreground">{cat.name}</h2>
+                    <div>
+                      <h2 className="text-lg md:text-3xl font-black text-foreground mb-0 md:mb-1">{cat.name}</h2>
+                      <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full group-hover:w-full transition-all duration-300" />
+                    </div>
                   </div>
                   <Link href={`/shop?category=${cat.id}`}>
-                    <Button variant="ghost" className="text-primary font-bold hover:bg-primary/5 rounded-full px-4">
-                      عرض الكل <ArrowLeft className="mr-2 h-4 w-4" />
+                    <Button variant="link" className="text-primary font-bold hover:no-underline px-0 text-sm md:text-lg">
+                      <span className="ml-2">عرض الكل</span> <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
                   </Link>
                 </div>
 
-                <div className="flex overflow-x-auto no-scrollbar gap-4 md:gap-6 pb-4 snap-x">
-                  {categoryProducts.map((product: any) => (
-                    <div key={product.id} className="flex-shrink-0 w-[160px] md:w-[240px] snap-start mb-2">
+                <div className="flex overflow-x-auto no-scrollbar gap-3 md:gap-8 pb-4 snap-x">
+                  {categoryProducts.slice(0, 10).map((product: any) => (
+                    <div key={product.id} className="flex-shrink-0 w-[150px] md:w-[280px] snap-start mb-1 h-full">
                       <ProductCard {...product} />
                     </div>
                   ))}
-                  <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[140px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-4 rounded-[2rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors group cursor-pointer h-full min-h-[220px] md:min-h-[350px]">
-                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                      <ArrowLeft className="h-6 w-6 md:h-8 md:h-8" />
+                  <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[100px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-3 rounded-2xl md:rounded-[3rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group cursor-pointer h-auto self-stretch">
+                    <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 group-hover:rotate-12 transition-transform shadow-inner">
+                      <ArrowLeft className="h-5 w-5 md:h-8 md:w-8" />
                     </div>
-                    <span className="font-bold text-sm md:text-base text-primary">مشاهدة المزيد</span>
+                    <span className="font-bold text-[10px] md:text-lg text-primary text-center px-1">عرض المزيد</span>
                   </Link>
                 </div>
               </div>
