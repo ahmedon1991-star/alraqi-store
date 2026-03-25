@@ -811,6 +811,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(category);
   });
 
+  app.patch("/api/admin/categories/:id", requireAdmin, async (req: Request, res: Response) => {
+    const categoryId = getSingleParam(req.params.id);
+    const { name, icon } = req.body as { name?: string; icon?: string };
+    if (!name) {
+      return res.status(400).json({ message: "اسم القسم مطلوب" });
+    }
+    const updated = await storage.updateCategory(categoryId, { name, icon: icon || null });
+    if (!updated) {
+      return res.status(404).json({ message: "القسم غير موجود" });
+    }
+    res.json(updated);
+  });
+
   app.delete("/api/admin/categories/:id", requireAdmin, async (req: Request, res: Response) => {
     await storage.deleteCategory(req.params.id as string);
     res.sendStatus(200);

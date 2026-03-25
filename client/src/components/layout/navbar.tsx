@@ -75,6 +75,42 @@ export function Navbar() {
 
           {/* Left Actions (Cart, Search, Profile) */}
           <div className="flex items-center gap-2 md:gap-4 justify-start">
+             {/* Mobile Menu Trigger */}
+             <div className="md:hidden">
+               <Sheet>
+                 <SheetTrigger asChild>
+                   <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-700 bg-gray-50/50 border border-gray-100 rounded-2xl">
+                     <Menu className="h-5 w-5" />
+                   </Button>
+                 </SheetTrigger>
+                 <SheetContent side="right" className="w-[80%] rounded-l-3xl p-6 text-right">
+                   <div className="flex flex-col gap-6 mt-12">
+                     <Link href="/" className="text-xl font-black text-gray-800">الرئيسية</Link>
+                     <Link href="/shop" className="text-xl font-black text-gray-800 border-t pt-4">المتجر</Link>
+                     <Link href="/shop?offers=true" className="text-xl font-black text-primary border-t pt-4">العروض الحصرية</Link>
+                     <div className="mt-auto border-t pt-8">
+                       <p className="text-sm font-bold text-gray-400 mb-4">متجر الراقي للمنتجات السودانية</p>
+                       {user ? (
+                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                              {user.name?.charAt(0) || "U"}
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-sm">{user.name}</p>
+                              <p className="text-xs text-muted-foreground">{user.email}</p>
+                            </div>
+                         </div>
+                       ) : (
+                        <Link href="/login">
+                          <Button className="w-full h-12 rounded-2xl font-bold">تسجيل الدخول</Button>
+                        </Link>
+                       )}
+                     </div>
+                   </div>
+                 </SheetContent>
+               </Sheet>
+             </div>
+
              <Button 
                 variant="ghost" 
                 size="icon" 

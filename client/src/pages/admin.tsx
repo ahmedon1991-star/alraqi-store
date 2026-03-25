@@ -31,6 +31,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
+import { CategoryIcon } from "@/components/ui/category-icon";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,6 +199,8 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; icon: string | null } | null>(null);
+  const [isCategoryEditDialogOpen, setIsCategoryEditDialogOpen] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, target: "product" | "category"): Promise<string | undefined> => {
     const file = e.target.files?.[0];
@@ -379,6 +382,24 @@ export default function AdminPage() {
       toast({
         title: "تمت إضافة القسم",
         description: "أصبح القسم الجديد متاحاً الآن.",
+      });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { name: string; icon?: string | null } }) =>
+      apiRequest(`/api/admin/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
+      setIsCategoryEditDialogOpen(false);
+      setEditingCategory(null);
+      toast({
+        title: "تم تحديث القسم",
+        description: "تم حفظ التعديلات بنجاح.",
       });
     },
   });
@@ -1329,11 +1350,11 @@ export default function AdminPage() {
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-xl overflow-hidden">
-                        {category.icon && (category.icon.startsWith("http") || category.icon.startsWith("/") || category.icon.startsWith("data:")) ? (
-                          <img src={category.icon} alt={category.name} className="w-full h-full object-cover p-1.5" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
-                        ) : (
-                          category.icon || "•"
-                        )}
+                        <CategoryIcon 
+                          icon={category.icon} 
+                          className="h-5 w-5 text-primary" 
+                          imgClassName="p-1.5" 
+                        />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">{category.name}</p>
@@ -2184,7 +2205,7 @@ export default function AdminPage() {
               </CardHeader>
               <CardContent>
                 <form 
-                  className="grid grid-cols-1 gap-4 md:grid-cols-4 items-end mb-8"
+                  className="grid grid-cols-1 gap-3 md:grid-cols-4 items-end mb-8"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const formData = new FormData(e.currentTarget);
@@ -2196,20 +2217,20 @@ export default function AdminPage() {
                     e.currentTarget.reset();
                   }}
                 >
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold block text-right">معرف القسم (إنجليزي)</label>
-                    <Input name="id" placeholder="honey-products" required className="text-right" dir="ltr" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block text-right">معرف القسم (إنجليزي)</label>
+                    <Input name="id" placeholder="spices-mix" required className="text-right h-10 rounded-xl" dir="ltr" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold block text-right">اسم القسم بالعربي</label>
-                    <Input name="name" placeholder="عسل ومنتجاته" required className="text-right" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block text-right">اسم القسم بالعربي</label>
+                    <Input name="name" placeholder="بهارات وتوابل" required className="text-right h-10 rounded-xl" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold block text-right">رمز القسم أو صوره</label>
-                    <div className="flex gap-2">
-                      <Input name="icon" id="cat-icon-input" placeholder="Sparkles أو رابط صوره" className="text-right flex-1" dir="ltr" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold block text-right">أيقونة أو رابط صورة</label>
+                    <div className="flex gap-1.5">
+                      <Input name="icon" id="cat-icon-input" placeholder="Sparkles أو رابط..." className="text-right flex-1 h-10 rounded-xl" dir="ltr" />
                       <div className="relative">
-                        <Button type="button" variant="outline" size="icon" disabled={isUploading}>
+                        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={isUploading}>
                           {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                         </Button>
                         <input
@@ -2227,41 +2248,125 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
-                  <Button type="submit" className="h-11 font-bold" disabled={createCategoryMutation.isPending}>
+                  <Button type="submit" className="h-10 font-black rounded-xl" disabled={createCategoryMutation.isPending}>
                     {createCategoryMutation.isPending ? "جارٍ الإضافة..." : "إضافة القسم"}
                   </Button>
                 </form>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {categoriesQuery.data?.map((category) => (
-                    <div key={category.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+                    <div key={category.id} className="flex items-center justify-between p-3 rounded-2xl border border-border bg-white shadow-sm hover:shadow-md transition-all group">
                       <div className="flex items-center gap-3">
-                        {category.icon && (
-                          <div className="h-10 w-10 rounded-lg overflow-hidden bg-primary/5">
-                            <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-bold">{category.name}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{category.id}</p>
+                        <div className="h-12 w-12 rounded-xl overflow-hidden bg-primary/5 flex items-center justify-center text-primary font-bold border border-primary/10">
+                          <CategoryIcon 
+                            icon={category.icon} 
+                            className="h-6 w-6" 
+                            imgClassName="w-full h-full object-cover" 
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-black text-sm leading-tight text-foreground">{category.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono mt-0.5 opacity-60">{category.id}</p>
                         </div>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-full"
-                        onClick={() => {
-                          if (confirm("هل أنت متأكد من حذف هذا القسم؟")) {
-                            deleteCategoryMutation.mutate(category.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          className="h-8 w-8 text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 rounded-lg"
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setIsCategoryEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          className="h-8 w-8 text-rose-600 hover:text-rose-700 bg-rose-50/50 hover:bg-rose-50 rounded-lg"
+                          onClick={() => {
+                            if (confirm(`هل أنت متأكد من حذف قسم "${category.name}"؟ سيتم الاحتفاظ بالمنتجات ولكنها قد لا تظهر بشكل صحيح.`)) {
+                              deleteCategoryMutation.mutate(category.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
-                  {categoriesQuery.isLoading && <div className="col-span-full py-8 text-center text-muted-foreground">جارٍ تحميل الأقسام...</div>}
+                  {categoriesQuery.isLoading && <div className="col-span-full py-20 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground/30" /></div>}
                 </div>
+
+                {/* Edit Category Dialog */}
+                <Dialog open={isCategoryEditDialogOpen} onOpenChange={setIsCategoryEditDialogOpen}>
+                  <DialogContent className="max-w-[400px] w-[95%] rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
+                    <DialogHeader className="text-right sm:text-right space-y-2">
+                       <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 w-fit">
+                        <Pencil className="h-3.5 w-3.5" />
+                        تعديل بيانات القسم
+                      </div>
+                      <DialogTitle className="text-2xl font-black">تعديل القسم</DialogTitle>
+                      <DialogDescription className="font-medium">تعديل الاسم أو الأيقونة المرئية للقسم.</DialogDescription>
+                    </DialogHeader>
+                    {editingCategory && (
+                    <form 
+                      className="space-y-5 py-4"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        updateCategoryMutation.mutate({
+                          id: editingCategory.id,
+                          data: {
+                            name: formData.get("name") as string,
+                            icon: (formData.get("icon") as string) || null,
+                          }
+                        });
+                      }}
+                    >
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold block text-right pr-1">معرف القسم</label>
+                        <Input value={editingCategory.id} disabled className="text-center font-mono bg-muted/50 h-11" dir="ltr" />
+                        <p className="text-[10px] text-muted-foreground text-right italic">لا يمكن تغيير المعرف الفريد للقسم بعد إنشائه.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold block text-right pr-1">اسم القسم بالعربي</label>
+                        <Input name="name" defaultValue={editingCategory.name} required className="text-right font-black text-lg h-12 rounded-xl focus:ring-primary/20" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold block text-right pr-1">رمز القسم أو الصورة</label>
+                        <div className="flex gap-2">
+                          <Input name="icon" id="edit-cat-icon-input" defaultValue={editingCategory.icon || ""} placeholder="Sparkles أو رابط..." className="text-right flex-1 h-12 rounded-xl" dir="ltr" />
+                          <div className="relative">
+                            <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl border-dashed" disabled={isUploading}>
+                              {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            </Button>
+                            <input
+                              type="file"
+                              className="absolute inset-0 cursor-pointer opacity-0"
+                              onChange={async (e) => {
+                                const url = await handleImageUpload(e, "category");
+                                if (url) {
+                                  const input = document.getElementById('edit-cat-icon-input') as HTMLInputElement;
+                                  if (input) input.value = url;
+                                }
+                              }}
+                              accept="image/*"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter className="pt-6 flex flex-col sm:flex-row-reverse gap-3">
+                        <Button type="submit" className="h-14 flex-1 font-black text-xl rounded-2xl shadow-lg shadow-primary/20" disabled={updateCategoryMutation.isPending}>
+                          {updateCategoryMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "حفظ التعديلات"}
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={() => setIsCategoryEditDialogOpen(false)} className="h-14 px-8 font-bold rounded-2xl">إلغاء</Button>
+                      </DialogFooter>
+                    </form>
+                    )}
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>

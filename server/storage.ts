@@ -113,6 +113,7 @@ export interface IStorage {
 
   getCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: string, data: { name: string; icon?: string | null }): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<void>;
 
   getCartItems(sessionId: string): Promise<CartItemWithProduct[]>;
@@ -332,6 +333,12 @@ export class DatabaseStorage implements IStorage {
     const [created] = await db.insert(categories).values(category).returning();
     return created;
   }
+  async updateCategory(id: string, data: { name: string; icon?: string | null }): Promise<Category | undefined> {
+    if (!db) return undefined;
+    const [updated] = await db.update(categories).set({ name: data.name, icon: data.icon ?? null }).where(eq(categories.id, id)).returning();
+    return updated;
+  }
+
   async deleteCategory(id: string): Promise<void> {
     if (!db) {
       return;
@@ -804,6 +811,13 @@ export class MemoryStorage implements IStorage {
     };
     this.categories.set(created.id, created);
     return created;
+  }
+  async updateCategory(id: string, data: { name: string; icon?: string | null }): Promise<Category | undefined> {
+    const existing = this.categories.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, name: data.name, icon: data.icon ?? existing.icon };
+    this.categories.set(id, updated);
+    return updated;
   }
   async deleteCategory(id: string): Promise<void> {
     this.categories.delete(id);

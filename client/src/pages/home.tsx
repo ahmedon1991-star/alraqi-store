@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest, seedDatabase } from "@/lib/api";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { CategoryIcon } from "@/components/ui/category-icon";
 
 export default function Home() {
   const { data: productsData, isLoading: productsLoading } = useQuery<any[]>({
@@ -49,12 +50,12 @@ export default function Home() {
             {cats.map((cat: any) => (
               <Link href={`/shop?category=${cat.id}`} key={cat.id}>
                 <div className="flex-shrink-0 w-20 md:w-32 group cursor-pointer flex flex-col items-center gap-1.5 p-1.5 md:p-4 rounded-xl md:rounded-3xl bg-white border border-border/50 shadow-sm hover:shadow-lg transition-all duration-300 snap-start">
-                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary/5 flex items-center justify-center text-xl md:text-3xl group-hover:scale-110 transition-transform">
-                    {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
-                      <img src={cat.icon} alt={cat.name} className="w-full h-full object-cover p-2 md:p-3" onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }} />
-                    ) : (
-                      cat.icon || "•"
-                    )}
+                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-primary/5 flex items-center justify-center text-xl md:text-3xl group-hover:scale-110 transition-transform overflow-hidden">
+                    <CategoryIcon 
+                      icon={cat.icon} 
+                      className="h-7 w-7 md:h-10 md:w-10 text-primary" 
+                      imgClassName="p-2 md:p-3" 
+                    />
                   </div>
                   <h3 className="font-bold text-center text-[10px] md:text-base text-gray-700 group-hover:text-primary transition-colors whitespace-nowrap overflow-hidden text-ellipsis w-full">{cat.name}</h3>
                 </div>
@@ -74,12 +75,12 @@ export default function Home() {
                 <div key={cat.id} className="bg-white/40 rounded-3xl p-3 md:p-6 border border-white shadow-sm overflow-hidden">
                   <div className="flex items-center justify-between mb-3 md:mb-6">
                     <div className="flex items-center gap-2 md:gap-4">
-                      <div className="w-8 h-8 md:w-14 md:h-14 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm border border-border/50">
-                        {cat.icon && (cat.icon.startsWith("http") || cat.icon.startsWith("/") || cat.icon.startsWith("data:")) ? (
-                          <img src={cat.icon} alt={cat.name} className="w-5 h-5 md:w-8 md:h-8 object-contain" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
-                        ) : (
-                          <ShoppingBag className="h-5 w-5 md:h-8 md:w-8" />
-                        )}
+                      <div className="w-8 h-8 md:w-14 md:h-14 rounded-xl bg-white flex items-center justify-center text-primary shadow-sm border border-border/50 overflow-hidden">
+                        <CategoryIcon 
+                          icon={cat.icon} 
+                          className="h-5 w-5 md:h-8 md:w-8" 
+                          imgClassName="object-contain" 
+                        />
                       </div>
                       <h2 className="text-base md:text-2xl font-black text-foreground">{cat.name}</h2>
                     </div>
