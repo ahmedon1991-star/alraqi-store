@@ -32,6 +32,8 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,9 +89,52 @@ export default function ProfilePage() {
     enabled: !!user,
   });
 
+  // Mutation to close an order (set status to cancelled)
+  const closeOrderMutation = useMutation({
+    mutationFn: (orderId: string) =>
+      apiRequest(`/api/orders/${orderId}/close`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/me"] });
+      toast({ title: "تم إغلاق الطلب", description: "تم إغلاق الطلب بنجاح." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "خطأ في إغلاق الطلب",
+        description: error.message || "حدث خطأ غير متوقع.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: { name: "", phone: "", email: "" },
+  });
+
+  // Password change form schema and hook
+  const passwordSchema = z.object({
+    currentPassword: z.string().min(6, { message: "كلمة السر الحالية يجب أن تكون 6 أحرف على الأقل" }),
+    newPassword: z.string().min(6, { message: "كلمة السر الجديدة يجب أن تكون 6 أحرف على الأقل" }),
+    confirmPassword: z.string().min(6),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "كلمة السر الجديدة وتأكيدها غير متطابقين",
+  });
+  const passwordForm = useForm<z.infer<typeof passwordSchema>>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
+
+  const changePasswordMutation = useMutation({
+    mutationFn: (values: z.infer<typeof passwordSchema>) =>
+      apiRequest("/api/auth/change-password", { method: "POST", body: JSON.stringify(values) }),
+    onSuccess: () => {
+      toast({ title: "تم تغيير كلمة السر", description: "تم حفظ كلمة السر الجديدة بنجاح." });
+      passwordForm.reset();
+    },
+    onError: (error: any) => {
+      toast({ title: "خطأ", description: error.message || "فشل تغيير كلمة السر", variant: "destructive" });
+    },
   });
 
   useEffect(() => {
@@ -127,9 +172,11 @@ export default function ProfilePage() {
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
       
+      if (!user) return;
       const userIdBuffer = new TextEncoder().encode(user.id);
-
+      
       const credential = await navigator.credentials.create({
+
         publicKey: {
           challenge: challenge.buffer,
           rp: { 
@@ -231,7 +278,9 @@ export default function ProfilePage() {
                     { id: "orders", label: "طلباتي", icon: ShoppingBag },
                     { id: "profile", label: "الملف الشخصي", icon: UserCog },
                     { id: "wallet", label: "المحفظة", icon: Wallet },
-                    { id: "settings", label: "الإعدادات", icon: Settings }
+                    { id: "settings", label: "الإعدادات", icon: Settings },
+                    { id: "changePassword", label: "تغيير كلمة السر", icon: Settings },
+                    { id: "orderHistory", label: "سجل الطلبات الملغية", icon: History }
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -248,33 +297,28 @@ export default function ProfilePage() {
                   <button onClick={() => logoutMutation.mutate()} className="flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-rose-600 hover:bg-rose-50 transition-all mt-6"><LogOut className="h-5 w-5 text-rose-400" /> تسجيل الخروج</button>
                </div>
 
-               <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar">
+                <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar sticky top-[80px] z-30 bg-[#F7F8FA]">
                   {[
                     { id: "orders", label: "طلباتي", icon: ShoppingBag },
+                    { id: "orderHistory", label: "ملغية", icon: History },
                     { id: "profile", label: "الملف", icon: UserCog },
-                    { id: "wallet", label: "المحفظة", icon: Wallet },
-                    { id: "settings", label: "الإعدادات", icon: Settings }
+                    { id: "changePassword", label: "كلمة السر", icon: Settings },
+                    { id: "settings", label: "الأمان", icon: ShieldCheck }
                   ].map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
                       className={cn(
-                        "flex-1 min-w-[100px] flex flex-col items-center justify-center p-4 rounded-2xl font-black text-xs transition-all",
-                        activeTab === item.id ? "bg-primary text-white shadow-lg" : "bg-white text-gray-500 shadow-sm"
+                        "flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 rounded-2xl font-black text-[10px] transition-all whitespace-nowrap",
+                        activeTab === item.id ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-white text-gray-500 shadow-sm"
                       )}
                     >
-                      <item.icon className="h-5 w-5 mb-2" />
+                      <item.icon className="h-4 w-4 mb-1" />
                       {item.label}
                     </button>
                   ))}
-                  <button
-                    onClick={() => logoutMutation.mutate()}
-                    className="flex-1 min-w-[100px] flex flex-col items-center justify-center p-4 rounded-2xl font-black text-xs transition-all bg-rose-50 text-rose-600 shadow-sm"
-                  >
-                    <LogOut className="h-5 w-5 mb-2" />
-                    خروج
-                  </button>
-               </div>
+                </div>
+
             </aside>
 
             <div className="lg:col-span-9 space-y-6">
@@ -287,13 +331,25 @@ export default function ProfilePage() {
 
                     {ordersQuery.isLoading ? (
                       <div className="flex flex-col items-center py-20 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="font-bold text-muted-foreground">جاري استرجاع طلباتك...</p></div>
-                    ) : ordersQuery.data?.length ? (
+                    ) : ordersQuery.data?.filter((order: any) => order.status !== "cancelled").length ? (
                       <div className="grid gap-5">
-                         {ordersQuery.data.map((order: any) => {
+                         {ordersQuery.data.filter((order: any) => order.status !== "cancelled").map((order: any) => {
                             const status = statusData[order.status] || statusData.pending;
                             const items = JSON.parse(order.items || "[]");
                             return (
-                              <Card key={order.id} className="border-none shadow-sm md:shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden rounded-[1.5rem] md:rounded-[2rem] bg-white group hover:shadow-md transition-all duration-300">
+                              <Card key={order.id} className="border-none shadow-sm md:shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-visible rounded-[2rem] bg-white group transition-all duration-300 relative">
+                                 {/* "Red Mark" Close Button (Top Left in RTL) */}
+                                 {order.status === "pending" && (
+                                   <button 
+                                      onClick={() => closeOrderMutation.mutate(order.id)}
+                                      className="absolute -top-3 -right-3 md:top-4 md:right-4 z-20 h-8 w-8 md:h-10 md:w-10 bg-white border-2 border-rose-100 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-90"
+                                      title="إغلاق / إلغاء الطلب"
+                                   >
+
+                                      <XCircle className="h-5 w-5 md:h-6 md:w-6" />
+                                   </button>
+                                 )}
+
                                  <div className="flex flex-col">
                                     <div className="p-5 md:p-6 flex items-center justify-between border-b border-gray-50">
                                        <div className="flex items-center gap-3">
@@ -311,9 +367,7 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="p-5 md:p-6">
-
-
-                                       <div className="flex items-center justify-between mt-4">
+                                       <div className="flex items-center justify-between">
                                           <div className="text-right">
                                              <p className="text-[10px] font-bold text-gray-400 mb-1">إجمالي المبلغ</p>
                                              <p className="text-lg md:text-xl font-black text-primary">{formatPrice(order.total)}</p>
@@ -321,27 +375,28 @@ export default function ProfilePage() {
                                           <div className="flex gap-2">
                                              <Button 
                                                 size="sm" 
-                                                className="rounded-full font-black px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
+                                                className="rounded-full font-black px-4 md:px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
                                                 onClick={() => { setSelectedOrder(order); setIsTrackOpen(true); }}
                                              >
                                                 تفاصيل الطلب <FileText className="h-4 w-4 mr-1.5" />
-                                             </Button>
-                                             <Button 
-                                                size="sm" 
-                                                variant="outline" 
-                                                className="rounded-full font-black px-6 h-10 border-2"
-                                                onClick={() => handleReorder(order.items)}
-                                             >
-                                                إعادة طلب <RotateCcw className="h-4 w-4 mr-1.5 text-orange-500" />
-                                             </Button>
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </Card>
-                            )
-                         })}
+                                              </Button>
+                                              <Button 
+                                                 size="sm" 
+                                                 variant="outline" 
+                                                 className="rounded-full font-black px-4 md:px-6 h-10 border-2"
+                                                 onClick={() => handleReorder(order.items)}
+                                              >
+                                                 إعادة طلب <RotateCcw className="h-4 w-4 mr-1.5 text-orange-500" />
+                                              </Button>
+                                           </div>
+                                        </div>
+                                     </div>
+                                  </div>
+                               </Card>
+                             )
+                          })}
                       </div>
+
                     ) : (
                       <div className="bg-white rounded-[2rem] p-16 text-center shadow-lg shadow-gray-100 animate-in zoom-in-95">
                          <div className="bg-primary/5 h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
@@ -452,6 +507,105 @@ export default function ProfilePage() {
                     </Card>
                   </div>
                )}
+
+               {/* Change Password Tab */}
+               {activeTab === "changePassword" && (
+                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                   <h2 className="text-2xl font-black text-gray-900">تغيير كلمة السر</h2>
+                   <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-white">
+                     <Form {...passwordForm}>
+                       <form onSubmit={passwordForm.handleSubmit((v) => changePasswordMutation.mutate(v))} className="space-y-6">
+                         <FormField control={passwordForm.control} name="currentPassword" render={({ field }) => (
+                           <FormItem>
+                             <FormLabel className="font-bold pr-2">كلمة السر الحالية</FormLabel>
+                             <FormControl>
+                               <Input type="password" {...field} className="h-14 rounded-2xl bg-[#F8F9FB] border-none text-right font-black focus-visible:ring-primary/20" />
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
+                         <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
+                           <FormItem>
+                             <FormLabel className="font-bold pr-2">كلمة السر الجديدة</FormLabel>
+                             <FormControl>
+                               <Input type="password" {...field} className="h-14 rounded-2xl bg-[#F8F9FB] border-none text-right font-black focus-visible:ring-primary/20" />
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
+                         <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
+                           <FormItem>
+                             <FormLabel className="font-bold pr-2">تأكيد كلمة السر</FormLabel>
+                             <FormControl>
+                               <Input type="password" {...field} className="h-14 rounded-2xl bg-[#F8F9FB] border-none text-right font-black focus-visible:ring-primary/20" />
+                             </FormControl>
+                             <FormMessage />
+                           </FormItem>
+                         )} />
+                         <Button type="submit" className="w-full md:w-auto rounded-full px-12 h-14 font-black text-lg shadow-xl shadow-primary/10" disabled={changePasswordMutation.isPending}>
+                           {changePasswordMutation.isPending ? "جاري الحفظ..." : "تغيير كلمة السر"}
+                         </Button>
+                       </form>
+                     </Form>
+                   </Card>
+                 </div>
+               )}
+
+                {/* Cancelled Order History */}
+                {activeTab === "orderHistory" && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="flex items-center justify-between mb-4">
+                       <h2 className="text-xl md:text-2xl font-black text-gray-900">سجل الطلبات الملغية</h2>
+                       <History className="h-5 w-5 text-gray-400" />
+                    </div>
+
+                    {ordersQuery.isLoading ? (
+                      <div className="flex flex-col items-center py-20 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="font-bold text-muted-foreground">جاري تحميل سجل المحفوظات...</p></div>
+                    ) : (ordersQuery.data || []).filter((order: any) => order.status === "cancelled").length ? (
+                      <div className="grid gap-5">
+                         {ordersQuery.data?.filter((order: any) => order.status === "cancelled").map((order: any) => {
+                            return (
+                              <Card key={order.id} className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-white border-r-4 border-r-rose-400">
+                                 <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="flex items-center gap-4">
+                                       <div className="h-12 w-12 rounded-2xl bg-rose-50 flex items-center justify-center">
+                                          <XCircle className="h-6 w-6 text-rose-500" />
+                                       </div>
+                                       <div>
+                                          <div className="text-[10px] font-bold text-gray-400">{formatOrderDate(order.createdAt)}</div>
+                                          <h3 className="font-black text-gray-900 leading-none">طلب #{order.id.slice(0, 8).toUpperCase()}</h3>
+                                          <Badge className="mt-2 bg-rose-50 text-rose-600 border-rose-100 text-[10px]" variant="outline">ملغي</Badge>
+                                       </div>
+                                    </div>
+                                    <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-4 md:pt-0">
+                                       <div className="text-right">
+                                          <p className="text-[10px] font-bold text-gray-400">الإجمالي</p>
+                                          <p className="text-lg font-black text-primary">{formatPrice(order.total)}</p>
+                                       </div>
+                                       <Button 
+                                          size="sm" 
+                                          variant="outline" 
+                                          className="rounded-full font-black px-4 md:px-6 h-10 border-2"
+                                          onClick={() => handleReorder(order.items)}
+                                       >
+                                          إعادة طلب
+                                       </Button>
+                                    </div>
+                                 </div>
+                              </Card>
+                            )
+                          })}
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-[2rem] p-16 text-center shadow-lg shadow-gray-100/50">
+                         <History className="h-16 w-16 text-gray-200 mx-auto mb-4" />
+                         <h3 className="text-xl font-black text-gray-900 mb-2">لا توجد طلبات ملغية</h3>
+                         <p className="text-gray-500 font-medium">سجلك نظيف جداً! لم تقم بإلغاء أي طلب مؤخراً.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
             </div>
          </div>
       </main>

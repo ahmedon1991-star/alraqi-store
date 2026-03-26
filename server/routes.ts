@@ -469,6 +469,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ success: true });
   });
 
+  app.post("/api/auth/change-password", requireCustomer, async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body as {
+      currentPassword?: string;
+      newPassword?: string;
+    };
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "كلمة المرور الحالية والجديدة مطلوبة" });
+    }
+
+    const user = res.locals.customer as User;
+    if (!verifyPassword(currentPassword, user.password)) {
+      return res.status(401).json({ message: "كلمة المرور الحالية غير صحيحة" });
+    }
+
+    await storage.updateUser(user.id, {
+      password: hashPassword(newPassword),
+    });
+
+    res.json({ success: true, message: "تم تغيير كلمة المرور بنجاح" });
+  });
+
   app.patch("/api/auth/me", requireCustomer, async (req: Request, res: Response) => {
     const { name, phone, email, avatar } = req.body as Partial<User>;
     const userId = res.locals.customer.id;
@@ -1190,6 +1212,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
     res.json(sortedOrders);
   });
+
+  app.post("/api/orders/:id/close", requireCustomer, async (req: Request, res: Response) => {
+    const orderId = getSingleParam(req.params.id);
+    const userId = res.locals.customer.id;
+    const order = await storage.getOrderById(orderId);
+
+    if (!order || order.userId !== userId) {
+      return res.status(403).json({ message: "ليس لديك صلاحية لإغلاق هذا الطلب" });
+    }
+
+    const updated = await storage.updateOrderStatus(orderId, "cancelled");
+    res.json(updated);
+  });
+
 
   app.post("/api/orders", async (req: Request, res: Response) => {
     const { sessionId: bodySessionId, name, phone, address, paymentMethod, bankId } = req.body as {
