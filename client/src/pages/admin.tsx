@@ -29,6 +29,7 @@ import {
   Volume2,
   RotateCcw,
   AlertTriangle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { CategoryIcon } from "@/components/ui/category-icon";
@@ -793,6 +794,16 @@ export default function AdminPage() {
     });
   }, [data?.products, data?.topCategories, productSearch]);
 
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    filteredProducts.forEach(product => {
+      const cat = product.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(product);
+    });
+    return groups;
+  }, [filteredProducts]);
+
   function openCreateDialog() {
     setForm(initialForm);
     setIsDialogOpen(true);
@@ -1066,7 +1077,33 @@ export default function AdminPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">الأحجام (اختياري)</label>
+                          <div className="flex items-center justify-between pr-1">
+                            <label className="text-sm font-bold text-gray-700 block">الأحجام (اختياري)</label>
+                            <div className="flex gap-1.5">
+                              {['S', 'M', 'L', 'XL', 'XXL'].map(s => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => {
+                                    const current = form.sizes ? form.sizes.split(',').map(x => x.trim()).filter(Boolean) : [];
+                                    if (!current.includes(s)) {
+                                      setForm(prev => ({ ...prev, sizes: [...current, s].join(', ') }));
+                                    } else {
+                                      setForm(prev => ({ ...prev, sizes: current.filter(x => x !== s).join(', ') }));
+                                    }
+                                  }}
+                                  className={cn(
+                                    "text-[10px] font-bold px-2 py-0.5 rounded-md transition-all active:scale-95",
+                                    form.sizes.includes(s) 
+                                      ? "bg-primary text-white shadow-sm" 
+                                      : "bg-primary/10 text-primary hover:bg-primary/20"
+                                  )}
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <Input
                             placeholder="مثال: S, M, L"
                             value={form.sizes}
@@ -1086,18 +1123,44 @@ export default function AdminPage() {
                         <div className="md:col-span-2 space-y-4 border-t pt-4 mt-2">
                           <div className="flex items-center justify-between px-1">
                             <label className="text-base font-black text-gray-800">خيارات المنتج (أحجام/مقاسات مختلفة)</label>
-                            <Button 
-                              type="button" 
-                              variant="outline" 
-                              size="sm" 
-                              className="rounded-xl gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5"
-                              onClick={() => setForm(prev => ({ 
-                                ...prev, 
-                                variants: [...(prev.variants || []), { name: "", price: "", originalPrice: "", image: "", stock: "" }] 
-                              }))}
-                            >
-                              <PlusCircle className="h-4 w-4" /> إضافة خيار
-                            </Button>
+                            <div className="flex gap-2">
+                              {['S', 'M', 'L'].map(s => (
+                                <Button 
+                                  key={s}
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="rounded-xl px-2 h-8 text-[10px] font-black border border-primary/10 text-primary hover:bg-primary/5"
+                                  onClick={() => setForm(prev => {
+                                    if (prev.variants?.some(v => v.name === s)) return prev;
+                                    return { 
+                                      ...prev, 
+                                      variants: [...(prev.variants || []), { 
+                                        name: s, 
+                                        price: prev.price || "", 
+                                        originalPrice: prev.originalPrice || "", 
+                                        image: prev.image || "", 
+                                        stock: prev.stock || "0" 
+                                      }] 
+                                    };
+                                  })}
+                                >
+                                  + {s}
+                                </Button>
+                              ))}
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                size="sm" 
+                                className="rounded-xl gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5"
+                                onClick={() => setForm(prev => ({ 
+                                  ...prev, 
+                                  variants: [...(prev.variants || []), { name: "", price: "", originalPrice: "", image: "", stock: "" }] 
+                                }))}
+                              >
+                                <PlusCircle className="h-4 w-4" /> إضافة خيار
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="space-y-3">
@@ -1533,99 +1596,93 @@ export default function AdminPage() {
               </div>
             </CardHeader>
             <CardContent className="px-6 pb-8">
-              <Reorder.Group
-                axis="y"
-                values={filteredProducts}
-                onReorder={(newOrder) => {
-                   // Local optimistic update
-                   queryClient.setQueryData(["/api/admin/overview"], (prev: any) => ({
-                     ...prev,
-                     products: prev.products.map((p: any) => {
-                        const newIdx = newOrder.findIndex((np: any) => np.id === p.id);
-                        return newIdx !== -1 ? newOrder[newIdx] : p;
-                     })
-                   }));
-
-                   // Debounced API call to prevent spamming during drag
-                   const timer = (window as any).reorderTimer;
-                   if (timer) clearTimeout(timer);
-                   
-                   (window as any).reorderTimer = setTimeout(() => {
-                      apiRequest("/api/admin/products/reorder", {
-                        method: "POST",
-                        body: JSON.stringify({ ids: newOrder.map(p => p.id) })
-                      });
-                   }, 500);
-                }}
-                className="space-y-4"
-              >
-                {filteredProducts.map((product) => (
-                  <Reorder.Item
-                    key={product.id}
-                    value={product}
-                    className="group rounded-3xl border border-border/40 bg-white/50 backdrop-blur-sm p-4 hover:border-primary/30 transition-all active:scale-[0.99] cursor-grab active:cursor-grabbing"
-                  >
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <div className="text-muted-foreground/30 group-hover:text-primary/50 transition-colors shrink-0">
-                          <GripVertical className="h-5 w-5" />
-                        </div>
-                        
-                        {product.image && (
-                          <div className="h-20 w-20 rounded-2xl overflow-hidden border-2 border-primary/5 shrink-0 shadow-sm">
-                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} />
-                          </div>
-                        )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-black text-base md:text-lg text-foreground mb-1 block leading-tight">{product.name}</h3>
-                          <div className="flex flex-wrap items-center gap-1.5 mb-2">
-                             <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
-                               {product.inStock ? "متوفر" : "غير متوفر"}
-                             </Badge>
-                             <Badge variant="outline" className={cn("rounded-full text-[10px] h-5 px-2 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
-                               المخزون: {product.stock || 0}
-                             </Badge>
-                             <Badge variant="secondary" className="text-primary/70 bg-primary/5 rounded-full h-5 text-[10px] font-bold">
-                               {getCategoryName(product.category)}
-                             </Badge>
-                          </div>
-                          <div className="text-sm font-black text-black/80">{formatPrice(product.price)}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity border-t sm:border-0 border-border/20 mt-1 sm:mt-0">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="flex-1 sm:flex-none h-10 px-4 rounded-xl gap-2 font-bold text-primary bg-primary/5 sm:bg-transparent hover:bg-primary/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditDialog(product);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          تعديل
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="flex-1 sm:flex-none h-10 px-4 rounded-xl gap-2 font-bold text-red-500 bg-red-50 sm:bg-transparent hover:bg-red-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
-                               deleteProductMutation.mutate(product.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          حذف
-                        </Button>
-                      </div>
+              <div className="space-y-12">
+                {Object.entries(groupedProducts).length > 0 ? Object.entries(groupedProducts).map(([catId, products]) => (
+                  <div key={catId} className="space-y-4">
+                    <div className="flex items-center justify-between px-2">
+                      <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                        <span className="h-6 w-1.5 bg-primary rounded-full"></span>
+                        {getCategoryName(catId)}
+                        <span className="text-xs font-bold text-muted-foreground mr-1 bg-muted px-2 py-0.5 rounded-full">{products.length} منتج</span>
+                      </h3>
                     </div>
-                  </Reorder.Item>
-                ))}
-              </Reorder.Group>
+
+                    <div className="flex gap-4 overflow-x-auto pb-6 -mx-2 px-2 scrollbar-hide">
+                      {products.map((product) => (
+                        <div
+                          key={product.id}
+                          className="group min-w-[280px] md:min-w-[320px] rounded-[2rem] border border-border/40 bg-white/50 backdrop-blur-sm p-4 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 relative"
+                        >
+                          <div className="flex flex-col gap-4">
+                            <div className="relative">
+                              {product.image ? (
+                                <div className="h-40 w-full rounded-2xl overflow-hidden border-2 border-primary/5 shadow-sm">
+                                  <img 
+                                    src={product.image} 
+                                    alt={product.name} 
+                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} 
+                                  />
+                                </div>
+                              ) : (
+                                <div className="h-40 w-full rounded-2xl bg-gray-50 flex items-center justify-center">
+                                  <ImageIcon className="h-10 w-10 text-gray-200" />
+                                </div>
+                              )}
+                              {product.badge && (
+                                <Badge className="absolute top-2 right-2 bg-primary text-white border-none font-bold text-[10px] rounded-lg shadow-sm">
+                                  {product.badge}
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-black text-lg text-foreground mb-2 block leading-tight truncate">{product.name}</h3>
+                              <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                                 <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-6 px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
+                                   {product.inStock ? "متوفر" : "غير متوفر"}
+                                 </Badge>
+                                 <Badge variant="outline" className={cn("rounded-full text-[10px] h-6 px-3 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                   المخزون: {product.stock || 0}
+                                 </Badge>
+                              </div>
+                              <div className="flex items-center justify-between mt-auto">
+                                <div className="text-xl font-black text-primary">{formatPrice(product.price)}</div>
+                                <div className="flex gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-10 w-10 rounded-xl text-primary bg-primary/5 hover:bg-primary/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openEditDialog(product);
+                                    }}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-10 w-10 rounded-xl text-red-500 bg-red-50 hover:bg-red-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                                         deleteProductMutation.mutate(product.id);
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )) : null}
+              </div>
 
               {filteredProducts.length === 0 && (
                 <div className="py-20 text-center">

@@ -798,6 +798,7 @@ export class MemoryStorage implements IStorage {
       sizes: product.sizes ?? existing.sizes,
       measurements: product.measurements ?? existing.measurements,
       stock: product.stock ?? existing.stock,
+      variants: product.variants ?? existing.variants,
     };
     this.products.set(id, updated);
     return updated;

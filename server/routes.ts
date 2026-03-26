@@ -216,7 +216,7 @@ async function verifyGoogleCredential(credential: string): Promise<GoogleTokenIn
 function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertProduct> | null {
   const {
     name, nameEn, description, price, image, category,
-    rating, reviews, badge, inStock, sizes, measurements, stock, originalPrice
+    rating, reviews, badge, inStock, sizes, measurements, stock, originalPrice, variants
   } = body;
 
   if (!name || typeof name !== "string") {
@@ -246,6 +246,7 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
     sizes: typeof sizes === "string" && sizes.trim() ? sizes : null,
     measurements: typeof measurements === "string" && measurements.trim() ? measurements : null,
     stock: typeof stock === "number" ? stock : Number(stock) || 0,
+    variants: typeof variants === "string" ? variants : null,
   };
 }
 
