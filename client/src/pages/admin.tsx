@@ -1125,13 +1125,14 @@ export default function AdminPage() {
                           <div className="flex items-center justify-between px-1">
                             <label className="text-base font-black text-gray-800">خيارات المنتج (أحجام/مقاسات مختلفة)</label>
                             <div className="flex gap-2">
-                              {['S', 'M', 'L'].map(s => (
+                            <div className="flex flex-wrap gap-2 justify-end">
+                              {['S', 'M', 'L', '1 كيلو', '2 كيلو', '5 كيلو', '10 كيلو'].map(s => (
                                 <Button 
                                   key={s}
                                   type="button" 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="rounded-xl px-2 h-8 text-[10px] font-black border border-primary/10 text-primary hover:bg-primary/5"
+                                  className="rounded-xl px-2.5 h-8 text-[10px] font-black border border-primary/10 text-primary hover:bg-primary/5 active:scale-90 transition-all"
                                   onClick={() => setForm(prev => {
                                     if (prev.variants?.some(v => v.name === s)) return prev;
                                     return { 
@@ -1153,7 +1154,7 @@ export default function AdminPage() {
                                 type="button" 
                                 variant="outline" 
                                 size="sm" 
-                                className="rounded-xl gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5"
+                                className="rounded-xl gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5 shrink-0"
                                 onClick={() => setForm(prev => ({ 
                                   ...prev, 
                                   variants: [...(prev.variants || []), { name: "", price: "", originalPrice: "", image: "", stock: "" }] 
@@ -1163,8 +1164,9 @@ export default function AdminPage() {
                               </Button>
                             </div>
                           </div>
+                        </div>
                           
-                          <div className="space-y-3">
+                        <div className="space-y-3">
                             {(form.variants || []).map((variant, idx) => (
                               <div key={idx} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 relative group animate-in slide-in-from-top-2">
                                 <Button 
