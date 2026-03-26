@@ -193,7 +193,6 @@ export default function ProductDetails() {
             </div>
 
             {(() => {
-              const variantsList = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
               const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
               const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
               
@@ -201,85 +200,98 @@ export default function ProductDetails() {
               
               return (
                 <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm space-y-6 mt-2">
-                  {variantsList.length > 1 && (
-                    <div>
-                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
-                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
-                         اختر النوع / السعة:
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm font-medium">
-                        {variantsList.map((v: any, idx: number) => (
-                           <button 
-                             key={idx}
-                             onClick={() => setSelectedVariant(v)}
-                             className={`p-4 rounded-3xl border-2 text-right transition-all flex justify-between items-center active:scale-[0.97] ${selectedVariant?.name === v.name ? "border-primary bg-primary/5 text-primary shadow-md" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
-                           >
-                              <div className="flex flex-col">
-                                <span className={cn("text-base font-black truncate", selectedVariant?.name === v.name ? "text-primary" : "text-slate-800")}>{v.name}</span>
-                                <div className="flex items-center gap-2">
-                                  {v.originalPrice && Number(v.originalPrice) > Number(v.price) && (
-                                    <span className="text-[10px] line-through opacity-50 font-bold">{Number(v.originalPrice).toLocaleString()} ج.س</span>
-                                  )}
-                                  {v.stock !== undefined && v.stock !== "" && Number(v.stock) > 0 && Number(v.stock) <= 5 && (
-                                    <span className="text-[9px] text-orange-600 font-black animate-pulse px-1.5 py-0.5 bg-orange-50 rounded-lg">متبقي {v.stock} فقط!</span>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-lg font-black">{Number(v.price).toLocaleString()} <span className="text-[10px]">ج.س</span></span>
-                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                   {variantsList.length > 0 && (
+                     <div>
+                       <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                          اختر المقاس:
+                       </h3>
+                       <div className="flex flex-wrap gap-2 text-sm font-medium">
+                         {variantsList.map((v: any, idx: number) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setSelectedVariant(v)}
+                              className={`min-w-[4rem] px-5 py-2.5 rounded-2xl border-2 flex flex-col items-center justify-center transition-all active:scale-90 ${selectedVariant?.name === v.name ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/10"}`}
+                            >
+                               <span className="text-sm">{v.name}</span>
+                            </button>
+                         ))}
+                       </div>
 
-                  {sizesList.length > 1 && (
-                    <div>
-                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
-                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
-                         اختر المقاس:
-                      </h3>
-                      <div className="flex flex-wrap gap-2 text-sm font-medium">
-                        {sizesList.map((s: string, idx: number) => (
-                           <button 
-                             key={idx}
-                             onClick={() => setSelectedSize(s)}
-                             className={`min-w-[3.5rem] h-11 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedSize === s ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
-                           >
-                             {s}
-                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                       {selectedVariant && (
+                         <div className="mt-4 p-4 rounded-3xl bg-slate-50/50 border border-slate-100 flex justify-between items-center animate-in fade-in slide-in-from-top-2">
+                           <div className="flex flex-col">
+                             <span className="text-[10px] text-muted-foreground font-black mb-0.5">السعر لهذا الاختيار:</span>
+                             <div className="flex items-baseline gap-2">
+                               <span className="text-xl font-black text-primary">{Number(selectedVariant.price).toLocaleString()} <span className="text-xs">ج.س</span></span>
+                               {selectedVariant.originalPrice && Number(selectedVariant.originalPrice) > Number(selectedVariant.price) && (
+                                 <span className="text-xs line-through opacity-40 font-bold">{Number(selectedVariant.originalPrice).toLocaleString()} ج.س</span>
+                               )}
+                             </div>
+                           </div>
+                           <div className="flex flex-col items-end">
+                             <span className="text-[10px] text-muted-foreground font-black mb-0.5">الحالة:</span>
+                             {Number(selectedVariant.stock) > 0 ? (
+                               <Badge variant={Number(selectedVariant.stock) <= 5 ? "outline" : "secondary"} className={cn("text-[10px] font-black h-6 px-3 rounded-full border-none", Number(selectedVariant.stock) <= 5 ? "text-orange-600 bg-orange-100/50" : "text-emerald-700 bg-emerald-100/50")}>
+                                 {Number(selectedVariant.stock) <= 5 ? `متبقي ${selectedVariant.stock} فقط!` : "متوفر"}
+                               </Badge>
+                             ) : (
+                               <Badge variant="destructive" className="text-[10px] font-black h-6 px-3 rounded-full">غير متوفر</Badge>
+                             )}
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                   )}
 
-                  {measurementList.length > 1 && (
-                    <div>
-                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
-                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
-                         اختر الحجم / الوزن:
-                      </h3>
-                      <div className="flex flex-wrap gap-2.5 text-sm font-medium">
-                        {measurementList.map((m: string, idx: number) => (
-                           <button 
-                             key={idx}
-                             onClick={() => setSelectedMeasurement(m)}
-                             className={`min-w-[4rem] h-12 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedMeasurement === m ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
-                           >
-                             {m}
-                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Informational display for single-option sections */}
-                  {(variantsList.length === 1 || sizesList.length === 1 || measurementList.length === 1) && (
-                    <div className="pt-2 border-t border-dashed border-border/40 space-y-2">
-                      {variantsList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الخيار المتوفر: <span className="text-primary">{variantsList[0].name}</span></p>}
-                      {sizesList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">المقاس المتوفر: <span className="text-primary">{sizesList[0]}</span></p>}
-                      {measurementList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الوزن المتوفر: <span className="text-primary">{measurementList[0]}</span></p>}
-                    </div>
-                  )}
+                   {sizesList.length > 1 && (
+                     <div>
+                       <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                          اختر المقاس الإضافي:
+                       </h3>
+                       <div className="flex flex-wrap gap-2 text-sm font-medium">
+                         {sizesList.map((s: string, idx: number) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setSelectedSize(s)}
+                              className={`min-w-[3.5rem] h-11 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedSize === s ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
+                            >
+                              {s}
+                            </button>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+
+                   {measurementList.length > 1 && (
+                     <div>
+                       <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                          <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                          اختر الحجم / الوزن:
+                       </h3>
+                       <div className="flex flex-wrap gap-2.5 text-sm font-medium">
+                         {measurementList.map((m: string, idx: number) => (
+                            <button 
+                              key={idx}
+                              onClick={() => setSelectedMeasurement(m)}
+                              className={`min-w-[4rem] h-12 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedMeasurement === m ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
+                            >
+                              {m}
+                            </button>
+                         ))}
+                       </div>
+                     </div>
+                   )}
+                   
+                   {/* Informational display for single-option sections */}
+                   {(variantsList.length === 1 || sizesList.length === 1 || measurementList.length === 1) && (
+                     <div className="pt-2 border-t border-dashed border-border/40 space-y-2">
+                       {variantsList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الخيار المتوفر: <span className="text-primary">{variantsList[0].name}</span></p>}
+                       {sizesList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">المقاس المتوفر: <span className="text-primary">{sizesList[0]}</span></p>}
+                       {measurementList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الوزن المتوفر: <span className="text-primary">{measurementList[0]}</span></p>}
+                     </div>
+                   )}
                 </div>
               );
             })()}
