@@ -31,24 +31,32 @@ export default function ProductDetails() {
     enabled: !!params?.id,
   });
 
+  const variantsList = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+  const sizesList = product?.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+  const measurementList = product?.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
+
+  // Auto-select single options
+  useState(() => {
+    if (variantsList.length === 1 && !selectedVariant) setSelectedVariant(variantsList[0]);
+    if (sizesList.length === 1 && !selectedSize) setSelectedSize(sizesList[0]);
+    if (measurementList.length === 1 && !selectedMeasurement) setSelectedMeasurement(measurementList[0]);
+  });
+
   function handleAddToCart() {
     if (!product) return;
     
-    const variantsList = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
-    const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-    const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
-
-    if (variantsList.length > 0 && !selectedVariant) {
+    // Only require selection if there are MULTIPLE options
+    if (variantsList.length > 1 && !selectedVariant) {
       toast({ title: "تنبيه", description: "يرجى اختيار النوع أو الحجم المطلوب", variant: "destructive" });
       return;
     }
 
-    if (sizesList.length > 0 && !selectedSize) {
+    if (sizesList.length > 1 && !selectedSize) {
       toast({ title: "تنبيه", description: "يرجى اختيار المقاس المناسب قبل الإضافة للسلة", variant: "destructive" });
       return;
     }
 
-    if (measurementList.length > 0 && !selectedMeasurement) {
+    if (measurementList.length > 1 && !selectedMeasurement) {
       toast({ title: "تنبيه", description: "يرجى اختيار الحجم أو الوزن قبل الإضافة للسلة", variant: "destructive" });
       return;
     }
@@ -60,11 +68,11 @@ export default function ProductDetails() {
         productId: product.id, 
         size: selectedSize || (selectedVariant ? selectedVariant.name : undefined), 
         measurement: selectedMeasurement || undefined,
-        price: itemPrice, // Pass price override if it's a variant
-        image: selectedVariant?.image || undefined // Pass image override if it's a variant
+        price: itemPrice, 
+        image: selectedVariant?.image || undefined 
       });
     }
-    toast({ title: "تمت الإضافة", description: `${product.name} ${selectedVariant ? `(${selectedVariant.name})` : ''} أُضيف إلى السلة` });
+    toast({ title: "تمت الإضافة", description: `${product.name} أُضيف إلى السلة بنجاح` });
   }
 
   const rateMutation = useMutation({
@@ -189,39 +197,45 @@ export default function ProductDetails() {
               if (variantsList.length === 0 && sizesList.length === 0 && measurementList.length === 0) return null;
               
               return (
-                <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm space-y-5 mt-2">
-                  {variantsList.length > 0 && (
+                <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm space-y-6 mt-2">
+                  {variantsList.length > 1 && (
                     <div>
-                      <h3 className="font-bold text-lg mb-3">اختر الحجم / النوع:</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-medium">
+                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                         اختر النوع / السعة:
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm font-medium">
                         {variantsList.map((v: any, idx: number) => (
                            <button 
                              key={idx}
                              onClick={() => setSelectedVariant(v)}
-                             className={`p-3 rounded-xl border text-right transition-all flex justify-between items-center ${selectedVariant?.name === v.name ? "border-primary bg-primary/10 text-primary font-bold shadow-sm" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                             className={`p-4 rounded-3xl border-2 text-right transition-all flex justify-between items-center active:scale-[0.97] ${selectedVariant?.name === v.name ? "border-primary bg-primary/5 text-primary shadow-md" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
                            >
                               <div className="flex flex-col">
-                                <span className="text-sm font-black">{v.name}</span>
+                                <span className={cn("text-base font-black truncate", selectedVariant?.name === v.name ? "text-primary" : "text-slate-800")}>{v.name}</span>
                                 {v.originalPrice && Number(v.originalPrice) > Number(v.price) && (
-                                  <span className="text-[10px] line-through opacity-50">{Number(v.originalPrice).toLocaleString()} ج.س</span>
+                                  <span className="text-[10px] line-through opacity-50 font-bold">{Number(v.originalPrice).toLocaleString()} ج.س</span>
                                 )}
                               </div>
-                              <span className="text-base font-black">{Number(v.price).toLocaleString()} ج.س</span>
+                              <span className="text-lg font-black">{Number(v.price).toLocaleString()} <span className="text-[10px]">ج.س</span></span>
                            </button>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {sizesList.length > 0 && (
+                  {sizesList.length > 1 && (
                     <div>
-                      <h3 className="font-bold text-lg mb-3">اختر المقاس:</h3>
+                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                         اختر المقاس:
+                      </h3>
                       <div className="flex flex-wrap gap-2 text-sm font-medium">
                         {sizesList.map((s: string, idx: number) => (
                            <button 
                              key={idx}
                              onClick={() => setSelectedSize(s)}
-                             className={`min-w-12 h-10 px-4 rounded-xl border flex items-center justify-center transition-all ${selectedSize === s ? "border-primary bg-primary/10 text-primary font-bold scale-105" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                             className={`min-w-[3.5rem] h-11 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedSize === s ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
                            >
                              {s}
                            </button>
@@ -230,20 +244,32 @@ export default function ProductDetails() {
                     </div>
                   )}
 
-                  {measurementList.length > 0 && (
+                  {measurementList.length > 1 && (
                     <div>
-                      <h3 className="font-bold text-lg mb-3">اختر الحجم / الوزن:</h3>
-                      <div className="flex flex-wrap gap-2 text-sm font-medium">
+                      <h3 className="font-black text-base md:text-lg mb-3 flex items-center gap-2">
+                         <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                         اختر الحجم / الوزن:
+                      </h3>
+                      <div className="flex flex-wrap gap-2.5 text-sm font-medium">
                         {measurementList.map((m: string, idx: number) => (
                            <button 
                              key={idx}
                              onClick={() => setSelectedMeasurement(m)}
-                             className={`min-w-12 h-10 px-4 rounded-xl border flex items-center justify-center transition-all ${selectedMeasurement === m ? "border-primary bg-primary/10 text-primary font-bold scale-105" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                             className={`min-w-[4rem] h-12 px-6 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${selectedMeasurement === m ? "border-primary bg-primary/5 text-primary font-black shadow-md scale-105" : "border-border/60 text-muted-foreground hover:border-primary/40 bg-gray-50/50"}`}
                            >
                              {m}
                            </button>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  
+                  {/* Informational display for single-option sections */}
+                  {(variantsList.length === 1 || sizesList.length === 1 || measurementList.length === 1) && (
+                    <div className="pt-2 border-t border-dashed border-border/40 space-y-2">
+                      {variantsList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الخيار المتوفر: <span className="text-primary">{variantsList[0].name}</span></p>}
+                      {sizesList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">المقاس المتوفر: <span className="text-primary">{sizesList[0]}</span></p>}
+                      {measurementList.length === 1 && <p className="text-xs font-bold text-muted-foreground flex items-center gap-2 px-1">الوزن المتوفر: <span className="text-primary">{measurementList[0]}</span></p>}
                     </div>
                   )}
                 </div>
