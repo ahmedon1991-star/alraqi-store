@@ -1656,15 +1656,14 @@ export default function AdminPage() {
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-6 -mx-2 px-2 snap-x snap-mandatory">
                       {products.map((product) => (
                         <div
                           key={product.id}
-                          className="group rounded-2xl border border-border/60 bg-white/80 backdrop-blur-sm p-3 hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-primary/5 relative overflow-hidden"
+                          className="group min-w-[160px] md:min-w-[300px] snap-start rounded-3xl border border-border/60 bg-white/80 backdrop-blur-sm p-3 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/5 relative flex flex-col"
                         >
-                          <div className="flex gap-3">
-                            {/* Smaller Product Image (Matching Image Request) */}
-                            <div className="h-24 w-24 shrink-0 rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-white p-1">
+                          <div className="flex flex-col gap-3">
+                            <div className="h-28 md:h-48 w-full rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-white p-1 mb-1">
                               <img 
                                 src={product.image || "/images/product-spices.png"} 
                                 alt={product.name} 
@@ -1673,43 +1672,40 @@ export default function AdminPage() {
                               />
                             </div>
                             
-                            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                              <div>
-                                <h3 className="font-black text-base text-foreground mb-0.5 block leading-tight truncate">{product.name}</h3>
-                                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
+                            <div className="flex-1 min-w-0 flex flex-col space-y-1">
+                              <div className="min-h-[2.5rem] md:min-h-0">
+                                <h3 className="font-black text-xs md:text-lg text-foreground mb-0.5 line-clamp-2 md:truncate leading-tight">{product.name}</h3>
+                                <p className="text-[8px] md:text-sm font-bold text-muted-foreground opacity-60">
                                    {getCategoryName(product.category)}
                                 </p>
+                              </div>
                                 
-                                <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                                   <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[9px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
-                                     {product.inStock ? "متوفر" : "غير متوفر"}
-                                   </Badge>
-                                   <Badge variant="outline" className={cn("rounded-full text-[9px] h-5 px-2 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
-                                     المخزون: {product.stock || 0}
-                                   </Badge>
-                                </div>
+                              <div className="flex flex-wrap items-center gap-1">
+                                 <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
+                                   {product.inStock ? "متوفر" : "غير متوفر"}
+                                 </Badge>
+                                 <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                   {product.stock || 0}
+                                 </Badge>
                               </div>
                               
-                              <div className="flex items-end justify-between">
-                                <div className="text-lg font-black text-slate-800">
-                                  {formatPrice(product.price)}
-                                </div>
+                              <div className="text-sm md:text-2xl font-black text-slate-800 pt-1">
+                                {formatPrice(product.price)}
                               </div>
                             </div>
                           </div>
 
-                          {/* Action Buttons More Compact */}
-                          <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/20">
+                          <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-border/20">
                             <Button 
                               variant="ghost" 
-                              className="h-9 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 gap-1.5 text-xs font-bold transition-all"
+                              className="h-8 md:h-11 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 gap-1 text-[10px] md:text-sm font-bold transition-all"
                               onClick={() => openEditDialog(product)}
                             >
                               <Pencil className="h-3 w-3" /> تعديل
                             </Button>
                             <Button 
                               variant="ghost" 
-                              className="h-9 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 gap-1.5 text-xs font-bold transition-all"
+                              className="h-8 md:h-11 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 gap-1 text-[10px] md:text-sm font-bold transition-all"
                               onClick={() => {
                                 if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
                                    deleteProductMutation.mutate(product.id);
@@ -1721,7 +1717,7 @@ export default function AdminPage() {
                           </div>
 
                           {product.badge && (
-                            <Badge className="absolute top-2 right-2 bg-primary text-white border-none font-bold text-[8px] px-2 py-0.5 rounded-lg shadow-sm">
+                            <Badge className="absolute top-2 right-2 bg-primary text-white border-none font-bold text-[6px] md:text-[8px] px-1.5 py-0.5 rounded-lg shadow-sm">
                               {product.badge}
                             </Badge>
                           )}
