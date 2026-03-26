@@ -22,9 +22,6 @@ export default function ProductDetails() {
   const { data: user } = useCurrentUser();
   const [hoverRating, setHoverRating] = useState(0);
   const { isInWishlist, toggleItem } = useWishlist();
-  const [selectedSize, setSelectedSize] = useState<string>("");
-  const [selectedMeasurement, setSelectedMeasurement] = useState<string>("");
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
@@ -32,47 +29,13 @@ export default function ProductDetails() {
     enabled: !!params?.id,
   });
 
-    const allVariants = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
-    // Only show variants that are in stock (if stock is managed)
-    const variantsList = allVariants.filter((v: any) => v.stock === undefined || v.stock === "" || Number(v.stock) > 0);
-    const sizesList = product?.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-    const measurementList = product?.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
-
-  // Auto-select single options
-  useState(() => {
-    if (variantsList.length === 1 && !selectedVariant) setSelectedVariant(variantsList[0]);
-    if (sizesList.length === 1 && !selectedSize) setSelectedSize(sizesList[0]);
-    if (measurementList.length === 1 && !selectedMeasurement) setSelectedMeasurement(measurementList[0]);
-  });
-
   function handleAddToCart() {
     if (!product) return;
     
-    // Only require selection if there are MULTIPLE options
-    if (variantsList.length > 1 && !selectedVariant) {
-      toast({ title: "تنبيه", description: "يرجى اختيار النوع أو الحجم المطلوب", variant: "destructive" });
-      return;
-    }
-
-    if (sizesList.length > 1 && !selectedSize) {
-      toast({ title: "تنبيه", description: "يرجى اختيار المقاس المناسب قبل الإضافة للسلة", variant: "destructive" });
-      return;
-    }
-
-    if (measurementList.length > 1 && !selectedMeasurement) {
-      toast({ title: "تنبيه", description: "يرجى اختيار الحجم أو الوزن قبل الإضافة للسلة", variant: "destructive" });
-      return;
-    }
-
-    const itemPrice = selectedVariant ? Number(selectedVariant.price) : product.price;
-
     for (let i = 0; i < quantity; i++) {
       addToCart.mutate({ 
         productId: product.id, 
-        size: selectedSize || (selectedVariant ? selectedVariant.name : undefined), 
-        measurement: selectedMeasurement || undefined,
-        price: itemPrice, 
-        image: selectedVariant?.image || undefined 
+        price: product.price, 
       });
     }
     toast({ title: "تمت الإضافة", description: `${product.name} أُضيف إلى السلة بنجاح` });
@@ -141,7 +104,7 @@ export default function ProductDetails() {
                 </div>
               )}
               <img
-                src={(selectedVariant && selectedVariant.image) ? selectedVariant.image : (product.image || "/images/product-spices.png")}
+                src={product.image || "/images/product-spices.png"}
                 alt={product.name}
                 className="w-full h-full object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
@@ -164,7 +127,7 @@ export default function ProductDetails() {
               <h2 className="text-xl text-muted-foreground font-medium mb-6 opacity-80">{product.nameEn}</h2>
 
               <div className="flex items-end gap-3 mb-8">
-                <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{(selectedVariant ? Number(selectedVariant.price) : product.price).toLocaleString()}</span>
+                <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
                 <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
               </div>
               
@@ -249,7 +212,7 @@ export default function ProductDetails() {
                 {product.inStock ? (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    إضافة للسلة - {((selectedVariant ? Number(selectedVariant.price) : product.price) * quantity).toLocaleString()} ج.س
+                    إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
                   </>
                 ) : (
                   <>
