@@ -196,6 +196,7 @@ export default function AdminPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("active");
   const [productSearch, setProductSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [orderTimeFilter, setOrderTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -1594,89 +1595,122 @@ export default function AdminPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Horizontal Category Navigation Bar (Sliding Bar) */}
+              <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-4 -mx-2 px-2 border-t border-border/20 mt-4">
+                <Button
+                  variant={!activeCategory ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveCategory(null)}
+                  className={cn(
+                    "rounded-full px-6 h-10 font-black shrink-0 transition-all",
+                    !activeCategory ? "shadow-md shadow-primary/20" : "bg-white"
+                  )}
+                >
+                  الكل
+                </Button>
+                {data.topCategories.map((cat: any) => (
+                  <Button
+                    key={cat.id}
+                    size="sm"
+                    variant={activeCategory === cat.id ? "default" : "outline"}
+                    onClick={() => setActiveCategory(cat.id)}
+                    className={cn(
+                      "rounded-full px-6 h-10 font-bold shrink-0 whitespace-nowrap transition-all flex items-center gap-2",
+                      activeCategory === cat.id ? "shadow-md shadow-primary/20" : "bg-white"
+                    )}
+                  >
+                    <CategoryIcon icon={cat.icon} className="h-4 w-4" imgClassName="p-0" />
+                    {cat.name}
+                  </Button>
+                ))}
+              </div>
             </CardHeader>
             <CardContent className="px-6 pb-8">
               <div className="space-y-12">
-                {Object.entries(groupedProducts).length > 0 ? Object.entries(groupedProducts).map(([catId, products]) => (
-                  <div key={catId} className="space-y-4">
+                {Object.entries(groupedProducts).length > 0 ? Object.entries(groupedProducts)
+                  .filter(([catId]) => !activeCategory || catId === activeCategory)
+                  .map(([catId, products]) => (
+                  <div key={catId} className="space-y-6">
                     <div className="flex items-center justify-between px-2">
-                      <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
-                        <span className="h-6 w-1.5 bg-primary rounded-full"></span>
+                      <h3 className="text-xl font-black text-gray-800 flex items-center gap-3">
+                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-xl overflow-hidden">
+                           <CategoryIcon icon={data.topCategories.find(c => c.id === catId)?.icon} className="h-5 w-5 text-primary" />
+                        </div>
                         {getCategoryName(catId)}
-                        <span className="text-xs font-bold text-muted-foreground mr-1 bg-muted px-2 py-0.5 rounded-full">{products.length} منتج</span>
+                        <span className="text-xs font-bold text-muted-foreground mr-1 bg-muted px-3 py-1 rounded-full">{products.length} منتج</span>
                       </h3>
                     </div>
 
-                    <div className="flex gap-4 overflow-x-auto pb-6 -mx-2 px-2 scrollbar-hide">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {products.map((product) => (
                         <div
                           key={product.id}
-                          className="group min-w-[280px] md:min-w-[320px] rounded-[2rem] border border-border/40 bg-white/50 backdrop-blur-sm p-4 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 relative"
+                          className="group rounded-[2rem] border border-border/60 bg-white/80 backdrop-blur-sm p-4 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/5 relative overflow-hidden active:scale-[0.98]"
                         >
-                          <div className="flex flex-col gap-4">
-                            <div className="relative">
-                              {product.image ? (
-                                <div className="h-40 w-full rounded-2xl overflow-hidden border-2 border-primary/5 shadow-sm">
-                                  <img 
-                                    src={product.image} 
-                                    alt={product.name} 
-                                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                                    onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} 
-                                  />
-                                </div>
-                              ) : (
-                                <div className="h-40 w-full rounded-2xl bg-gray-50 flex items-center justify-center">
-                                  <ImageIcon className="h-10 w-10 text-gray-200" />
-                                </div>
-                              )}
-                              {product.badge && (
-                                <Badge className="absolute top-2 right-2 bg-primary text-white border-none font-bold text-[10px] rounded-lg shadow-sm">
-                                  {product.badge}
-                                </Badge>
-                              )}
+                          <div className="flex gap-4">
+                            {/* Product Image on Left (Matching Image) */}
+                            <div className="h-32 w-32 shrink-0 rounded-3xl overflow-hidden border-2 border-primary/5 shadow-sm bg-white p-1">
+                              <img 
+                                src={product.image || "/images/product-spices.png"} 
+                                alt={product.name} 
+                                className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110" 
+                                onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} 
+                              />
                             </div>
                             
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-black text-lg text-foreground mb-2 block leading-tight truncate">{product.name}</h3>
-                              <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                                 <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-6 px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold shrink-0">
-                                   {product.inStock ? "متوفر" : "غير متوفر"}
-                                 </Badge>
-                                 <Badge variant="outline" className={cn("rounded-full text-[10px] h-6 px-3 font-black shrink-0", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
-                                   المخزون: {product.stock || 0}
-                                 </Badge>
+                            <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                              <div>
+                                <h3 className="font-black text-lg text-foreground mb-1 block leading-tight truncate">{product.name}</h3>
+                                <p className="text-[10px] font-bold text-muted-foreground mb-2 flex items-center gap-1">
+                                   {getCategoryName(product.category)}
+                                </p>
+                                
+                                <div className="flex items-center gap-2 mb-2">
+                                   <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-6 px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
+                                     {product.inStock ? "متوفر" : "غير متوفر"}
+                                   </Badge>
+                                   <Badge variant="outline" className={cn("rounded-full text-[10px] h-6 px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                     المخزون: {product.stock || 0}
+                                   </Badge>
+                                </div>
                               </div>
-                              <div className="flex items-center justify-between mt-auto">
-                                <div className="text-xl font-black text-primary">{formatPrice(product.price)}</div>
-                                <div className="flex gap-1">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    className="h-10 w-10 rounded-xl text-primary bg-primary/5 hover:bg-primary/10"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openEditDialog(product);
-                                    }}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    className="h-10 w-10 rounded-xl text-red-500 bg-red-50 hover:bg-red-100"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
-                                         deleteProductMutation.mutate(product.id);
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                              
+                              <div className="flex items-end justify-between">
+                                <div className="text-xl font-black text-slate-800">
+                                  {formatPrice(product.price)}
                                 </div>
                               </div>
                             </div>
                           </div>
+
+                          {/* Actions Buttons below (Matching Image) */}
+                          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border/20">
+                            <Button 
+                              variant="ghost" 
+                              className="h-11 rounded-2xl text-primary bg-primary/5 hover:bg-primary/10 gap-2 font-bold transition-all"
+                              onClick={() => openEditDialog(product)}
+                            >
+                              <Pencil className="h-4 w-4" /> تعديل
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              className="h-11 rounded-2xl text-red-500 bg-red-50 hover:bg-red-100 gap-2 font-bold transition-all"
+                              onClick={() => {
+                                if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                                   deleteProductMutation.mutate(product.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" /> حذف
+                            </Button>
+                          </div>
+
+                          {product.badge && (
+                            <Badge className="absolute top-2 right-2 bg-primary text-white border-none font-bold text-[8px] px-2 py-0.5 rounded-lg shadow-sm">
+                              {product.badge}
+                            </Badge>
+                          )}
                         </div>
                       ))}
                     </div>

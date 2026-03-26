@@ -189,24 +189,53 @@ export default function Shop() {
             {filterContent}
           </aside>
 
-          <div className="lg:hidden w-full mb-6">
+          <div className="lg:hidden w-full mb-4">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="w-full h-12 font-bold gap-2" data-testid="button-filter-mobile">
+                <Button variant="outline" className="w-full h-12 font-bold gap-2 rounded-2xl border-primary/20 bg-primary/5 text-primary" data-testid="button-filter-mobile">
                   <Filter className="h-4 w-4" />
-                  تصفية المنتجات
+                  خيارات التصفية والبحث
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="rounded-t-3xl h-[80vh]">
-                <div className="py-6">
-                  <h2 className="text-xl font-bold mb-4">تصفية النتائج</h2>
+              <SheetContent side="bottom" className="rounded-t-[2.5rem] h-[85vh] p-0 overflow-hidden">
+                <div className="h-1.5 w-12 bg-gray-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+                <div className="py-6 px-6 overflow-y-auto h-full pb-20 no-scrollbar">
+                  <h2 className="text-2xl font-black mb-6">تصفية النتائج</h2>
                   {filterContent}
                 </div>
               </SheetContent>
             </Sheet>
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
+            {/* Horizontal Category Sliding Bar */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-6 -mx-1 px-1">
+              <Button
+                variant={selectedCategories.length === 0 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategories([])}
+                className={cn(
+                  "rounded-full px-6 h-10 font-bold shrink-0 transition-all",
+                  selectedCategories.length === 0 ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
+                )}
+              >
+                الكل
+              </Button>
+              {cats.map((cat: any) => (
+                <Button
+                  key={cat.id}
+                  size="sm"
+                  variant={selectedCategories.includes(cat.id) ? "default" : "outline"}
+                  onClick={() => toggleCategory(cat.id)}
+                  className={cn(
+                    "rounded-full px-6 h-10 font-bold shrink-0 whitespace-nowrap transition-all",
+                    selectedCategories.includes(cat.id) ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
+                  )}
+                >
+                  {cat.name}
+                </Button>
+              ))}
+            </div>
             <div className="flex items-center justify-between mb-8">
               <p className="text-muted-foreground font-medium">
                 عرض <span className="text-foreground font-bold" data-testid="text-product-count">{filteredProducts.length}</span> منتج
