@@ -16,7 +16,7 @@ export function useCartCount() {
 
 export function useAddToCart() {
   return useMutation({
-    mutationFn: (data: { productId: string; size?: string; measurement?: string }) =>
+    mutationFn: (data: { productId: string; size?: string; measurement?: string; price?: number; image?: string }) =>
       apiRequest("/api/cart", {
         method: "POST",
         body: JSON.stringify({ 
@@ -24,7 +24,9 @@ export function useAddToCart() {
           sessionId: getSessionId(), 
           quantity: 1, 
           size: data.size, 
-          measurement: data.measurement 
+          measurement: data.measurement,
+          price: data.price,
+          image: data.image
         }),
       }),
     onSuccess: () => {

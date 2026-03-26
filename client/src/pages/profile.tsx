@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,11 +30,11 @@ import {
   Fingerprint,
   Check,
   ImageIcon,
-  Loader2,
   Mail,
   Lock,
   Key,
   RefreshCw,
+  History as HistoryIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -309,7 +309,7 @@ export default function ProfilePage() {
                             { id: "wallet", label: "المحفظة", icon: Wallet },
                             { id: "profile", label: "البيانات الشخصية", icon: Settings },
                             { id: "password", label: "كلمة السر", icon: Key },
-                            { id: "orderHistory", label: "الطلبات الملغية", icon: History, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status === 'cancelled') },
+                             { id: "orderHistory", label: "الطلبات الملغية", icon: HistoryIcon, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status === 'cancelled') },
                             { id: "settings", label: "الأمان", icon: ShieldCheck },
                          ].map((tab) => (
                             <button
@@ -340,7 +340,7 @@ export default function ProfilePage() {
                 <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar sticky top-[80px] z-30 bg-[#F7F8FA]">
                   {[
                     { id: "orders", label: "طلباتي", icon: ShoppingBag },
-                    { id: "orderHistory", label: "ملغية", icon: History },
+                     { id: "orderHistory", label: "ملغية", icon: HistoryIcon },
                     { id: "profile", label: "الملف", icon: UserCog },
                     { id: "password", label: "كلمة السر", icon: Settings },
                     { id: "settings", label: "الأمان", icon: ShieldCheck }
@@ -602,7 +602,7 @@ export default function ProfilePage() {
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="flex items-center justify-between mb-4">
                        <h2 className="text-xl md:text-2xl font-black text-gray-900">سجل الطلبات الملغية</h2>
-                       <History className="h-5 w-5 text-gray-400" />
+                       <HistoryIcon className="h-5 w-5 text-gray-400" />
                     </div>
 
                     {ordersQuery.isLoading ? (
@@ -650,7 +650,7 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       <div className="bg-white rounded-[2rem] p-16 text-center shadow-lg shadow-gray-100/50">
-                         <History className="h-16 w-16 text-gray-200 mx-auto mb-4" />
+                          <HistoryIcon className="h-16 w-16 text-gray-200 mx-auto mb-4" />
                          <h3 className="text-xl font-black text-gray-900 mb-2">لا توجد طلبات ملغية</h3>
                          <p className="text-gray-500 font-medium">سجلك نظيف جداً! لم تقم بإلغاء أي طلب مؤخراً.</p>
                       </div>

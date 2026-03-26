@@ -37,7 +37,7 @@ export default function Cart() {
   });
 
   const cartItems = data?.items || [];
-  const subtotal = cartItems.reduce((acc: number, item: any) => acc + item.product.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((acc: number, item: any) => acc + (item.price || item.product.price) * item.quantity, 0);
   
   const shippingFeeBase = Number(adminSettings?.shippingFee) || 0;
   const freeShippingThreshold = Number(adminSettings?.freeShippingThreshold) || 0;
@@ -138,7 +138,7 @@ export default function Cart() {
               {cartItems.map((item: any) => (
                 <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-white border border-border/50 items-center" data-testid={`card-cart-item-${item.id}`}>
                   <div className="w-24 h-24 bg-white border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1">
-                    <img src={item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
+                    <img src={item.image || item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export default function Cart() {
                         {item.measurement && <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg shadow-sm border border-primary/20">الحجم/الوزن: {item.measurement}</span>}
                       </div>
                     )}
-                    <div className="font-mono font-bold text-primary text-sm md:text-base">{item.product.price.toLocaleString()} ج.س</div>
+                    <div className="font-mono font-bold text-primary text-sm md:text-base">{(item.price || item.product.price).toLocaleString()} ج.س</div>
                   </div>
 
                   <div className="flex flex-col items-end gap-2">

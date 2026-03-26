@@ -52,6 +52,7 @@ export const products = pgTable("products", {
   stock: integer("stock").notNull().default(0),
   sortOrder: integer("sort_order").default(0),
   originalPrice: integer("original_price"),
+  variants: text("variants"), // JSON array of { name, price, originalPrice, image, stock }
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -75,6 +76,8 @@ export const cartItems = pgTable("cart_items", {
   quantity: integer("quantity").notNull().default(1),
   size: text("size"),
   measurement: text("measurement"),
+  price: integer("price"), // Price override for variants
+  image: text("image"), // Image override for variants
 });
 
 export const insertCartItemSchema = createInsertSchema(cartItems).omit({ id: true });

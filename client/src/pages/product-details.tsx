@@ -23,6 +23,7 @@ export default function ProductDetails() {
   const { isInWishlist, toggleItem } = useWishlist();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedMeasurement, setSelectedMeasurement] = useState<string>("");
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
@@ -33,8 +34,14 @@ export default function ProductDetails() {
   function handleAddToCart() {
     if (!product) return;
     
+    const variantsList = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
     const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
     const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
+
+    if (variantsList.length > 0 && !selectedVariant) {
+      toast({ title: "تنبيه", description: "يرجى اختيار النوع أو الحجم المطلوب", variant: "destructive" });
+      return;
+    }
 
     if (sizesList.length > 0 && !selectedSize) {
       toast({ title: "تنبيه", description: "يرجى اختيار المقاس المناسب قبل الإضافة للسلة", variant: "destructive" });
@@ -46,14 +53,18 @@ export default function ProductDetails() {
       return;
     }
 
+    const itemPrice = selectedVariant ? Number(selectedVariant.price) : product.price;
+
     for (let i = 0; i < quantity; i++) {
       addToCart.mutate({ 
         productId: product.id, 
-        size: selectedSize || undefined, 
-        measurement: selectedMeasurement || undefined 
+        size: selectedSize || (selectedVariant ? selectedVariant.name : undefined), 
+        measurement: selectedMeasurement || undefined,
+        price: itemPrice, // Pass price override if it's a variant
+        image: selectedVariant?.image || undefined // Pass image override if it's a variant
       });
     }
-    toast({ title: "تمت الإضافة", description: `${product.name} (${quantity}) أُضيف إلى السلة` });
+    toast({ title: "تمت الإضافة", description: `${product.name} ${selectedVariant ? `(${selectedVariant.name})` : ''} أُضيف إلى السلة` });
   }
 
   const rateMutation = useMutation({
@@ -119,7 +130,7 @@ export default function ProductDetails() {
                 </div>
               )}
               <img
-                src={product.image || "/images/product-spices.png"}
+                src={(selectedVariant && selectedVariant.image) ? selectedVariant.image : (product.image || "/images/product-spices.png")}
                 alt={product.name}
                 className="w-full h-full object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
@@ -142,7 +153,7 @@ export default function ProductDetails() {
               <h2 className="text-xl text-muted-foreground font-medium mb-6 opacity-80">{product.nameEn}</h2>
 
               <div className="flex items-end gap-3 mb-8">
-                <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
+                <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{(selectedVariant ? Number(selectedVariant.price) : product.price).toLocaleString()}</span>
                 <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
               </div>
               
@@ -171,13 +182,37 @@ export default function ProductDetails() {
             </div>
 
             {(() => {
+              const variantsList = product.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
               const sizesList = product.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
               const measurementList = product.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
               
-              if (sizesList.length === 0 && measurementList.length === 0) return null;
+              if (variantsList.length === 0 && sizesList.length === 0 && measurementList.length === 0) return null;
               
               return (
                 <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm space-y-5 mt-2">
+                  {variantsList.length > 0 && (
+                    <div>
+                      <h3 className="font-bold text-lg mb-3">اختر الحجم / النوع:</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm font-medium">
+                        {variantsList.map((v: any, idx: number) => (
+                           <button 
+                             key={idx}
+                             onClick={() => setSelectedVariant(v)}
+                             className={`p-3 rounded-xl border text-right transition-all flex justify-between items-center ${selectedVariant?.name === v.name ? "border-primary bg-primary/10 text-primary font-bold shadow-sm" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                           >
+                              <div className="flex flex-col">
+                                <span className="text-sm font-black">{v.name}</span>
+                                {v.originalPrice && Number(v.originalPrice) > Number(v.price) && (
+                                  <span className="text-[10px] line-through opacity-50">{Number(v.originalPrice).toLocaleString()} ج.س</span>
+                                )}
+                              </div>
+                              <span className="text-base font-black">{Number(v.price).toLocaleString()} ج.س</span>
+                           </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {sizesList.length > 0 && (
                     <div>
                       <h3 className="font-bold text-lg mb-3">اختر المقاس:</h3>
@@ -270,7 +305,7 @@ export default function ProductDetails() {
                 {product.inStock ? (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
+                    إضافة للسلة - {((selectedVariant ? Number(selectedVariant.price) : product.price) * quantity).toLocaleString()} ج.س
                   </>
                 ) : (
                   <>

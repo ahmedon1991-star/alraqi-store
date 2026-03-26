@@ -1162,13 +1162,13 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/cart", async (req: Request, res: Response) => {
     const sessionId = req.body.sessionId || getSessionId(req);
-    const { productId, quantity, size, measurement } = req.body as { productId?: string; quantity?: number; size?: string; measurement?: string };
+    const { productId, quantity, size, measurement, price, image } = req.body as { productId?: string; quantity?: number; size?: string; measurement?: string; price?: number; image?: string };
 
     if (!productId) {
       return res.status(400).json({ message: "معرف المنتج مطلوب" });
     }
 
-    const item = await storage.addToCart({ sessionId, productId, quantity: quantity || 1, size: size || null, measurement: measurement || null });
+    const item = await storage.addToCart({ sessionId, productId, quantity: quantity || 1, size: size || null, measurement: measurement || null, price: price || null, image: image || null });
     const count = await storage.getCartCount(sessionId);
     res.json({ item, count, sessionId });
   });
@@ -1279,7 +1279,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "السلة فارغة" });
     }
 
-    const subtotal = currentCartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const subtotal = currentCartItems.reduce((sum, item) => sum + (item.price || item.product.price) * item.quantity, 0);
     
     // Fetch dynamic shipping settings
     const adminSettings = await storage.getAdminSettings();
@@ -1293,7 +1293,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const itemsData = currentCartItems.map(item => ({
       id: item.product.id,
       name: item.product.name,
-      price: item.product.price,
+      price: item.price || item.product.price,
       quantity: item.quantity,
       size: (item as any).size || null
     }));
@@ -1340,7 +1340,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const itemsText = itemsData.map((item, idx) =>
-      `*${idx + 1}. ${item.name}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${(item.price).toLocaleString()} ج.س`
+      `*${idx + 1}. ${item.name}${item.size ? ` (${item.size})` : ''}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${(item.price).toLocaleString()} ج.س`
     ).join('%0A%0A');
 
     const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;

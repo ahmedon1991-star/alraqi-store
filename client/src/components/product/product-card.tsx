@@ -13,6 +13,7 @@ interface ProductProps {
   image: string | null;
   category: string;
   rating: number | null;
+  variants?: string | null;
   badge?: string | null;
   sizes?: string | null;
   measurements?: string | null;
@@ -21,10 +22,13 @@ interface ProductProps {
   originalPrice?: number | null;
 }
 
-export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements, stock, inStock, originalPrice }: ProductProps) {
+export function ProductCard({ id, name, price, image, category, rating, badge, sizes, measurements, stock, inStock, originalPrice, variants }: ProductProps) {
   const addToCart = useAddToCart();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  const parsedVariants = variants ? JSON.parse(variants) : [];
+  const hasVariants = parsedVariants.length > 0;
 
   const discountBadge = originalPrice && originalPrice > price 
     ? `${Math.round(((originalPrice - price) / originalPrice) * 100)}%` 
@@ -35,7 +39,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
     e.stopPropagation();
     if (addToCart.isPending) return;
 
-    if (sizes || (measurements && measurements.includes(','))) {
+    if (hasVariants || sizes || (measurements && measurements.includes(','))) {
       toast({ title: "مطلوب اختيار التفاصيل", description: "هذا المنتج يتطلب تحديد المقاس أو الحجم." });
       setLocation(`/product/${id}`);
       return;

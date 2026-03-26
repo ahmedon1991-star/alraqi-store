@@ -377,9 +377,12 @@ export class DatabaseStorage implements IStorage {
       .from(cartItems)
       .where(and(eq(cartItems.sessionId, item.sessionId), eq(cartItems.productId, item.productId)));
       
-    // Find matching size and measurement
+    // Find matching size, measurement, price AND image
     const matchingItem = existingItems.find(
-      e => (e.size || null) === (item.size || null) && (e.measurement || null) === (item.measurement || null)
+      e => (e.size || null) === (item.size || null) && 
+           (e.measurement || null) === (item.measurement || null) &&
+           (e.price || null) === (item.price || null) &&
+           (e.image || null) === (item.image || null)
     );
 
     if (matchingItem) {
@@ -768,7 +771,8 @@ export class MemoryStorage implements IStorage {
       sizes: product.sizes ?? null,
       measurements: product.measurements ?? null,
       stock: product.stock ?? 0,
-      originalPrice: product.originalPrice ?? null, // FIXED: Added originalPrice
+      originalPrice: product.originalPrice ?? null,
+      variants: product.variants ?? null,
       sortOrder: Math.max(0, ...Array.from(this.products.values()).map(p => p.sortOrder || 0)) + 1,
     };
     this.products.set(created.id, created);
@@ -865,7 +869,13 @@ export class MemoryStorage implements IStorage {
 
   async addToCart(item: InsertCartItem): Promise<CartItem> {
     const existing = Array.from(this.cartItems.values()).find(
-      (cartItem) => cartItem.sessionId === item.sessionId && cartItem.productId === item.productId,
+      (cartItem) => 
+        cartItem.sessionId === item.sessionId && 
+        cartItem.productId === item.productId &&
+        (cartItem.size || null) === (item.size || null) &&
+        (cartItem.measurement || null) === (item.measurement || null) &&
+        (cartItem.price || null) === (item.price || null) &&
+        (cartItem.image || null) === (item.image || null)
     );
 
     if (existing) {
@@ -882,8 +892,10 @@ export class MemoryStorage implements IStorage {
       sessionId: item.sessionId,
       productId: item.productId,
       quantity: item.quantity || 1,
-      size: item.size || null,
-      measurement: item.measurement || null,
+      size: item.size ?? null,
+      measurement: item.measurement ?? null,
+      price: item.price ?? null,
+      image: item.image ?? null,
     };
     this.cartItems.set(created.id, created);
     return created;
@@ -934,6 +946,8 @@ export class MemoryStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: null,
       isArchived: false,
+      statusTimeline: JSON.stringify([{ status: order.status || "pending", time: new Date().toISOString() }]),
+      hasNewNotification: true,
     };
     this.orders.set(created.id, created);
     return created;

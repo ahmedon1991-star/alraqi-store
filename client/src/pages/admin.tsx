@@ -92,6 +92,7 @@ type AdminOverview = {
     sizes: string | null;
     measurements: string | null;
     stock: number;
+    variants: string | null;
   }>;
   topCategories: Array<{
     id: string;
@@ -143,6 +144,7 @@ type ProductFormState = {
   sizes: string;
   measurements: string;
   stock: string;
+  variants: Array<{ name: string; price: string; originalPrice: string; image: string; stock: string }>;
 };
 
 const initialForm: ProductFormState = {
@@ -158,6 +160,7 @@ const initialForm: ProductFormState = {
   sizes: "",
   measurements: "",
   stock: "0",
+  variants: [],
 };
 
 const statusLabels: Record<string, string> = {
@@ -622,6 +625,7 @@ export default function AdminPage() {
           sizes: form.sizes,
           measurements: form.measurements,
           stock: Number(form.stock) || 0,
+          variants: JSON.stringify(form.variants),
         }),
       }),
     onSuccess: () => {
@@ -809,6 +813,7 @@ export default function AdminPage() {
       sizes: product.sizes || "",
       measurements: product.measurements || "",
       stock: String(product.stock || 0),
+      variants: typeof product.variants === 'string' ? JSON.parse(product.variants || '[]') : (product.variants || []),
     });
     setIsDialogOpen(true);
   }
@@ -1078,6 +1083,126 @@ export default function AdminPage() {
                             className="text-right h-11 rounded-xl border-gray-200"
                           />
                         </div>
+                        <div className="md:col-span-2 space-y-4 border-t pt-4 mt-2">
+                          <div className="flex items-center justify-between px-1">
+                            <label className="text-base font-black text-gray-800">خيارات المنتج (أحجام/مقاسات مختلفة)</label>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              className="rounded-xl gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5"
+                              onClick={() => setForm(prev => ({ 
+                                ...prev, 
+                                variants: [...(prev.variants || []), { name: "", price: "", originalPrice: "", image: "", stock: "" }] 
+                              }))}
+                            >
+                              <PlusCircle className="h-4 w-4" /> إضافة خيار
+                            </Button>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            {(form.variants || []).map((variant, idx) => (
+                              <div key={idx} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 relative group animate-in slide-in-from-top-2">
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="absolute top-2 left-2 h-7 w-7 text-rose-500 hover:bg-rose-50 rounded-lg"
+                                  onClick={() => setForm(prev => ({ 
+                                    ...prev, 
+                                    variants: prev.variants.filter((_, i) => i !== idx) 
+                                  }))}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-muted-foreground pr-1">اسم الخيار (مثال: 1 لتر)</label>
+                                    <Input 
+                                      placeholder="اسم الحجم" 
+                                      value={variant.name} 
+                                      onChange={(e) => {
+                                        const newVariants = [...form.variants];
+                                        newVariants[idx].name = e.target.value;
+                                        setForm(prev => ({ ...prev, variants: newVariants }));
+                                      }}
+                                      className="h-9 rounded-lg text-sm font-bold"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-muted-foreground pr-1">السعر (ج.س)</label>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="السعر" 
+                                      value={variant.price} 
+                                      onChange={(e) => {
+                                        const newVariants = [...form.variants];
+                                        newVariants[idx].price = e.target.value;
+                                        setForm(prev => ({ ...prev, variants: newVariants }));
+                                      }}
+                                      className="h-9 rounded-lg text-sm font-black text-emerald-600"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-muted-foreground pr-1">السعر الأصلي</label>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="بدون خصم" 
+                                      value={variant.originalPrice} 
+                                      onChange={(e) => {
+                                        const newVariants = [...form.variants];
+                                        newVariants[idx].originalPrice = e.target.value;
+                                        setForm(prev => ({ ...prev, variants: newVariants }));
+                                      }}
+                                      className="h-9 rounded-lg text-xs"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-muted-foreground pr-1">صورة الخيار (اختياري)</label>
+                                    <div className="flex gap-2">
+                                      <Input 
+                                        placeholder="رابط الصورة" 
+                                        value={variant.image} 
+                                        onChange={(e) => {
+                                          const newVariants = [...form.variants];
+                                          newVariants[idx].image = e.target.value;
+                                          setForm(prev => ({ ...prev, variants: newVariants }));
+                                        }}
+                                        className="h-9 rounded-lg text-[10px]"
+                                        dir="ltr"
+                                      />
+                                      <div className="relative shrink-0">
+                                        <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-lg border-dashed" disabled={isUploading}>
+                                          <Upload className="h-3 w-3" />
+                                        </Button>
+                                        <input 
+                                          type="file" 
+                                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                                          onChange={async (e) => {
+                                            const url = await handleImageUpload(e, "product");
+                                            if (url) {
+                                              const newVariants = [...form.variants];
+                                              newVariants[idx].image = url;
+                                              setForm(prev => ({ ...prev, variants: newVariants }));
+                                            }
+                                          }}
+                                          accept="image/*"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            {(!form.variants || form.variants.length === 0) && (
+                              <p className="text-xs text-muted-foreground text-center py-4 border-2 border-dashed rounded-2xl">
+                                لا توجد خيارات إضافية، سيتم استخدام السعر الأساسي للمنتج.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="md:col-span-2 space-y-2">
                           <label className="text-sm font-bold text-gray-700 block pr-1">شارة المنتج (اختياري)</label>
                           <Input
