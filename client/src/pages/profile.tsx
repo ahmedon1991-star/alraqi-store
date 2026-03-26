@@ -29,11 +29,15 @@ import {
   ArrowRight,
   Fingerprint,
   Check,
-  Image as ImageIcon,
+  ImageIcon,
+  Loader2,
+  Mail,
+  Lock,
+  Key,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,13 +154,28 @@ export default function ProfilePage() {
   }, [user, profileForm, isUserLoading, setLocation]);
 
   const updateProfileMutation = useMutation({
-    mutationFn: (values: z.infer<typeof profileSchema>) =>
-      apiRequest("/api/auth/me", { method: "PATCH", body: JSON.stringify(values) }),
+    mutationFn: (values: any) => apiRequest("/api/auth/me", { method: "PATCH", body: JSON.stringify(values) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      toast({ title: "تم التحديث بنجاح", description: "تم حفظ بياناتك الشخصية." });
+      toast({ title: "تم التحديث", description: "تم تحديث بياناتك الشخصية بنجاح." });
+    },
+    onError: (error: any) => toast({ title: "خطأ", description: error.message, variant: "destructive" }),
+  });
+
+  const markNotificationReadMutation = useMutation({
+    mutationFn: (orderId: string) => apiRequest(`/api/orders/${orderId}/read-notification`, { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/orders/me"] });
     },
   });
+
+  const handleTrackClick = (order: any) => {
+    setSelectedOrder(order);
+    setIsTrackOpen(true);
+    if (order.hasNewNotification) {
+      markNotificationReadMutation.mutate(order.id);
+    }
+  };
 
   const handleEnableBiometrics = async () => {
     try {
@@ -272,37 +291,58 @@ export default function ProfilePage() {
 
       <main className="container mx-auto flex-1 px-4 py-6 md:py-10">
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <aside className="lg:col-span-3">
-               <div className="md:grid hidden gap-2">
-                  {[
-                    { id: "orders", label: "طلباتي", icon: ShoppingBag },
-                    { id: "profile", label: "الملف الشخصي", icon: UserCog },
-                    { id: "wallet", label: "المحفظة", icon: Wallet },
-                    { id: "settings", label: "الإعدادات", icon: Settings },
-                    { id: "changePassword", label: "تغيير كلمة السر", icon: Settings },
-                    { id: "orderHistory", label: "سجل الطلبات الملغية", icon: History }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={cn(
-                        "flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-right transition-all group",
-                        activeTab === item.id ? "bg-primary text-white shadow-xl shadow-primary/30" : "text-gray-500 hover:bg-white hover:text-primary border border-transparent hover:border-primary/20"
-                      )}
-                    >
-                      <item.icon className={cn("h-5 w-5", activeTab === item.id ? "text-white" : "text-primary/40")} />
-                      {item.label}
-                    </button>
-                  ))}
+            <aside className="w-full lg:w-80 space-y-4">
+                   <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 overflow-hidden relative">
+                      <div className="flex items-center gap-5 mb-8">
+                         <div className="h-16 w-16 rounded-[1.5rem] bg-gradient-to-br from-primary to-[#2c917a] flex items-center justify-center text-white shadow-lg shadow-primary/20">
+                            <UserIcon className="h-8 w-8" />
+                         </div>
+                         <div className="text-right">
+                            <h2 className="font-black text-xl text-gray-900 leading-tight">{user.name}</h2>
+                            <p className="text-sm font-bold text-gray-400">عميل الراقي المميز</p>
+                         </div>
+                     </div>
+
+                      <nav className="space-y-1">
+                         {[
+                            { id: "orders", label: "طلباتي", icon: ShoppingBag, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status !== 'cancelled') },
+                            { id: "wallet", label: "المحفظة", icon: Wallet },
+                            { id: "profile", label: "البيانات الشخصية", icon: Settings },
+                            { id: "password", label: "كلمة السر", icon: Key },
+                            { id: "orderHistory", label: "الطلبات الملغية", icon: History, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status === 'cancelled') },
+                            { id: "settings", label: "الأمان", icon: ShieldCheck },
+                         ].map((tab) => (
+                            <button
+                               key={tab.id}
+                               onClick={() => setActiveTab(tab.id)}
+                               className={cn(
+                                  "w-full flex items-center justify-between p-4 rounded-2xl transition-all font-black relative group",
+                                  activeTab === tab.id 
+                                     ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]" 
+                                     : "text-gray-500 hover:bg-gray-50"
+                               )}
+                            >
+                               <div className="flex items-center gap-4">
+                                  <tab.icon className={cn("h-5 w-5", activeTab === tab.id ? "text-white" : "text-gray-400 group-hover:text-primary")} />
+                                  <span>{tab.label}</span>
+                               </div>
+                               {tab.hasNtf && (
+                                  <div className="h-2.5 w-2.5 rounded-full bg-rose-500 ring-4 ring-rose-500/20 animate-pulse" />
+                               )}
+                               {activeTab === tab.id && <ChevronLeft className="h-5 w-5 opacity-50" />}
+                            </button>
+                         ))}
+                      </nav>
+                   </div>
                   <button onClick={() => logoutMutation.mutate()} className="flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-rose-600 hover:bg-rose-50 transition-all mt-6"><LogOut className="h-5 w-5 text-rose-400" /> تسجيل الخروج</button>
-               </div>
+               </aside>
 
                 <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar sticky top-[80px] z-30 bg-[#F7F8FA]">
                   {[
                     { id: "orders", label: "طلباتي", icon: ShoppingBag },
                     { id: "orderHistory", label: "ملغية", icon: History },
                     { id: "profile", label: "الملف", icon: UserCog },
-                    { id: "changePassword", label: "كلمة السر", icon: Settings },
+                    { id: "password", label: "كلمة السر", icon: Settings },
                     { id: "settings", label: "الأمان", icon: ShieldCheck }
                   ].map((item) => (
                     <button
@@ -318,8 +358,6 @@ export default function ProfilePage() {
                     </button>
                   ))}
                 </div>
-
-            </aside>
 
             <div className="lg:col-span-9 space-y-6">
                {activeTab === "orders" && (
@@ -361,22 +399,30 @@ export default function ProfilePage() {
                                              <h3 className="font-black text-gray-900">طلب #{order.id.slice(0, 8).toUpperCase()}</h3>
                                           </div>
                                        </div>
-                                       <div className={cn("px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black border", status.bg, status.color, status.border)}>
+                                       <Badge className={cn("px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black border", status.bg, status.color, status.border)}>
                                           {status.label}
-                                       </div>
+                                       </Badge>
                                     </div>
 
                                     <div className="p-5 md:p-6">
                                        <div className="flex items-center justify-between">
-                                          <div className="text-right">
-                                             <p className="text-[10px] font-bold text-gray-400 mb-1">إجمالي المبلغ</p>
-                                             <p className="text-lg md:text-xl font-black text-primary">{formatPrice(order.total)}</p>
-                                          </div>
+                                           <div className="flex items-center gap-4">
+                                              <div className="text-right">
+                                                 <p className="text-[10px] font-bold text-gray-400 mb-1">إجمالي المبلغ</p>
+                                                 <p className="text-lg md:text-xl font-black text-primary">{formatPrice(order.total)}</p>
+                                              </div>
+                                              {order.hasNewNotification && (
+                                                <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-full text-rose-500 animate-pulse">
+                                                  <Bell className="h-3 w-3" />
+                                                  <span className="text-[10px] font-black">تحديث جديد!</span>
+                                                </div>
+                                              )}
+                                           </div>
                                           <div className="flex gap-2">
                                              <Button 
                                                 size="sm" 
                                                 className="rounded-full font-black px-4 md:px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
-                                                onClick={() => { setSelectedOrder(order); setIsTrackOpen(true); }}
+                                                onClick={() => handleTrackClick(order)}
                                              >
                                                 تفاصيل الطلب <FileText className="h-4 w-4 mr-1.5" />
                                               </Button>
@@ -509,7 +555,7 @@ export default function ProfilePage() {
                )}
 
                {/* Change Password Tab */}
-               {activeTab === "changePassword" && (
+               {activeTab === "password" && (
                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                    <h2 className="text-2xl font-black text-gray-900">تغيير كلمة السر</h2>
                    <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-white">
@@ -564,6 +610,7 @@ export default function ProfilePage() {
                     ) : (ordersQuery.data || []).filter((order: any) => order.status === "cancelled").length ? (
                       <div className="grid gap-5">
                          {ordersQuery.data?.filter((order: any) => order.status === "cancelled").map((order: any) => {
+                            const s = statusData[order.status] || statusData.cancelled;
                             return (
                               <Card key={order.id} className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-white border-r-4 border-r-rose-400">
                                  <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -574,21 +621,26 @@ export default function ProfilePage() {
                                        <div>
                                           <div className="text-[10px] font-bold text-gray-400">{formatOrderDate(order.createdAt)}</div>
                                           <h3 className="font-black text-gray-900 leading-none">طلب #{order.id.slice(0, 8).toUpperCase()}</h3>
-                                          <Badge className="mt-2 bg-rose-50 text-rose-600 border-rose-100 text-[10px]" variant="outline">ملغي</Badge>
+                                          <Badge className={cn("mt-2 px-3 py-0.5 rounded-full border-none font-black text-[10px]", s.color, "text-white")}>{s.label}</Badge>
                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-4 md:pt-0">
-                                       <div className="text-right">
-                                          <p className="text-[10px] font-bold text-gray-400">الإجمالي</p>
-                                          <p className="text-lg font-black text-primary">{formatPrice(order.total)}</p>
+                                    <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-5 md:pt-0">
+                                       {order.hasNewNotification && (
+                                         <div className="flex items-center gap-2 bg-rose-50 px-3 py-1.5 rounded-full text-rose-500 animate-pulse">
+                                           <Bell className="h-3 w-3" />
+                                           <span className="text-[10px] font-black">تحديث جديد!</span>
+                                         </div>
+                                       )}
+                                       <div className="text-right shrink-0">
+                                          <p className="text-[10px] font-black text-gray-400 mb-0.5">الإجمالي كاش</p>
+                                          <p className="text-xl font-black text-primary">{formatPrice(order.total)}</p>
                                        </div>
                                        <Button 
                                           size="sm" 
-                                          variant="outline" 
-                                          className="rounded-full font-black px-4 md:px-6 h-10 border-2"
-                                          onClick={() => handleReorder(order.items)}
+                                          className="rounded-full font-black px-6 h-12 shadow-lg shadow-primary/10"
+                                          onClick={() => handleTrackClick(order)}
                                        >
-                                          إعادة طلب
+                                          تتبع الطلب
                                        </Button>
                                     </div>
                                  </div>
@@ -612,96 +664,93 @@ export default function ProfilePage() {
 
       <Dialog open={isTrackOpen} onOpenChange={setIsTrackOpen}>
          <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] p-0 overflow-hidden border-none w-[95vw] max-w-lg max-h-[90vh] flex flex-col hide-scrollbar">
-            {selectedOrder && (
-              <div className="flex flex-col h-full overflow-y-auto scrollbar-hide">
-                 <div className="bg-primary p-6 md:p-8 text-white relative shrink-0">
-                    <DialogClose className="absolute top-4 outline-none left-4 md:top-6 md:left-6 text-white/70 hover:text-white"><XCircle className="h-6 w-6 md:h-7 md:w-7" /></DialogClose>
-                    <h2 className="text-lg md:text-xl font-black mb-1 md:mb-2 opacity-80">تتبع طلبك</h2>
-                    <h3 className="text-2xl md:text-3xl font-black">#{selectedOrder.id.slice(0, 8).toUpperCase()}</h3>
-                    <div className="flex items-center gap-2 mt-3 md:mt-4 bg-white/10 w-fit px-3 py-1.5 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold capitalize">
-                       <statusData.pending.icon className="h-4 w-4" /> {selectedOrder.status === 'completed' ? 'وصلت بسلام' : 'في الطريق إليك'}
-                    </div>
-                 </div>
-                 
-                 <div className="p-5 md:p-8 space-y-6 md:space-y-8 bg-white flex-1 overflow-visible">
-                    <div className="space-y-6 md:space-y-8 relative before:absolute before:inset-y-0 before:right-6 md:before:right-7 before:w-0.5 before:bg-gray-100 pb-2">
-                       <div className="flex items-start gap-4 md:gap-5 relative group">
-                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", selectedOrder.createdAt ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-100 text-gray-400")}>
-                             <Clock className="h-5 w-5 md:h-6 md:w-6" />
-                          </div>
-                          <div className="pt-1">
-                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم استلام الطلب</h4>
-                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">{formatOrderDate(selectedOrder.createdAt)}</p>
-                          </div>
-                       </div>
-                       
-                       <div className="flex items-start gap-4 md:gap-5 relative">
-                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status !== 'pending') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <Package className="h-5 w-5 md:h-6 md:w-6" />
-                          </div>
-                          <div className="pt-1">
-                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">قيد التجهيز</h4>
-                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">نحن نعمل على تغليف منتجاتك بعناية</p>
-                          </div>
-                       </div>
-                       
-                       <div className="flex items-start gap-4 md:gap-5 relative">
-                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <Truck className="h-5 w-5 md:h-6 md:w-6" />
-                          </div>
-                          <div className="pt-1">
-                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم الشحن</h4>
-                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">الطلب في طريقه إلى عنوانك الحالي</p>
-                          </div>
-                       </div>
-                       
-                       <div className="flex items-start gap-4 md:gap-5 relative">
-                          <div className={cn("z-10 h-12 w-12 md:h-14 md:w-14 shrink-0 rounded-[1rem] md:rounded-2xl flex items-center justify-center transition-all shadow-sm", (selectedOrder.status === 'completed') ? "bg-emerald-500 text-white shadow-emerald-500/20" : "bg-gray-50 text-gray-300")}>
-                             <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6" />
-                          </div>
-                          <div className="pt-1">
-                             <h4 className="text-sm md:text-base font-black text-gray-900 leading-none mb-1 md:mb-2">تم التوصيل</h4>
-                             <p className="text-[10px] md:text-xs text-muted-foreground font-medium">نتمنى أن تنال منتجاتنا رضاكم...</p>
-                          </div>
-                       </div>
-                    </div>
-                    
-                    {/* Order Details / Items */}
-                    <div className="mt-6 md:mt-8 border-t pt-5 md:pt-6 bg-white shrink-0">
-                      <h4 className="text-sm md:text-base font-black text-gray-900 mb-3 md:mb-4 px-1 md:px-2">تفاصيل المنتجات:</h4>
-                      <div className="space-y-3 md:space-y-4">
+             {selectedOrder && (
+               <div className="flex flex-col h-full overflow-y-auto scrollbar-hide">
+                  <div className="bg-primary p-6 md:p-8 text-white relative shrink-0">
+                     <DialogClose className="absolute top-4 outline-none left-4 md:top-6 md:left-6 text-white/70 hover:text-white"><XCircle className="h-6 w-6 md:h-7 md:w-7" /></DialogClose>
+                     <h2 className="text-lg md:text-xl font-black mb-1 md:mb-2 opacity-80 text-right">تتبع طلبك</h2>
+                     <h3 className="text-2xl md:text-3xl font-black text-right">#{selectedOrder.id.slice(0, 8).toUpperCase()}</h3>
+                     <div className="flex items-center gap-2 mt-3 md:mt-4 bg-white/10 w-fit px-3 py-1.5 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold capitalize ml-auto">
+                        {statusData[selectedOrder.status as keyof typeof statusData]?.icon && React.createElement(statusData[selectedOrder.status as keyof typeof statusData].icon, { className: "h-4 w-4" })} {selectedOrder.status === 'delivered' ? 'وصلت بسلام' : 'قيد المتابعة'}
+                     </div>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-8 bg-white">
+                     <div className="space-y-6 md:space-y-8 relative before:absolute before:inset-y-0 before:right-6 md:before:right-7 before:w-0.5 before:bg-gray-100 pb-2">
                         {(() => {
-                          try {
-                            const items = JSON.parse(selectedOrder.items || '[]');
-                            return items.map((item: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-xl md:rounded-2xl border border-gray-100">
-                                <div>
-                                  <p className="text-xs md:text-sm font-bold text-gray-900">{item.name}</p>
-                                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
-                                </div>
-                                <p className="text-sm md:text-base font-black text-primary shrink-0 mr-2">{formatPrice(item.price)}</p>
-                              </div>
-                            ));
-                          } catch(e) {
-                            return <p className="text-gray-500 text-xs md:text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
-                          }
+                           try {
+                              const timeline = JSON.parse(selectedOrder.statusTimeline || '[]');
+                              if (timeline.length === 0) {
+                                 const s = statusData[selectedOrder.status as keyof typeof statusData] || statusData.pending;
+                                 return (
+                                    <div className="flex items-start gap-4 md:gap-5 relative group">
+                                       <div className={cn("z-10 h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-lg", s.color)}>
+                                          <s.icon className="h-6 w-6 text-white" />
+                                       </div>
+                                       <div className="pt-1 text-right">
+                                          <h4 className="text-base font-black text-gray-900 leading-none mb-1">{s.label}</h4>
+                                          <p className="text-[10px] text-muted-foreground font-medium">{formatOrderDate(selectedOrder.createdAt)}</p>
+                                       </div>
+                                    </div>
+                                 );
+                              }
+                              return timeline.map((event: any, idx: number) => {
+                                 const s = statusData[event.status as keyof typeof statusData] || statusData.pending;
+                                 return (
+                                    <div key={idx} className="flex items-start gap-4 md:gap-5 relative group">
+                                       <div className={cn(
+                                          "z-10 h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-lg",
+                                          idx === timeline.length - 1 ? `${s.color} text-white` : "bg-gray-100 text-gray-400"
+                                       )}>
+                                          <s.icon className="h-6 w-6" />
+                                       </div>
+                                       <div className="pt-1 text-right">
+                                          <h4 className={cn("text-base font-black leading-none mb-1", idx === timeline.length - 1 ? "text-gray-900" : "text-gray-400")}>{s.label}</h4>
+                                          <p className="text-[10px] text-muted-foreground font-medium">{formatOrderDate(event.time)}</p>
+                                       </div>
+                                    </div>
+                                 );
+                              });
+                           } catch (e) {
+                              return null;
+                           }
                         })()}
-                      </div>
-                    </div>
-                    
-                    <div className="bg-[#F8F9FB] rounded-[1.5rem] md:rounded-3xl p-5 md:p-6 mb-4 md:mb-0 shrink-0">
-                       <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-                          <MapPin className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                          <h4 className="text-sm md:text-base font-black text-gray-900">عنوان التوصيل</h4>
+                     </div>
+                     
+                     <div className="mt-8 border-t pt-8">
+                       <h4 className="text-sm md:text-base font-black text-gray-900 mb-4 text-right">تفاصيل المنتجات:</h4>
+                       <div className="space-y-3">
+                         {(() => {
+                           try {
+                             const items = JSON.parse(selectedOrder.items || '[]');
+                             return items.map((item: any, idx: number) => (
+                               <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                 <div className="text-right">
+                                   <p className="text-xs md:text-sm font-bold text-gray-900">{item.name}</p>
+                                   <p className="text-[10px] md:text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
+                                 </div>
+                                 <p className="text-sm md:text-base font-black text-primary shrink-0 mr-2">{formatPrice(item.price)}</p>
+                               </div>
+                             ));
+                           } catch(e) {
+                             return <p className="text-gray-500 text-xs md:text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
+                           }
+                         })()}
                        </div>
-                       <p className="text-xs md:text-sm font-medium text-gray-600 leading-relaxed md:mr-8 break-words">{selectedOrder.address}</p>
-                    </div>
+                     </div>
+                     
+                     <div className="bg-[#F8F9FB] rounded-[2rem] p-6">
+                        <div className="flex items-center gap-3 mb-4 justify-end">
+                           <h4 className="text-sm md:text-base font-black text-gray-900">عنوان التوصيل</h4>
+                           <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                        <p className="text-xs md:text-sm font-medium text-gray-600 leading-relaxed text-right">{selectedOrder.address}</p>
+                     </div>
 
-                    <div className="shrink-0 mb-2">
-                       <Button className="w-full h-12 md:h-14 rounded-2xl md:rounded-full font-black text-base md:text-lg shadow-lg shadow-primary/20" onClick={() => setIsTrackOpen(false)}>إغلاق التفاصيل</Button>
-                    </div>
-                 </div>
-              </div>
+                     <Button className="w-full h-14 rounded-full font-black text-lg shadow-xl shadow-primary/20" onClick={() => setIsTrackOpen(false)}>إغلاق التفاصيل</Button>
+                  </div>
+               </div>
+
             )}
          </DialogContent>
       </Dialog>

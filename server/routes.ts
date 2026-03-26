@@ -1226,6 +1226,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(updated);
   });
 
+  app.post("/api/orders/:id/read-notification", requireCustomer, async (req: Request, res: Response) => {
+    const orderId = getSingleParam(req.params.id);
+    const userId = res.locals.customer.id;
+    const order = await storage.getOrderById(orderId);
+
+    if (!order || order.userId !== userId) {
+      return res.status(403).json({ message: "ليس لديك صلاحية" });
+    }
+
+    await storage.markOrderNotificationRead(orderId);
+    res.json({ success: true });
+  });
+
+
 
   app.post("/api/orders", async (req: Request, res: Response) => {
     const { sessionId: bodySessionId, name, phone, address, paymentMethod, bankId } = req.body as {

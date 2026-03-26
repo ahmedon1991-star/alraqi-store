@@ -148,6 +148,8 @@ export interface IStorage {
   markMessageAsRead(id: string): Promise<Message | undefined>;
   archiveMessage(id: string): Promise<Message | undefined>;
   archiveOrder(id: string): Promise<Order | undefined>;
+  markOrderNotificationRead(id: string): Promise<void>;
+
 }
 
 export class DatabaseStorage implements IStorage {
@@ -507,9 +509,36 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    const [updated] = await db.update(orders).set({ status, updatedAt: new Date() }).where(eq(orders.id, id)).returning();
+    let timeline = [];
+    try {
+      const order = await this.getOrderById(id);
+      if (order?.statusTimeline) {
+        timeline = JSON.parse(order.statusTimeline);
+      }
+    } catch (e) {}
+
+    timeline.push({
+      status,
+      time: new Date().toISOString()
+    });
+
+    const [updated] = await db.update(orders)
+      .set({ 
+        status, 
+        updatedAt: new Date(),
+        statusTimeline: JSON.stringify(timeline),
+        hasNewNotification: true 
+      })
+      .where(eq(orders.id, id))
+      .returning();
     return updated;
   }
+
+  async markOrderNotificationRead(id: string): Promise<void> {
+    if (!db) return;
+    await db.update(orders).set({ hasNewNotification: false }).where(eq(orders.id, id));
+  }
+
 
   async archiveOrder(id: string): Promise<Order | undefined> {
     if (!db) return undefined;
@@ -962,10 +991,36 @@ export class MemoryStorage implements IStorage {
       }
     }
 
-    const updated: Order = { ...existing, status, updatedAt: new Date() };
+    let timeline = [];
+    try {
+      if (existing.statusTimeline) {
+        timeline = JSON.parse(existing.statusTimeline);
+      }
+    } catch (e) {}
+
+    timeline.push({
+      status,
+      time: new Date().toISOString()
+    });
+
+    const updated: Order = { 
+      ...existing, 
+      status, 
+      updatedAt: new Date(),
+      statusTimeline: JSON.stringify(timeline),
+      hasNewNotification: true 
+    };
     this.orders.set(id, updated);
     return updated;
   }
+
+  async markOrderNotificationRead(id: string): Promise<void> {
+    const existing = this.orders.get(id);
+    if (existing) {
+      this.orders.set(id, { ...existing, hasNewNotification: false });
+    }
+  }
+
 
   async archiveOrder(id: string): Promise<Order | undefined> {
     const existing = this.orders.get(id);

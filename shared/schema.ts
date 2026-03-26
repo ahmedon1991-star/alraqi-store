@@ -96,7 +96,10 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   isArchived: boolean("is_archived").default(false),
+  statusTimeline: text("status_timeline"), // JSON array of [{status, time, note}]
+  hasNewNotification: boolean("has_new_notification").default(false),
 });
+
 
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true, updatedAt: true, isArchived: true });
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
