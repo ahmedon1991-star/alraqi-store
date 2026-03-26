@@ -931,7 +931,7 @@ export default function AdminPage() {
                 <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
                   <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
                   <p className="mt-1 text-lg md:text-2xl font-black">
-                  {data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
+                  {!data?.stats?.orders || data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
                   </p>
                 </div>
               </div>
