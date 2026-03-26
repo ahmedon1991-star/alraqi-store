@@ -32,9 +32,11 @@ export default function ProductDetails() {
     enabled: !!params?.id,
   });
 
-  const variantsList = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
-  const sizesList = product?.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
-  const measurementList = product?.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
+    const allVariants = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+    // Only show variants that are in stock (if stock is managed)
+    const variantsList = allVariants.filter((v: any) => v.stock === undefined || v.stock === "" || Number(v.stock) > 0);
+    const sizesList = product?.sizes ? product.sizes.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+    const measurementList = product?.measurements ? product.measurements.split(',').map((m: string) => m.trim()).filter(Boolean) : [];
 
   // Auto-select single options
   useState(() => {
@@ -214,9 +216,14 @@ export default function ProductDetails() {
                            >
                               <div className="flex flex-col">
                                 <span className={cn("text-base font-black truncate", selectedVariant?.name === v.name ? "text-primary" : "text-slate-800")}>{v.name}</span>
-                                {v.originalPrice && Number(v.originalPrice) > Number(v.price) && (
-                                  <span className="text-[10px] line-through opacity-50 font-bold">{Number(v.originalPrice).toLocaleString()} ج.س</span>
-                                )}
+                                <div className="flex items-center gap-2">
+                                  {v.originalPrice && Number(v.originalPrice) > Number(v.price) && (
+                                    <span className="text-[10px] line-through opacity-50 font-bold">{Number(v.originalPrice).toLocaleString()} ج.س</span>
+                                  )}
+                                  {v.stock !== undefined && v.stock !== "" && Number(v.stock) > 0 && Number(v.stock) <= 5 && (
+                                    <span className="text-[9px] text-orange-600 font-black animate-pulse px-1.5 py-0.5 bg-orange-50 rounded-lg">متبقي {v.stock} فقط!</span>
+                                  )}
+                                </div>
                               </div>
                               <span className="text-lg font-black">{Number(v.price).toLocaleString()} <span className="text-[10px]">ج.س</span></span>
                            </button>

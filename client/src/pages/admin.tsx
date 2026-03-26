@@ -1180,7 +1180,7 @@ export default function AdminPage() {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                                 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3">
                                   <div className="space-y-1">
                                     <label className="text-[10px] font-black text-muted-foreground pr-1">اسم الخيار (مثال: 1 لتر)</label>
                                     <Input 
@@ -1222,9 +1222,9 @@ export default function AdminPage() {
                                       className="h-9 rounded-lg text-xs"
                                     />
                                   </div>
-                                  <div className="space-y-1">
+                                  <div className="space-y-1 sm:col-span-1 lg:col-span-1">
                                     <label className="text-[10px] font-black text-muted-foreground pr-1">صورة الخيار (اختياري)</label>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1.5">
                                       <Input 
                                         placeholder="رابط الصورة" 
                                         value={variant.image} 
@@ -1233,7 +1233,7 @@ export default function AdminPage() {
                                           newVariants[idx].image = e.target.value;
                                           setForm(prev => ({ ...prev, variants: newVariants }));
                                         }}
-                                        className="h-9 rounded-lg text-[10px]"
+                                        className="h-9 rounded-lg text-xs"
                                         dir="ltr"
                                       />
                                       <div className="relative shrink-0">
@@ -1255,6 +1255,20 @@ export default function AdminPage() {
                                         />
                                       </div>
                                     </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-muted-foreground pr-1">الكمية المتوفرة</label>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="المخزون" 
+                                      value={variant.stock || ""} 
+                                      onChange={(e) => {
+                                        const newVariants = [...form.variants];
+                                        newVariants[idx].stock = e.target.value;
+                                        setForm(prev => ({ ...prev, variants: newVariants }));
+                                      }}
+                                      className="h-9 rounded-lg text-sm font-bold text-orange-600 border-orange-100 bg-orange-50/30"
+                                    />
                                   </div>
                                 </div>
                               </div>
