@@ -1596,14 +1596,14 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Horizontal Category Navigation Bar (Sliding Bar) */}
-              <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-4 -mx-2 px-2 border-t border-border/20 mt-4">
+              {/* Horizontal Category Navigation Bar (Sliding Bar) - MORE COMPACT */}
+              <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 -mx-2 px-2 border-t border-border/20 mt-4">
                 <Button
                   variant={!activeCategory ? "default" : "outline"}
                   size="sm"
                   onClick={() => setActiveCategory(null)}
                   className={cn(
-                    "rounded-full px-6 h-10 font-black shrink-0 transition-all",
+                    "rounded-full px-4 h-8 text-xs font-black shrink-0 transition-all",
                     !activeCategory ? "shadow-md shadow-primary/20" : "bg-white"
                   )}
                 >
@@ -1616,41 +1616,41 @@ export default function AdminPage() {
                     variant={activeCategory === cat.id ? "default" : "outline"}
                     onClick={() => setActiveCategory(cat.id)}
                     className={cn(
-                      "rounded-full px-6 h-10 font-bold shrink-0 whitespace-nowrap transition-all flex items-center gap-2",
+                      "rounded-full px-4 h-8 text-xs font-bold shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5",
                       activeCategory === cat.id ? "shadow-md shadow-primary/20" : "bg-white"
                     )}
                   >
-                    <CategoryIcon icon={cat.icon} className="h-4 w-4" imgClassName="p-0" />
+                    <CategoryIcon icon={cat.icon} className="h-3 w-3" imgClassName="p-0" />
                     {cat.name}
                   </Button>
                 ))}
               </div>
             </CardHeader>
-            <CardContent className="px-6 pb-8">
-              <div className="space-y-12">
+            <CardContent className="px-4 pb-6">
+              <div className="space-y-8">
                 {Object.entries(groupedProducts).length > 0 ? Object.entries(groupedProducts)
                   .filter(([catId]) => !activeCategory || catId === activeCategory)
                   .map(([catId, products]) => (
-                  <div key={catId} className="space-y-6">
-                    <div className="flex items-center justify-between px-2">
-                      <h3 className="text-xl font-black text-gray-800 flex items-center gap-3">
-                        <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary/10 text-xl overflow-hidden">
-                           <CategoryIcon icon={data.topCategories.find(c => c.id === catId)?.icon} className="h-5 w-5 text-primary" />
+                  <div key={catId} className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+                        <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/10 text-base overflow-hidden">
+                           <CategoryIcon icon={data.topCategories.find(c => c.id === catId)?.icon} className="h-4 w-4 text-primary" />
                         </div>
                         {getCategoryName(catId)}
-                        <span className="text-xs font-bold text-muted-foreground mr-1 bg-muted px-3 py-1 rounded-full">{products.length} منتج</span>
+                        <span className="text-[10px] font-bold text-muted-foreground mr-1 bg-muted px-2 py-0.5 rounded-full">{products.length}</span>
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {products.map((product) => (
                         <div
                           key={product.id}
-                          className="group rounded-[2rem] border border-border/60 bg-white/80 backdrop-blur-sm p-4 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/5 relative overflow-hidden active:scale-[0.98]"
+                          className="group rounded-2xl border border-border/60 bg-white/80 backdrop-blur-sm p-3 hover:border-primary/40 transition-all hover:shadow-lg hover:shadow-primary/5 relative overflow-hidden"
                         >
-                          <div className="flex gap-4">
-                            {/* Product Image on Left (Matching Image) */}
-                            <div className="h-32 w-32 shrink-0 rounded-3xl overflow-hidden border-2 border-primary/5 shadow-sm bg-white p-1">
+                          <div className="flex gap-3">
+                            {/* Smaller Product Image (Matching Image Request) */}
+                            <div className="h-24 w-24 shrink-0 rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-white p-1">
                               <img 
                                 src={product.image || "/images/product-spices.png"} 
                                 alt={product.name} 
@@ -1659,50 +1659,50 @@ export default function AdminPage() {
                               />
                             </div>
                             
-                            <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                            <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                               <div>
-                                <h3 className="font-black text-lg text-foreground mb-1 block leading-tight truncate">{product.name}</h3>
-                                <p className="text-[10px] font-bold text-muted-foreground mb-2 flex items-center gap-1">
+                                <h3 className="font-black text-base text-foreground mb-0.5 block leading-tight truncate">{product.name}</h3>
+                                <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
                                    {getCategoryName(product.category)}
                                 </p>
                                 
-                                <div className="flex items-center gap-2 mb-2">
-                                   <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[10px] h-6 px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
+                                <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                                   <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[9px] h-5 px-2 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
                                      {product.inStock ? "متوفر" : "غير متوفر"}
                                    </Badge>
-                                   <Badge variant="outline" className={cn("rounded-full text-[10px] h-6 px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                   <Badge variant="outline" className={cn("rounded-full text-[9px] h-5 px-2 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
                                      المخزون: {product.stock || 0}
                                    </Badge>
                                 </div>
                               </div>
                               
                               <div className="flex items-end justify-between">
-                                <div className="text-xl font-black text-slate-800">
+                                <div className="text-lg font-black text-slate-800">
                                   {formatPrice(product.price)}
                                 </div>
                               </div>
                             </div>
                           </div>
 
-                          {/* Actions Buttons below (Matching Image) */}
-                          <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border/20">
+                          {/* Action Buttons More Compact */}
+                          <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border/20">
                             <Button 
                               variant="ghost" 
-                              className="h-11 rounded-2xl text-primary bg-primary/5 hover:bg-primary/10 gap-2 font-bold transition-all"
+                              className="h-9 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 gap-1.5 text-xs font-bold transition-all"
                               onClick={() => openEditDialog(product)}
                             >
-                              <Pencil className="h-4 w-4" /> تعديل
+                              <Pencil className="h-3 w-3" /> تعديل
                             </Button>
                             <Button 
                               variant="ghost" 
-                              className="h-11 rounded-2xl text-red-500 bg-red-50 hover:bg-red-100 gap-2 font-bold transition-all"
+                              className="h-9 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 gap-1.5 text-xs font-bold transition-all"
                               onClick={() => {
                                 if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
                                    deleteProductMutation.mutate(product.id);
                                 }
                               }}
                             >
-                              <Trash2 className="h-4 w-4" /> حذف
+                              <Trash2 className="h-3 w-3" /> حذف
                             </Button>
                           </div>
 
