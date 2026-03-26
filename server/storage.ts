@@ -739,7 +739,8 @@ export class MemoryStorage implements IStorage {
       sizes: product.sizes ?? null,
       measurements: product.measurements ?? null,
       stock: product.stock ?? 0,
-      sortOrder: product.sortOrder ?? 0,
+      originalPrice: product.originalPrice ?? null, // FIXED: Added originalPrice
+      sortOrder: Math.max(0, ...Array.from(this.products.values()).map(p => p.sortOrder || 0)) + 1,
     };
     this.products.set(created.id, created);
     return created;
