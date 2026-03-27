@@ -136,9 +136,9 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
               <span className="text-[7px] md:text-xs">ج.س</span>
             </div>
           )}
-          <div className="font-black text-[13px] md:text-3xl text-primary flex items-baseline gap-1">
+          <div className="font-black text-[17px] md:text-3xl text-primary flex items-baseline gap-1">
             <span className="font-mono tracking-tighter">{price.toLocaleString()}</span>
-            <span className="text-[10px] md:text-lg font-bold opacity-70">ج.س</span>
+            <span className="text-[11px] md:text-lg font-bold opacity-80">ج.س</span>
           </div>
         </div>
       </CardContent>
