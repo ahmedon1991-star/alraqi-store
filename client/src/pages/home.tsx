@@ -7,7 +7,6 @@ import { ArrowLeft, Truck, ShieldCheck, Loader2, Send, ShoppingBag } from "lucid
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, seedDatabase } from "@/lib/api";
-import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/components/ui/category-icon";
 
@@ -31,7 +30,7 @@ export default function Home() {
     seedDatabase().catch(() => {});
   }, []);
 
-  const featuredProducts = useMemo(() => productsData || [], [productsData]);
+  const featuredProducts = useMemo(() => (productsData || []).filter((p: any) => p.isVisible !== false), [productsData]);
   const cats = useMemo(() => categoriesData || [], [categoriesData]);
 
   return (

@@ -53,6 +53,7 @@ export const products = pgTable("products", {
   sortOrder: integer("sort_order").default(0),
   originalPrice: integer("original_price"),
   variants: text("variants"), // JSON array of { name, price, originalPrice, image, stock }
+  isVisible: boolean("is_visible").default(true),
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });

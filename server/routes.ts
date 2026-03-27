@@ -247,6 +247,7 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
     measurements: typeof measurements === "string" && measurements.trim() ? measurements : null,
     stock: typeof stock === "number" ? stock : Number(stock) || 0,
     variants: typeof variants === "string" ? variants : null,
+    isVisible: typeof body.isVisible === "boolean" ? body.isVisible : true,
   };
 }
 

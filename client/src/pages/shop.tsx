@@ -71,7 +71,7 @@ export default function Shop() {
   }, [location, search]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = allProducts;
+    let filtered = allProducts.filter((p: any) => p.isVisible !== false);
     if (searchTerm) {
       filtered = filtered.filter((p: any) =>
         p.name.includes(searchTerm) || (p.nameEn && p.nameEn.toLowerCase().includes(searchTerm.toLowerCase()))

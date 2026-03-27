@@ -146,6 +146,7 @@ type ProductFormState = {
   measurements: string;
   stock: string;
   variants: Array<{ name: string; price: string; originalPrice: string; image: string; stock: string }>;
+  isVisible: boolean;
 };
 
 const initialForm: ProductFormState = {
@@ -158,6 +159,7 @@ const initialForm: ProductFormState = {
   badge: "",
   description: "",
   inStock: true,
+  isVisible: true,
   sizes: "",
   measurements: "",
   stock: "0",
@@ -628,6 +630,7 @@ export default function AdminPage() {
           measurements: form.measurements,
           stock: Number(form.stock) || 0,
           variants: JSON.stringify(form.variants),
+          isVisible: form.isVisible,
         }),
       }),
     onSuccess: () => {
@@ -826,6 +829,7 @@ export default function AdminPage() {
       measurements: product.measurements || "",
       stock: String(product.stock || 0),
       variants: typeof product.variants === 'string' ? JSON.parse(product.variants || '[]') : (product.variants || []),
+      isVisible: product.isVisible ?? true,
     });
     setIsDialogOpen(true);
   }
@@ -1114,12 +1118,22 @@ export default function AdminPage() {
                             className="min-h-32 text-right rounded-2xl border-gray-200 focus:border-primary/30 py-3"
                           />
                         </div>
-                        <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-primary/5 px-5 py-4 md:col-span-2 shadow-inner">
-                          <div className="text-right">
-                            <p className="font-black text-foreground">الحالة: متوفر بالمخزون</p>
-                            <p className="text-sm text-muted-foreground">سيظهر المنتج للعملاء في المتجر إذا كان مفعلاً.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
+                          <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-emerald-50 px-5 py-3 shadow-inner">
+                            <div className="text-right">
+                              <p className="text-sm font-black text-emerald-900">حالة المخزون</p>
+                              <p className="text-[10px] text-emerald-700/80">هل المنتج متوفر للشراء؟</p>
+                            </div>
+                            <Switch checked={form.inStock} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, inStock: checked }))} />
                           </div>
-                          <Switch checked={form.inStock} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, inStock: checked }))} />
+                          
+                          <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-primary/5 px-5 py-3 shadow-inner">
+                            <div className="text-right">
+                              <p className="text-sm font-black text-foreground">ظهور المنتج</p>
+                              <p className="text-[10px] text-muted-foreground">عرض المنتج للعملاء في المتجر</p>
+                            </div>
+                            <Switch checked={form.isVisible} onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isVisible: checked }))} />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1502,6 +1516,11 @@ export default function AdminPage() {
                                  <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
                                    {product.stock || 0}
                                  </Badge>
+                                 {!product.isVisible && (
+                                   <Badge variant="destructive" className="rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black bg-rose-600 text-white">
+                                     مخفي
+                                   </Badge>
+                                 )}
                               </div>
                               
                               <div className="text-sm md:text-2xl font-black text-slate-800 pt-1">
