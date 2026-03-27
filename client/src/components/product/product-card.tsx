@@ -88,6 +88,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         </Link>
         
 
+        {inStock && (
+          <button
+            onClick={handleAddToCart}
+            disabled={addToCart.isPending}
+            className="absolute bottom-1.5 left-1.5 z-30 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-white/95 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
+          >
+            {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-7 md:w-7 animate-spin" /> : <Plus className="h-4 w-4 md:h-7 md:w-7 stroke-[3]" />}
+          </button>
+        )}
+
         {/* Status Badges */}
         {(discountBadge || badge) && (
           <div className={cn(
@@ -148,27 +158,19 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           </div>
 
           <div className="flex items-center gap-2 mb-1">
-             {/* Favorite Button */}
+             {/* Favorite Button (Improved style) */}
              <button
                 onClick={handleWishlistToggle}
                 className={cn(
-                  "w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl bg-muted/30 transition-all active:scale-95",
-                  isInWishlist(id) ? "text-red-500 shadow-sm" : "text-muted-foreground/60 hover:text-red-400"
+                  "w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl transition-all active:scale-95 border",
+                  isInWishlist(id) 
+                    ? "bg-red-50 text-red-500 border-red-100 shadow-sm shadow-red-100" 
+                    : "bg-muted/20 text-muted-foreground/50 border-transparent hover:bg-muted/30"
                 )}
+                title="إضافة للمفضلة"
              >
                 <Heart className={cn("h-4 w-4 md:h-6 md:w-6", isInWishlist(id) ? "fill-current" : "")} />
              </button>
-
-             {/* Add to Cart Button */}
-             {inStock && (
-               <button
-                  onClick={handleAddToCart}
-                  disabled={addToCart.isPending}
-                  className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:scale-105 active:scale-90 transition-all"
-               >
-                  {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-4 w-4 md:h-6 md:w-6 stroke-[3]" />}
-               </button>
-             )}
           </div>
         </div>
       </CardContent>
