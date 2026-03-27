@@ -5,6 +5,8 @@ import { useCartCount } from "@/hooks/use-cart";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { getAdminToken } from "@/lib/api";
+import { CartSheet } from "@/components/layout/cart-sheet";
+import { cn } from "@/lib/utils";
 
 export function MobileNav() {
   const [location] = useLocation();
@@ -44,6 +46,7 @@ export function MobileNav() {
       href: "/cart",
       active: location === "/cart",
       count: cartCount,
+      isCart: true,
     },
     {
       label: user ? "حسابي" : "دخول",
@@ -65,32 +68,40 @@ export function MobileNav() {
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-primary/10 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
       <div className="flex items-center justify-between h-16 px-4">
-        {navItems.map((item) => {
+        {navItems.map((item: any) => {
           const Icon = item.icon;
-          return (
-            <Link key={item.label} href={item.href}>
-              <div className={`flex flex-col items-center justify-center gap-1 group relative cursor-pointer min-w-[64px]`}>
-                <div className="relative">
-                  <Icon
-                    className={`h-6 w-6 transition-all duration-300 ${item.active
-                        ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(200,150,62,0.4)]"
-                        : "text-muted-foreground group-hover:text-primary/70"
-                      }`}
-                  />
-                  {item.count !== undefined && item.count > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-primary to-primary-foreground text-black text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
-                      {item.count}
-                    </Badge>
-                  )}
-                </div>
-                <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-muted-foreground"
-                  }`}>
-                  {item.label}
-                </span>
-                {item.active && (
-                  <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full shadow-[0_0_12px_rgba(200,150,62,0.6)] transition-all duration-500" />
+          const content = (
+            <div className={`flex flex-col items-center justify-center gap-1 group relative cursor-pointer min-w-[64px]`}>
+              <div className="relative">
+                <Icon
+                  className={`h-6 w-6 transition-all duration-300 ${item.active
+                      ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(200,150,62,0.4)]"
+                      : "text-muted-foreground group-hover:text-primary/70"
+                    }`}
+                />
+                {item.count !== undefined && item.count > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-primary to-primary-foreground text-black text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
+                    {item.count}
+                  </Badge>
                 )}
               </div>
+              <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-muted-foreground"
+                }`}>
+                {item.label}
+              </span>
+              {item.active && (
+                <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full shadow-[0_0_12px_rgba(200,150,62,0.6)] transition-all duration-500" />
+              )}
+            </div>
+          );
+
+          if (item.isCart) {
+            return <CartSheet key={item.label}>{content}</CartSheet>;
+          }
+
+          return (
+            <Link key={item.label} href={item.href}>
+              {content}
             </Link>
           );
         })}

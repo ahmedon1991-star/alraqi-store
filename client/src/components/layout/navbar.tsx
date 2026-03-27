@@ -11,6 +11,7 @@ import { getAdminToken } from "@/lib/api";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { CartSheet } from "@/components/layout/cart-sheet";
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -149,7 +150,7 @@ export function Navbar() {
               {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </Button>
 
-            <Link href="/cart">
+            <CartSheet>
               <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all cursor-pointer group">
                 <ShoppingCart className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
                 {cartCount > 0 && (
@@ -158,7 +159,7 @@ export function Navbar() {
                   </Badge>
                 )}
               </div>
-            </Link>
+            </CartSheet>
 
             <Link href="/profile">
               <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all group">
