@@ -1078,13 +1078,21 @@ export default function AdminPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">الكمية الإجمالية في المخزن</label>
+                          <label className="text-sm font-bold text-gray-700 block pr-1">المقاسات المتاحة (اختياري)</label>
                           <Input
-                            type="number"
-                            placeholder="مثال: 100"
-                            value={form.stock}
-                            onChange={(e) => setForm((prev) => ({ ...prev, stock: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200"
+                            placeholder="مثال: S, M, L, XL"
+                            value={form.sizes}
+                            onChange={(e) => setForm((prev) => ({ ...prev, sizes: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-gray-700 block pr-1">الحجم / الوزن (اختياري)</label>
+                          <Input
+                            placeholder="مثال: 1kg, 500g, 250g"
+                            value={form.measurements}
+                            onChange={(e) => setForm((prev) => ({ ...prev, measurements: e.target.value }))}
+                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
                           />
                         </div>
 
