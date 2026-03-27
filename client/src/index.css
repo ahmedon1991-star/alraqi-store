@@ -1,5 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* 
+ * NOTE: This project uses Tailwind CSS v4. 
+ * IDE warnings for "@theme", "@custom-variant", or "@apply" are false positives.
+ * They are valid Tailwind v4 syntax and compile correctly.
+ */
+
 @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
@@ -10,35 +17,27 @@
   --radius-lg: 0.8rem;
   --radius-xl: 1rem;
 
-  /* Luxurious Gold & Dark Palette */
-  --color-background: hsl(20 10% 5%); /* Deepest Black/Charcoal */
-  --color-foreground: hsl(40 25% 90%); /* Light Cream/Ivory */
-  
-  --color-card: hsl(30 15% 7%); /* Extremely Dark Card */
-  --color-card-foreground: hsl(40 25% 90%);
-  
-  --color-popover: hsl(30 15% 7%);
-  --color-popover-foreground: hsl(40 25% 90%);
-  
-  --color-primary: hsl(38 52% 51%); /* Regal Gold #C8963E */
-  --color-primary-foreground: hsl(38 100% 5%); /* Dark text on gold */
-  
-  --color-secondary: hsl(150 40% 30%); /* Forest/Luxury Green #2D6A4F */
-  --color-secondary-foreground: hsl(150 20% 95%);
-  
-  --color-muted: hsl(30 10% 12%);
-  --color-muted-foreground: hsl(40 10% 65%);
-  
-  --color-accent: hsl(38 30% 15%); /* Subtle Gold Glow */
-  --color-accent-foreground: hsl(38 52% 51%);
-  
-  --color-destructive: hsl(0 75% 45%);
-  --color-destructive-foreground: hsl(0 0% 100%);
-  
-  --color-border: hsla(38, 52%, 51%, 0.18);
-  --color-input: hsla(38, 52%, 51%, 0.1);
-  --color-ring: hsl(38, 52%, 51%);
-  
+  /* Luxurious Shared Tokens */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --font-sans: 'Cairo', 'Tajawal', sans-serif;
   --font-display: 'Amiri', serif;
   --font-heading: 'Tajawal', sans-serif;
@@ -46,13 +45,66 @@
   --radius: 0.5rem;
 }
 
+:root {
+  /* Luxurious Light Mode (Ivory & Gold) */
+  --background: hsl(40 25% 98%);
+  --foreground: hsl(20 15% 10%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(20 15% 10%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(20 15% 10%);
+  --primary: hsl(38 52% 51%);
+  --primary-foreground: hsl(40 20% 98%);
+  --secondary: hsl(150 40% 30%);
+  --secondary-foreground: hsl(150 20% 95%);
+  --muted: hsl(30 15% 94%);
+  --muted-foreground: hsl(20 5% 40%);
+  --accent: hsl(38 60% 95%);
+  --accent-foreground: hsl(38 52% 51%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsla(38, 52%, 51%, 0.12);
+  --input: hsla(38, 52%, 51%, 0.08);
+  --ring: hsl(38, 52%, 51%);
+}
+
+.dark {
+  /* Luxurious Dark Mode (Charcoal & Gold) */
+  --background: hsl(20 10% 5%);
+  --foreground: hsl(40 25% 90%);
+  --card: hsl(30 15% 7%);
+  --card-foreground: hsl(40 25% 90%);
+  --popover: hsl(30 15% 7%);
+  --popover-foreground: hsl(40 25% 90%);
+  --primary: hsl(38 52% 51%);
+  --primary-foreground: hsl(38 100% 5%);
+  --secondary: hsl(150 40% 30%);
+  --secondary-foreground: hsl(150 20% 95%);
+  --muted: hsl(30 10% 12%);
+  --muted-foreground: hsl(40 10% 65%);
+  --accent: hsl(38 30% 15%);
+  --accent-foreground: hsl(38 52% 51%);
+  --destructive: hsl(0 75% 45%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsla(38, 52%, 51%, 0.18);
+  --input: hsla(38, 52%, 51%, 0.1);
+  --ring: hsl(38, 52%, 51%);
+}
+
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border transition-colors duration-200;
   }
   body {
     @apply font-sans antialiased text-foreground min-h-screen selection:bg-primary/30;
+    transition: background-color 0.3s ease;
+  }
+  .dark body {
     background: radial-gradient(ellipse at 50% 0%, #1a150a 0%, #080706 80%);
+    background-attachment: fixed;
+  }
+  body:not(.dark) {
+    background: radial-gradient(ellipse at 50% 0%, hsl(40 30% 96%) 0%, hsl(40 10% 92%) 80%);
     background-attachment: fixed;
   }
   h1, h2, h3, .font-display {

@@ -53,16 +53,20 @@ function Router() {
   );
 }
 
+import { ThemeProvider } from "next-themes";
+
 function App() {
   const [splashDone, setSplashDone] = useState(false);
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      {!splashDone && <SplashScreen onDone={handleSplashDone} />}
-      <Router />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        {!splashDone && <SplashScreen onDone={handleSplashDone} />}
+        <Router />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

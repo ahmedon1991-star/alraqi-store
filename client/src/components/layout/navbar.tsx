@@ -1,4 +1,5 @@
-import { LogOut, Menu, Search, Shield, ShoppingCart, User, Heart, X } from "lucide-react";
+import { LogOut, Menu, Search, Shield, ShoppingCart, User, Heart, X, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,31 @@ import { getAdminToken } from "@/lib/api";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all group overflow-hidden relative"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      title={theme === "dark" ? "التغيير للوضع النهاري" : "التغيير للوضع الليلي"}
+    >
+      <div className="relative w-5 h-5 flex items-center justify-center">
+        <Sun className={cn(
+          "h-full w-full absolute transition-all duration-500",
+          theme === "dark" ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
+        )} />
+        <Moon className={cn(
+          "h-full w-full absolute transition-all duration-500",
+          theme === "dark" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
+        )} />
+      </div>
+    </Button>
+  );
+}
 
 export function Navbar() {
   const [location] = useLocation();
@@ -142,6 +168,8 @@ export function Navbar() {
               </Button>
             </Link>
             
+            <ThemeToggle />
+
             {getAdminToken() && (
               <Link href="/admin">
                 <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-orange-600 hover:bg-orange-50 rounded-2xl border border-orange-100 animate-pulse">
