@@ -94,8 +94,8 @@ export default function ProductDetails() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <main className="flex-1 container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+      <main className="flex-1 container mx-auto px-4 py-4 md:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-20">
           <div className="space-y-4">
             <div className="aspect-square rounded-3xl overflow-hidden bg-white flex items-center justify-center p-1 relative shadow-sm border border-border/50">
               {product.badge && (
@@ -130,11 +130,11 @@ export default function ProductDetails() {
                   <span className="text-muted-foreground text-xs mr-1">({product.reviews} تقييم)</span>
                 </div>
               </div>
-              <h1 className="text-3xl md:text-5xl font-black text-foreground mb-2" data-testid="text-product-name">{product.name}</h1>
-              <h2 className="text-xl text-muted-foreground font-medium mb-6 opacity-80">{product.nameEn}</h2>
+              <h1 className="text-2xl md:text-5xl font-black text-foreground mb-1 md:mb-2 leading-tight" data-testid="text-product-name">{product.name}</h1>
+              <h2 className="text-lg text-muted-foreground font-medium mb-4 md:mb-6 opacity-80">{product.nameEn}</h2>
 
-              <div className="flex items-end gap-3 mb-8">
-                <span className="text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
+              <div className="flex items-end gap-3 mb-4 md:mb-8">
+                <span className="text-3xl md:text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
                 <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
               </div>
               
@@ -146,7 +146,7 @@ export default function ProductDetails() {
               )}
             </div>
 
-            <div className="bg-muted/30 p-6 rounded-2xl space-y-2 border border-border/50 transition-all duration-500">
+            <div className="bg-muted/30 p-4 md:p-6 rounded-2xl space-y-2 border border-border/50 transition-all duration-500">
               <p className={cn(
                 "leading-relaxed text-muted-foreground transition-all duration-300",
                 !isExpanded && "line-clamp-2"
@@ -175,8 +175,8 @@ export default function ProductDetails() {
 
             {/* Removed the entire product options section (variants, sizes, measurements) and its IIFE */}
 
-            <div className="bg-white p-6 rounded-2xl border border-border/50 shadow-sm mt-2">
-              <h3 className="font-bold text-lg mb-3">قيم هذا المنتج</h3>
+            <div className="bg-white p-4 md:p-6 rounded-2xl border border-border/50 shadow-sm mt-1">
+              <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">قيم هذا المنتج</h3>
               <div className="flex items-center gap-1 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
