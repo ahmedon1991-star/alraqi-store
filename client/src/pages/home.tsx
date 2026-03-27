@@ -90,17 +90,17 @@ export default function Home() {
                     </Link>
                   </div>
 
-                  <div className="flex overflow-x-auto no-scrollbar gap-4 md:gap-10 pb-6 snap-x">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-12">
                     {categoryProducts.slice(0, 6).map((product: any) => (
-                      <div key={product.id} className="flex-shrink-0 w-[160px] md:w-[350px] snap-start mb-2">
+                      <div key={product.id} className="w-full animate-fade-up">
                         <ProductCard {...product} />
                       </div>
                     ))}
-                    <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[100px] md:w-[200px] snap-start flex flex-col items-center justify-center gap-4 rounded-[2rem] md:rounded-[4rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer">
+                    <Link href={`/shop?category=${cat.id}`} className="col-span-1 md:col-span-1 flex flex-col items-center justify-center gap-6 rounded-[2rem] md:rounded-[4rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer min-h-[150px] md:min-h-[400px]">
                       <div className="w-12 h-12 md:w-24 md:h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                         <ArrowLeft className="h-6 w-6 md:h-12 md:w-12" />
                       </div>
-                      <span className="font-heading font-black text-sm md:text-2xl text-primary">المزيد</span>
+                      <span className="font-heading font-black text-sm md:text-3xl text-primary">عرض كافة المنتجات</span>
                     </Link>
                   </div>
                 </div>
