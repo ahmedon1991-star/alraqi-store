@@ -6,10 +6,10 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setFadeOut(true);
-    }, 1800);
+    }, 800);
     const done = setTimeout(() => {
       onDone();
-    }, 2400);
+    }, 1400);
     return () => {
       clearTimeout(timer);
       clearTimeout(done);

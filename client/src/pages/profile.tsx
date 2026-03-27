@@ -265,7 +265,13 @@ export default function ProfilePage() {
 
   if (isUserLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+      <div className="flex min-h-screen flex-col bg-[#F7F8FA]">
+        <Navbar />
+        <div className="flex flex-1 items-center justify-center p-20">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
     );
   }
 
