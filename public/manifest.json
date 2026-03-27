@@ -8,16 +8,22 @@
   "description": "وجهتك الأولى للمنتجات الغذائية والأصيلة. تسوق التوابل، الأغذية، والمنتجات الطبيعية بجودة عالية وتوصيل سريع.",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "orientation": "portrait-primary",
