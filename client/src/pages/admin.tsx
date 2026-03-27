@@ -94,6 +94,7 @@ type AdminOverview = {
     measurements: string | null;
     stock: number;
     variants: string | null;
+    isVisible: boolean | null;
   }>;
   topCategories: Array<{
     id: string;

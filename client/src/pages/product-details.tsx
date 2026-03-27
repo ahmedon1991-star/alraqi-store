@@ -69,14 +69,20 @@ export default function ProductDetails() {
     );
   }
 
-  if (!product) {
+  if (!product || product.isVisible === false) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Navbar />
         <div className="flex-1 flex items-center justify-center text-center">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">المنتج غير موجود</h2>
-            <p className="text-muted-foreground">عذراً، لم نتمكن من العثور على هذا المنتج.</p>
+          <div className="space-y-4 px-6">
+            <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+               <Package className="h-10 w-10 text-muted-foreground/40" />
+            </div>
+            <h2 className="text-2xl font-black mb-2">عذراً، المنتج غير متاح حالياً</h2>
+            <p className="text-muted-foreground">هذا المنتج ربما تم إخفاؤه أو لم يعد متوفراً في المتجر.</p>
+            <Button variant="outline" className="mt-4 rounded-full font-bold h-11 px-8" onClick={() => window.history.back()}>
+                العودة للمتجر
+            </Button>
           </div>
         </div>
         <Footer />
