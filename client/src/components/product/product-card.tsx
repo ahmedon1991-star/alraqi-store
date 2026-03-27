@@ -87,28 +87,6 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           />
         </Link>
         
-        {/* Wishlist Button */}
-        <button
-          onClick={handleWishlistToggle}
-          className={cn(
-            "absolute bottom-2 right-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300",
-            isInWishlist(id) 
-              ? "bg-red-50 text-red-500 shadow-lg shadow-red-200/50 border border-red-100" 
-              : "bg-white/90 backdrop-blur-md text-muted-foreground/80 hover:text-red-400 border border-border/50"
-          )}
-        >
-          <Heart className={cn("h-4 w-4 md:h-6 md:w-6 transition-transform", isInWishlist(id) ? "fill-current scale-110" : "")} />
-        </button>
-        {/* Floating Add Button (HungerStation Style) */}
-        {inStock && (
-          <button
-            onClick={handleAddToCart}
-            disabled={addToCart.isPending}
-            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-card/80 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-primary-foreground transition-all transform active:scale-90"
-          >
-            {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-7 md:w-7 animate-spin" /> : <Plus className="h-4 w-4 md:h-7 md:w-7 stroke-[3]" />}
-          </button>
-        )}
 
         {/* Status Badges */}
         {(discountBadge || badge) && (
@@ -132,7 +110,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       </div>
 
       {/* Content Area */}
-      <CardContent className="p-1 md:p-4 text-right flex flex-col flex-1 space-y-0.5 md:space-y-1">
+      <CardContent className="p-2 md:p-4 text-right flex flex-col flex-1 space-y-1 relative">
         <div className="flex items-center justify-between">
            <span className="text-[7px] md:text-xs font-bold text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{category}</span>
            {rating && rating > 0 && (
@@ -155,16 +133,42 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           </p>
         )}
 
-        <div className="mt-auto pt-2">
-          {originalPrice && originalPrice > price && (
-            <div className="text-[9px] md:text-base text-muted-foreground/40 line-through font-bold mb-[-3px] flex items-center gap-1">
-              <span>{originalPrice.toLocaleString()}</span>
-              <span className="text-[7px] md:text-xs">ج.س</span>
+        <div className="mt-auto pt-2 flex items-end justify-between">
+          <div>
+            {originalPrice && originalPrice > price && (
+              <div className="text-[9px] md:text-base text-muted-foreground/40 line-through font-bold mb-[-3px] flex items-center gap-1">
+                <span>{originalPrice.toLocaleString()}</span>
+                <span className="text-[7px] md:text-xs">ج.س</span>
+              </div>
+            )}
+            <div className="font-black text-[17px] md:text-3xl text-primary flex items-baseline gap-1">
+              <span className="font-mono tracking-tighter">{price.toLocaleString()}</span>
+              <span className="text-[11px] md:text-lg font-bold opacity-80">ج.س</span>
             </div>
-          )}
-          <div className="font-black text-[17px] md:text-3xl text-primary flex items-baseline gap-1">
-            <span className="font-mono tracking-tighter">{price.toLocaleString()}</span>
-            <span className="text-[11px] md:text-lg font-bold opacity-80">ج.س</span>
+          </div>
+
+          <div className="flex items-center gap-2 mb-1">
+             {/* Favorite Button */}
+             <button
+                onClick={handleWishlistToggle}
+                className={cn(
+                  "w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl bg-muted/30 transition-all active:scale-95",
+                  isInWishlist(id) ? "text-red-500 shadow-sm" : "text-muted-foreground/60 hover:text-red-400"
+                )}
+             >
+                <Heart className={cn("h-4 w-4 md:h-6 md:w-6", isInWishlist(id) ? "fill-current" : "")} />
+             </button>
+
+             {/* Add to Cart Button */}
+             {inStock && (
+               <button
+                  onClick={handleAddToCart}
+                  disabled={addToCart.isPending}
+                  className="w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:scale-105 active:scale-90 transition-all"
+               >
+                  {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-4 w-4 md:h-6 md:w-6 stroke-[3]" />}
+               </button>
+             )}
           </div>
         </div>
       </CardContent>
