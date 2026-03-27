@@ -22,6 +22,7 @@ export default function ProductDetails() {
   const { data: user } = useCurrentUser();
   const [hoverRating, setHoverRating] = useState(0);
   const { isInWishlist, toggleItem } = useWishlist();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
@@ -139,10 +140,21 @@ export default function ProductDetails() {
               )}
             </div>
 
-            <div className="bg-muted/30 p-6 rounded-2xl space-y-4 border border-border/50">
-              <p className="leading-relaxed text-muted-foreground">
+            <div className="bg-muted/30 p-6 rounded-2xl space-y-2 border border-border/50 transition-all duration-500">
+              <p className={cn(
+                "leading-relaxed text-muted-foreground transition-all duration-300",
+                !isExpanded && "line-clamp-2"
+              )}>
                 {product.description || "منتج سوداني أصيل بجودة عالية وطعم مميز."}
               </p>
+              {product.description && product.description.length > 80 && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)} 
+                  className="text-primary font-black text-sm hover:underline flex items-center gap-1 transition-colors"
+                >
+                  {isExpanded ? "عرض أقل" : "عرض المزيد..."}
+                </button>
+              )}
               <div className="grid grid-cols-2 gap-4 text-sm font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-green-600" />
