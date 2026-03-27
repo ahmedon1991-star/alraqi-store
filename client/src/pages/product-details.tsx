@@ -175,9 +175,9 @@ export default function ProductDetails() {
 
             {/* Removed the entire product options section (variants, sizes, measurements) and its IIFE */}
 
-            <div className="bg-white p-4 md:p-6 rounded-2xl border border-border/50 shadow-sm mt-1">
-              <h3 className="font-bold text-base md:text-lg mb-2 md:mb-3">قيم هذا المنتج</h3>
-              <div className="flex items-center gap-1 mb-2">
+            <div className="bg-muted/20 px-4 py-3 rounded-xl border border-border/40 flex items-center justify-between mt-1">
+              <span className="font-bold text-xs md:text-sm text-foreground/70">قيّم المنتج:</span>
+              <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -189,15 +189,12 @@ export default function ProductDetails() {
                     disabled={rateMutation.isPending}
                   >
                     <Star
-                      className={`h-8 w-8 ${(hoverRating || 0) >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                      className={`h-5 w-5 md:h-6 md:w-6 ${(hoverRating || 0) >= star ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
                         }`}
                     />
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground">
-                {user ? "اضغط على النجوم للتقييم" : "يجب عليك تسجيل الدخول لتتمكن من التقييم"}
-              </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t mt-auto">
