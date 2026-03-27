@@ -1411,7 +1411,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       `⭐ *الإجمالي النهائي: ${(subtotal + shipping).toLocaleString()} ج.س*%0A` +
       `━━━━━━━━━━━━━━━━━━%0A%0A` +
       `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.%0A` +
-      `www.alraqi-store.com`;
+      `https://alraqi-store.onrender.com`;
 
     const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${message}`;
 
