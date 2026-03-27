@@ -86,6 +86,7 @@ export default function ProfilePage() {
   
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isTrackOpen, setIsTrackOpen] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
   const ordersQuery = useQuery({
     queryKey: ["/api/orders/me"],
@@ -179,6 +180,7 @@ export default function ProfilePage() {
 
   const handleEnableBiometrics = async () => {
     try {
+      setIsBiometricLoading(true);
       if (!window.PublicKeyCredential) {
         toast({
           title: "غير مدعوم",
@@ -194,10 +196,10 @@ export default function ProfilePage() {
       if (!user) return;
       const userIdBuffer = new TextEncoder().encode(user.id);
       
+      // We use a shorter timeout and more specific options to prevent "hanging"
       const credential = await navigator.credentials.create({
-
         publicKey: {
-          challenge: challenge.buffer,
+          challenge: challenge, // Some browsers prefer Uint8Array directly
           rp: { 
             name: "الراقي للمنتجات الغذائية",
             id: window.location.hostname === "localhost" ? undefined : window.location.hostname
@@ -207,9 +209,18 @@ export default function ProfilePage() {
             name: user?.email || "user",
             displayName: user?.name || "User",
           },
-          pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+          pubKeyCredParams: [
+            { alg: -7, type: "public-key" }, // ES256
+            { alg: -257, type: "public-key" } // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform", // Force TouchID/FaceID/Windows Hello
+            userVerification: "required",
+            residentKey: "preferred",
+            requireResidentKey: false,
+          },
           timeout: 60000,
-          attestation: "direct",
+          attestation: "none", // Faster and more private than "direct"
         }
       });
 
@@ -228,11 +239,16 @@ export default function ProfilePage() {
       }
     } catch (error: any) {
       console.error(error);
-      toast({
-        title: "فشل التفعيل",
-        description: error.message || "تعذر إكمال عملية التحقق",
-        variant: "destructive",
-      });
+      // Don't toast if the user just cancelled
+      if (error.name !== "NotAllowedError" && error.name !== "AbortError") {
+        toast({
+          title: "فشل التفعيل",
+          description: error.message || "تعذر إكمال عملية التحقق",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsBiometricLoading(false);
     }
   };
 
@@ -532,8 +548,13 @@ export default function ProfilePage() {
                             onClick={() => handleEnableBiometrics()}
                             variant={user.biometricEnabled ? "outline" : "default"}
                             className="rounded-full px-8 h-12 font-black shadow-lg"
+                            disabled={isBiometricLoading}
                           >
-                            {user.biometricEnabled ? "إعادة ضبط البصمة" : "تفعيل الآن"}
+                            {isBiometricLoading ? (
+                              <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري التفعيل...</>
+                            ) : (
+                              user.biometricEnabled ? "إعادة ضبط البصمة" : "تفعيل الآن"
+                            )}
                           </Button>
                         </div>
 
