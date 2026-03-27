@@ -143,23 +143,32 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                       {item.measurement && <p className="text-[10px] md:text-xs text-muted-foreground font-bold mt-1">الحجم: {item.measurement}</p>}
                       <p className="text-primary font-mono font-black text-base md:text-2xl mt-1">{(item.price || item.product.price).toLocaleString()} <span className="text-[10px] md:text-sm">ج.س</span></p>
                     </div>
-                    <div className="flex items-center gap-2 bg-primary/5 px-2 py-1 rounded-2xl border border-primary/10">
+                    <div className="flex flex-col items-center gap-3">
                       <button 
-                        onClick={() => updateQuantity.mutate({ id: item.id, quantity: item.quantity + 1 })}
-                        className="w-10 h-10 flex items-center justify-center text-primary bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
+                        onClick={() => removeItem.mutate(item.id)}
+                        className="text-muted-foreground/40 hover:text-red-500 transition-colors p-1"
+                        title="إزالة من السلة"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                      <span className="font-black text-lg w-6 text-center">{item.quantity}</span>
-                      <button 
-                        onClick={() => {
-                          if (item.quantity > 1) updateQuantity.mutate({ id: item.id, quantity: item.quantity - 1 });
-                          else removeItem.mutate(item.id);
-                        }}
-                        className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-red-500 bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-2 bg-primary/5 px-2 py-1 rounded-2xl border border-primary/10">
+                        <button 
+                          onClick={() => updateQuantity.mutate({ id: item.id, quantity: item.quantity + 1 })}
+                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-primary bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
+                        >
+                          <Plus className="h-3 w-3 md:h-4 md:w-4" />
+                        </button>
+                        <span className="font-black text-sm md:text-lg w-6 text-center">{item.quantity}</span>
+                        <button 
+                          onClick={() => {
+                            if (item.quantity > 1) updateQuantity.mutate({ id: item.id, quantity: item.quantity - 1 });
+                            else removeItem.mutate(item.id);
+                          }}
+                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-muted-foreground hover:text-primary bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
+                        >
+                          <Minus className="h-3 w-3 md:h-4 md:w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
