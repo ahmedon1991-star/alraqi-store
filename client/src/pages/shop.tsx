@@ -14,6 +14,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useWishlist } from "@/hooks/use-wishlist";
 
 import { useLocation, useSearch } from "wouter";
+import { cn } from "@/lib/utils";
 
 export default function Shop() {
   const [location] = useLocation();
