@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -9,42 +10,38 @@
   --radius-lg: 0.8rem;
   --radius-xl: 1rem;
 
-  /* Earthy Warm Palette inspired by Sudanese Spices and Nile */
-  --color-background: hsl(30 20% 98%); /* Warm Papyrus White */
-  --color-foreground: hsl(20 10% 15%); /* Dark Coffee */
+  /* Luxurious Gold & Dark Palette */
+  --color-background: hsl(20 10% 5%); /* Deepest Black/Charcoal */
+  --color-foreground: hsl(40 25% 90%); /* Light Cream/Ivory */
   
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(20 10% 15%);
+  --color-card: hsl(30 15% 7%); /* Extremely Dark Card */
+  --color-card-foreground: hsl(40 25% 90%);
   
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(20 10% 15%);
+  --color-popover: hsl(30 15% 7%);
+  --color-popover-foreground: hsl(40 25% 90%);
   
-  --color-primary: hsl(25 85% 45%); /* Spiced Rust / Terracotta */
-  --color-primary-foreground: hsl(30 20% 98%);
+  --color-primary: hsl(38 52% 51%); /* Regal Gold #C8963E */
+  --color-primary-foreground: hsl(38 100% 5%); /* Dark text on gold */
   
-  --color-secondary: hsl(180 35% 30%); /* Deep Nile Teal */
-  --color-secondary-foreground: hsl(180 20% 95%);
+  --color-secondary: hsl(150 40% 30%); /* Forest/Luxury Green #2D6A4F */
+  --color-secondary-foreground: hsl(150 20% 95%);
   
-  --color-muted: hsl(30 15% 90%);
-  --color-muted-foreground: hsl(25 5% 45%);
+  --color-muted: hsl(30 10% 12%);
+  --color-muted-foreground: hsl(40 10% 65%);
   
-  --color-accent: hsl(40 60% 90%); /* Light Gold/Sand */
-  --color-accent-foreground: hsl(25 85% 45%);
+  --color-accent: hsl(38 30% 15%); /* Subtle Gold Glow */
+  --color-accent-foreground: hsl(38 52% 51%);
   
-  --color-destructive: hsl(0 70% 50%);
+  --color-destructive: hsl(0 75% 45%);
   --color-destructive-foreground: hsl(0 0% 100%);
   
-  --color-border: hsl(30 10% 85%);
-  --color-input: hsl(30 10% 85%);
-  --color-ring: hsl(25 85% 45%);
+  --color-border: hsla(38, 52%, 51%, 0.18);
+  --color-input: hsla(38, 52%, 51%, 0.1);
+  --color-ring: hsl(38, 52%, 51%);
   
-  --color-chart-1: hsl(25 85% 45%);
-  --color-chart-2: hsl(180 35% 30%);
-  --color-chart-3: hsl(45 90% 45%);
-  --color-chart-4: hsl(15 70% 55%);
-  --color-chart-5: hsl(200 60% 40%);
-
-  --font-sans: 'Tajawal', 'Outfit', sans-serif;
+  --font-sans: 'Cairo', 'Tajawal', sans-serif;
+  --font-display: 'Amiri', serif;
+  --font-heading: 'Tajawal', sans-serif;
   
   --radius: 0.5rem;
 }
@@ -54,11 +51,12 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    background-image: url('/images/texture-pattern.png');
-    background-blend-mode: multiply;
-    background-size: 400px;
+    @apply font-sans antialiased text-foreground min-h-screen selection:bg-primary/30;
+    background: radial-gradient(ellipse at 50% 0%, #1a150a 0%, #080706 80%);
     background-attachment: fixed;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
   }
 }
 
@@ -66,11 +64,31 @@
   direction: rtl;
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+.gold-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(200,150,62,0.1), transparent);
+  background-size: 400px 100%;
+  animation: shimmer 4s infinite linear;
+}
+
 @keyframes ping-slow {
   0%, 100% { transform: scale(1); opacity: 0.3; }
-  50% { transform: scale(1.12); opacity: 0.1; }
+  50% { transform: scale(1.1); opacity: 0.1; }
 }
 
 .animate-ping-slow {
-  animation: ping-slow 3s ease-in-out infinite;
+  animation: ping-slow 4s ease-in-out infinite;
 }

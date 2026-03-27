@@ -63,7 +63,7 @@ export function MobileNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 pb-safe shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-primary/10 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
       <div className="flex items-center justify-between h-16 px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -73,22 +73,22 @@ export function MobileNav() {
                 <div className="relative">
                   <Icon
                     className={`h-6 w-6 transition-all duration-300 ${item.active
-                        ? "text-primary scale-110 fill-primary/10"
-                        : "text-gray-400 group-hover:text-primary/70"
+                        ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(200,150,62,0.4)]"
+                        : "text-muted-foreground group-hover:text-primary/70"
                       }`}
                   />
                   {item.count !== undefined && item.count > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-[10px] border-2 border-white animate-in zoom-in duration-300">
+                    <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-primary to-primary-foreground text-black text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
                       {item.count}
                     </Badge>
                   )}
                 </div>
-                <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-gray-500"
+                <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-muted-foreground"
                   }`}>
                   {item.label}
                 </span>
                 {item.active && (
-                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full shadow-[0_0_12px_rgba(200,150,62,0.6)] transition-all duration-500" />
                 )}
               </div>
             </Link>

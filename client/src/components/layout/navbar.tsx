@@ -31,7 +31,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-md shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)] transition-all duration-300">
+    <nav className="sticky top-0 z-50 w-full border-b border-primary/10 bg-background/95 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex h-16 md:h-24 items-center justify-between gap-2 md:gap-8 flex-row-reverse">
           
@@ -39,11 +39,11 @@ export function Navbar() {
           <div className="flex h-full items-center justify-end">
             <Link href="/">
               <div className="group relative flex items-center cursor-pointer">
-                <div className="absolute -inset-2 rounded-xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100" />
+                <div className="absolute -inset-2 rounded-xl bg-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100 blur-md" />
                 <img
                   src="/logo.png"
                   alt="متجر الراقي"
-                  className="h-11 md:h-20 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px]"
+                  className="h-12 md:h-22 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px] brightness-110 contrast-110"
                   onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
                 />
               </div>
@@ -60,12 +60,12 @@ export function Navbar() {
               const isActive = location === link.path || (link.path.includes("?") && location.includes(link.path.split("?")[0]));
               return (
                 <Link key={link.label} href={link.path} className={cn(
-                  "relative py-2 transition-all duration-300 group",
-                  isActive ? "text-primary" : "text-gray-500 hover:text-primary"
+                  "relative py-2 transition-all duration-300 group font-bold tracking-wide",
+                  isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
                 )}>
                   {link.label}
                   <span className={cn(
-                    "absolute bottom-0 right-0 h-0.5 bg-primary transition-all duration-300 rounded-full",
+                    "absolute bottom-0 right-0 h-0.5 bg-gradient-to-l from-primary to-primary/40 transition-all duration-300 rounded-full",
                     isActive ? "w-full" : "w-0 group-hover:w-full"
                   )} />
                 </Link>
@@ -115,8 +115,8 @@ export function Navbar() {
                 variant="ghost" 
                 size="icon" 
                 className={cn(
-                  "h-10 w-10 md:h-12 md:w-12 text-gray-700 hover:text-primary transition-all rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:shadow-sm",
-                  isSearchOpen ? "bg-primary/10 text-primary border-primary/30" : ""
+                  "h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary transition-all rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)]",
+                  isSearchOpen ? "bg-primary text-primary-foreground border-primary" : ""
                 )}
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
@@ -124,10 +124,10 @@ export function Navbar() {
             </Button>
 
             <Link href="/cart">
-              <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:bg-white hover:shadow-sm transition-all cursor-pointer group">
-                <ShoppingCart className="h-5 w-5 text-gray-700 group-hover:text-primary transition-colors" />
+              <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all cursor-pointer group">
+                <ShoppingCart className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
                 {cartCount > 0 && (
-                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-primary p-0 text-[10px] border-2 border-white shadow-md font-black animate-in zoom-in">
+                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-gradient-to-br from-primary to-primary-foreground p-0 text-[10px] border-2 border-background shadow-md font-black animate-in zoom-in text-black">
                     {cartCount}
                   </Badge>
                 )}
@@ -135,7 +135,7 @@ export function Navbar() {
             </Link>
 
             <Link href="/profile">
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-gray-700 hover:text-primary rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-primary/20 hover:bg-white hover:shadow-sm transition-all group">
+              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all group">
                 {user ? (
                   user.avatar ? <img src={user.avatar} className="h-5 w-5 rounded-full object-cover" /> : <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
                 ) : <User className="h-5 w-5" />}

@@ -63,9 +63,9 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   };
 
   return (
-    <Card className="group overflow-hidden border-none shadow-none bg-transparent relative flex flex-col h-full" data-testid={`card-product-${id}`}>
+    <Card className="group overflow-hidden border-none shadow-none bg-transparent relative flex flex-col h-full animate-fade-up" data-testid={`card-product-${id}`}>
       {/* Image Area */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-[0.8rem] md:rounded-[2.5rem] bg-white border border-border/10 shadow-sm transition-transform duration-300 group-hover:shadow-md">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[3rem] bg-[#1A1710] border border-primary/10 shadow-2xl transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-[0_0_30px_rgba(200,150,62,0.15)] group-hover:-translate-y-1">
         <Link href={`/product/${id}`}>
           <img
             src={image || "/images/product-spices.png"}
@@ -83,17 +83,17 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           <button
             onClick={handleAddToCart}
             disabled={addToCart.isPending}
-            className="absolute bottom-1 left-1 z-20 w-6 h-6 md:w-12 md:h-12 flex items-center justify-center rounded-lg md:rounded-2xl border border-primary/20 bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
+            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/40 bg-[#0E0D0B]/80 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-black transition-all transform active:scale-90"
           >
-            {addToCart.isPending ? <Loader2 className="h-3 w-3 md:h-6 md:w-6 animate-spin" /> : <Plus className="h-3 w-3 md:h-6 md:w-6 stroke-[3]" />}
+            {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-7 md:w-7 animate-spin" /> : <Plus className="h-4 w-4 md:h-7 md:w-7 stroke-[3]" />}
           </button>
         )}
 
         {/* Status Badges */}
         {(discountBadge || badge) && (
-          <div className="absolute top-0 right-0 z-10 bg-emerald-500 text-white text-[8px] md:text-sm font-black px-2 py-0.5 md:px-3 md:py-1 rounded-bl-xl md:rounded-bl-3xl shadow-md flex flex-col items-center">
+          <div className="absolute top-0 right-0 z-10 bg-gradient-to-br from-primary to-primary-foreground text-black text-[9px] md:text-sm font-black px-3 py-1 md:px-5 md:py-2 rounded-bl-[1.5rem] md:rounded-bl-[3rem] shadow-xl flex flex-col items-center">
             {discountBadge && <span className="leading-none">{discountBadge}</span>}
-            {discountBadge && <span className="text-[6px] md:text-[10px] leading-tight">خصم</span>}
+            {discountBadge && <span className="text-[7px] md:text-[11px] leading-tight uppercase">خصم</span>}
             {!discountBadge && badge && <span>{badge}</span>}
           </div>
         )}
@@ -118,27 +118,27 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         </div>
 
         <Link href={`/product/${id}`}>
-          <h3 className="font-bold text-[9px] md:text-xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer hover:text-primary transition-colors">
+          <h3 className="font-heading font-black text-[11px] md:text-2xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer group-hover:text-primary transition-colors">
             {name}
           </h3>
         </Link>
         
         {measurements && (
-          <p className="text-[8px] md:text-sm font-medium text-muted-foreground/80 line-clamp-1">
+          <p className="text-[9px] md:text-base font-medium text-muted-foreground/80 line-clamp-1 mb-1">
             {measurements}
           </p>
         )}
 
-        <div className="mt-auto pt-0.5">
+        <div className="mt-auto pt-2">
           {originalPrice && originalPrice > price && (
-            <div className="text-[8px] md:text-sm text-muted-foreground/50 line-through font-bold mb-[-3px] flex items-center gap-1">
+            <div className="text-[9px] md:text-base text-muted-foreground/40 line-through font-bold mb-[-3px] flex items-center gap-1">
               <span>{originalPrice.toLocaleString()}</span>
-              <span className="text-[6px] md:text-[10px]">ج.س</span>
+              <span className="text-[7px] md:text-xs">ج.س</span>
             </div>
           )}
-          <div className="font-black text-[10px] md:text-2xl text-slate-800 flex items-baseline gap-0.5">
-            <span className="font-outfit">{price.toLocaleString()}</span>
-            <span className="text-[8px] md:text-sm font-bold text-muted-foreground/60">ج.س</span>
+          <div className="font-black text-[13px] md:text-3xl text-primary flex items-baseline gap-1">
+            <span className="font-mono tracking-tighter">{price.toLocaleString()}</span>
+            <span className="text-[10px] md:text-lg font-bold opacity-70">ج.س</span>
           </div>
         </div>
       </CardContent>
