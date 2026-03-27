@@ -1387,33 +1387,34 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
 
     const itemsText = itemsData.map((item, idx) =>
-      `*${idx + 1}. ${item.name}${item.size ? ` (${item.size})` : ''}*%0A   - الكمية: ${item.quantity}%0A   - السعر: ${(item.price).toLocaleString()} ج.س`
-    ).join('%0A%0A');
+      `*${idx + 1}. ${item.name}${item.size ? ` (${item.size})` : ''}*\n   - الكمية: ${item.quantity}\n   - السعر: ${(item.price).toLocaleString()} ج.س`
+    ).join('\n\n');
 
     const orderNumber = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}-${Math.floor(Math.random() * 9000) + 1000}`;
 
-    const message = `🌿 *الراقي للمنتجات الغذائية*%0A🔖 *للتميز والفخامة*%0A%0A` +
-      `━━━━━━━━━━━━━━━━━━%0A` +
-      `📋 *فاتورة طلب جديدة*%0A` +
-      `🔢 رقم الطلب: *${orderNumber}*%0A` +
-      `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}%0A` +
-      `━━━━━━━━━━━━━━━━━━%0A%0A` +
-      `👤 *بيانات العميل:*%0A` +
-      `   الاسم: *${name}*%0A` +
-      `   الهاتف: ${phone}%0A` +
-      `   العنوان: ${address}%0A%0A` +
-      `💳 *طريقة الدفع:* ${paymentMethodText}${bankDetailsText}%0A` +
-      `━━━━━━━━━━━━━━━━━━%0A` +
-      `📦 *المنتجات المطلوبة:*%0A%0A${itemsText}%0A%0A` +
-      `━━━━━━━━━━━━━━━━━━%0A` +
-      `💰 المجموع الفرعي: ${subtotal.toLocaleString()} ج.س%0A` +
-      `🚚 التوصيل: ${isFreeShipping ? "مجااااني 🎉" : `${shipping.toLocaleString()} ج.س`}%0A` +
-      `⭐ *الإجمالي النهائي: ${(subtotal + shipping).toLocaleString()} ج.س*%0A` +
-      `━━━━━━━━━━━━━━━━━━%0A%0A` +
-      `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.%0A` +
+    const rawMessage = `🟢 *الراقي للمنتجات الغذائية* 🟢\n` +
+      `✨ *للتميز والفخامة* ✨\n\n` +
+      `══════════════════\n` +
+      `📄 *فاتورة طلب جديدة*\n` +
+      `🔢 رقم الطلب: *${orderNumber}*\n` +
+      `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}\n` +
+      `══════════════════\n\n` +
+      `👤 *بيانات العميل:*\n` +
+      `   الاسم: *${name}*\n` +
+      `   الهاتف: ${phone}\n` +
+      `   العنوان: ${address}\n\n` +
+      `💳 *طريقة الدفع:* ${paymentMethodText}${bankDetailsText}\n` +
+      `══════════════════\n` +
+      `📦 *المنتجات المطلوبة:*\n\n${itemsText}\n\n` +
+      `══════════════════\n` +
+      `💰 المجموع الفرعي: ${subtotal.toLocaleString()} ج.س\n` +
+      `🚚 التوصيل: ${isFreeShipping ? "مجااااني 🎉" : `${shipping.toLocaleString()} ج.س`}\n` +
+      `🌟 *الإجمالي النهائي: ${(subtotal + shipping).toLocaleString()} ج.س*\n` +
+      `══════════════════\n\n` +
+      `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.\n` +
       `https://alraqi-store.onrender.com`;
 
-    const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${message}`;
+    const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${encodeURIComponent(rawMessage)}`;
 
     res.json({ ...order, whatsappUrl });
   });
