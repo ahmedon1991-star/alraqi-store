@@ -264,8 +264,43 @@ export default function Shop() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground">
-                <p className="text-xl">لا توجد منتجات مطابقة</p>
+              <div className="text-center py-20 bg-muted/20 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 mx-auto max-w-lg mt-8">
+                {showWishlistOnly ? (
+                  <div className="space-y-4 px-6">
+                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Heart className="h-10 w-10 text-red-200" />
+                    </div>
+                    <h3 className="text-xl font-black text-foreground">قائمة المفضلة فارغة</h3>
+                    <p className="text-muted-foreground text-sm">لم تقم بإضافة أي منتجات للمفضلة بعد، أو ربما أصبحت المنتجات المختارة غير متاحة حالياً.</p>
+                    <Button 
+                      variant="outline" 
+                      className="rounded-full font-bold px-8 mt-4"
+                      onClick={() => setShowWishlistOnly(false)}
+                    >
+                      استكشف جميع المنتجات
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 px-6">
+                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-10 w-10 text-gray-200" />
+                    </div>
+                    <p className="text-xl font-bold">لا توجد منتجات مطابقة للبحث</p>
+                    <Button 
+                      variant="ghost" 
+                      className="text-primary font-bold"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSelectedCategories([]);
+                        setPriceRange([100]);
+                        setShowWishlistOnly(false);
+                        setShowOffersOnly(false);
+                      }}
+                    >
+                      إعادة تعيين كافة الفلاتر
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6">
