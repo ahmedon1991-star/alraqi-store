@@ -91,13 +91,13 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         <button
           onClick={handleWishlistToggle}
           className={cn(
-            "absolute top-2 left-2 z-20 w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300",
+            "absolute bottom-2 right-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl transition-all duration-300",
             isInWishlist(id) 
               ? "bg-red-50 text-red-500 shadow-lg shadow-red-200/50 border border-red-100" 
-              : "bg-white/80 backdrop-blur-md text-muted-foreground/40 hover:text-red-400 border border-border/50"
+              : "bg-white/90 backdrop-blur-md text-muted-foreground/80 hover:text-red-400 border border-border/50"
           )}
         >
-          <Heart className={cn("h-4 w-4 md:h-5 md:w-5 transition-transform", isInWishlist(id) ? "fill-current scale-110" : "")} />
+          <Heart className={cn("h-4 w-4 md:h-6 md:w-6 transition-transform", isInWishlist(id) ? "fill-current scale-110" : "")} />
         </button>
         {/* Floating Add Button (HungerStation Style) */}
         {inStock && (
