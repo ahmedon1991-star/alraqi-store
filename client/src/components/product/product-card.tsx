@@ -1,4 +1,5 @@
-import { Star, Plus, Heart, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ListOrdered, Star, Plus, Heart, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +28,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
-  const parsedVariants = variants ? JSON.parse(variants) : [];
+  const parsedVariants = useMemo(() => {
+    if (!variants) return [];
+    try {
+      return typeof variants === 'string' ? JSON.parse(variants) : variants;
+    } catch (e) {
+      console.error("ProductCard: Failed to parse variants", e);
+      return [];
+    }
+  }, [variants]);
+  
   const hasVariants = parsedVariants.length > 0;
 
   const discountBadge = originalPrice && originalPrice > price 

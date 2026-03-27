@@ -24,13 +24,19 @@ export function useWishlist() {
     useEffect(() => {
         const handleStorageChange = () => {
             const saved = localStorage.getItem("wishlist");
-            if (saved) {
-                setItems(JSON.parse(saved));
+            try {
+                setItems(saved ? JSON.parse(saved) : []);
+            } catch (e) {
+                setItems([]);
             }
         };
 
         window.addEventListener(WISHLIST_UPDATED, handleStorageChange);
-        return () => window.removeEventListener(WISHLIST_UPDATED, handleStorageChange);
+        window.addEventListener("storage", handleStorageChange); // Also listen to cross-tab changes
+        return () => {
+            window.removeEventListener(WISHLIST_UPDATED, handleStorageChange);
+            window.removeEventListener("storage", handleStorageChange);
+        };
     }, []);
 
     const saveItems = (newItems: string[]) => {
@@ -56,7 +62,9 @@ export function useWishlist() {
     }, [toast]);
 
     const toggleItem = useCallback((id: string, name?: string) => {
-        const current = JSON.parse(localStorage.getItem("wishlist") || "[]");
+        if (!id) return;
+        const saved = localStorage.getItem("wishlist");
+        const current = saved ? JSON.parse(saved) : [];
         if (current.includes(id)) {
             removeItem(id, name);
         } else {

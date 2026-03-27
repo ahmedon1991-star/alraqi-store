@@ -86,7 +86,7 @@ export default function Shop() {
     }
 
     if (showWishlistOnly) {
-      filtered = filtered.filter((p: any) => wishlistItems.includes(p.id));
+      filtered = filtered.filter((p: any) => Array.isArray(wishlistItems) && wishlistItems.includes(p.id));
     }
 
     if (showOffersOnly) {
