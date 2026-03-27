@@ -199,10 +199,9 @@ export default function ProfilePage() {
       // We use a shorter timeout and more specific options to prevent "hanging"
       const credential = await navigator.credentials.create({
         publicKey: {
-          challenge: challenge, // Some browsers prefer Uint8Array directly
+          challenge: challenge,
           rp: { 
-            name: "الراقي للمنتجات الغذائية",
-            id: window.location.hostname === "localhost" ? undefined : window.location.hostname
+            name: "الراقي للمنتجات الغذائية"
           },
           user: {
             id: userIdBuffer,
@@ -214,13 +213,12 @@ export default function ProfilePage() {
             { alg: -257, type: "public-key" } // RS256
           ],
           authenticatorSelection: {
-            authenticatorAttachment: "platform", // Force TouchID/FaceID/Windows Hello
             userVerification: "required",
             residentKey: "preferred",
             requireResidentKey: false,
           },
           timeout: 60000,
-          attestation: "none", // Faster and more private than "direct"
+          attestation: "none", 
         }
       });
 
