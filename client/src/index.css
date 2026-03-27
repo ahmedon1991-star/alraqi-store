@@ -46,26 +46,26 @@
 }
 
 :root {
-  /* Luxurious Light Mode (Ivory & Gold) */
-  --background: hsl(40 25% 98%);
-  --foreground: hsl(20 15% 10%);
+  /* Luxurious Light Mode (Ivory & High Gold) */
+  --background: hsl(45 35% 99%);
+  --foreground: hsl(20 30% 8%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(20 15% 10%);
+  --card-foreground: hsl(20 30% 8%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(20 15% 10%);
-  --primary: hsl(38 52% 51%);
-  --primary-foreground: hsl(40 20% 98%);
-  --secondary: hsl(150 40% 30%);
-  --secondary-foreground: hsl(150 20% 95%);
-  --muted: hsl(30 15% 94%);
-  --muted-foreground: hsl(20 5% 40%);
-  --accent: hsl(38 60% 95%);
-  --accent-foreground: hsl(38 52% 51%);
-  --destructive: hsl(0 84% 60%);
+  --popover-foreground: hsl(20 30% 8%);
+  --primary: hsl(38 65% 52%);
+  --primary-foreground: hsl(45 40% 98%);
+  --secondary: hsl(155 45% 25%);
+  --secondary-foreground: hsl(155 25% 96%);
+  --muted: hsl(45 20% 95%);
+  --muted-foreground: hsl(25 10% 45%);
+  --accent: hsl(38 70% 97%);
+  --accent-foreground: hsl(38 65% 52%);
+  --destructive: hsl(0 84% 50%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsla(38, 52%, 51%, 0.12);
-  --input: hsla(38, 52%, 51%, 0.08);
-  --ring: hsl(38, 52%, 51%);
+  --border: hsla(38, 65%, 52%, 0.15);
+  --input: hsla(38, 65%, 52%, 0.1);
+  --ring: hsl(38, 65%, 52%);
 }
 
 .dark {

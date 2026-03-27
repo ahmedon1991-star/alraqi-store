@@ -60,7 +60,7 @@ function App() {
   const handleSplashDone = useCallback(() => setSplashDone(true), []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <Toaster />
         {!splashDone && <SplashScreen onDone={handleSplashDone} />}
