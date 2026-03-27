@@ -252,6 +252,51 @@ function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertP
 }
 
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
+  // Dynamic sitemap for SEO
+  app.get("/sitemap.xml", async (_req, res) => {
+    try {
+      const [products, categories] = await Promise.all([
+        storage.getProducts(),
+        storage.getCategories(),
+      ]);
+
+      const visibleProducts = products.filter(p => p.isVisible !== false);
+      const baseUrl = process.env.URL || "https://alraqi-store.onrender.com";
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${baseUrl}/shop</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  ${categories.map(c => `
+  <url>
+    <loc>${baseUrl}/shop?category=${c.id}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('')}
+  ${visibleProducts.map(p => `
+  <url>
+    <loc>${baseUrl}/product/${p.id}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`).join('')}
+</urlset>`;
+
+      res.header("Content-Type", "application/xml");
+      res.send(xml);
+    } catch (error) {
+      console.error("Sitemap error:", error);
+      res.status(500).end();
+    }
+  });
+
   // Public Diagnostic route (top of routes for high priority)
   app.get("/api/public-debug", async (_req, res) => {
     const rootUploadDir = path.resolve(process.cwd(), "public", "uploads");
