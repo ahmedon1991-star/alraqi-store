@@ -774,6 +774,7 @@ export class MemoryStorage implements IStorage {
       originalPrice: product.originalPrice ?? null,
       variants: product.variants ?? null,
       sortOrder: Math.max(0, ...Array.from(this.products.values()).map(p => p.sortOrder || 0)) + 1,
+      isVisible: product.isVisible ?? true,
     };
     this.products.set(created.id, created);
     return created;
@@ -799,6 +800,7 @@ export class MemoryStorage implements IStorage {
       measurements: product.measurements ?? existing.measurements,
       stock: product.stock ?? existing.stock,
       variants: product.variants ?? existing.variants,
+      isVisible: product.isVisible ?? existing.isVisible,
     };
     this.products.set(id, updated);
     return updated;

@@ -60,6 +60,8 @@ export async function runMigrations() {
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock integer DEFAULT 0`);
     // products: add original_price if missing
     await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS original_price integer`);
+    // products: add is_visible if missing
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_visible boolean DEFAULT true`);
 
     // Ensure admin settings row exists with correct credentials
     const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
