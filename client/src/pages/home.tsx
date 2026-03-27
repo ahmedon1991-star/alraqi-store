@@ -91,7 +91,7 @@ export default function Home() {
                   </div>
 
                   <div className="flex overflow-x-auto no-scrollbar gap-4 md:gap-10 pb-6 snap-x">
-                    {categoryProducts.slice(0, 10).map((product: any) => (
+                    {categoryProducts.slice(0, 6).map((product: any) => (
                       <div key={product.id} className="flex-shrink-0 w-[160px] md:w-[350px] snap-start mb-2">
                         <ProductCard {...product} />
                       </div>
