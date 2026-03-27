@@ -90,17 +90,17 @@ export default function Home() {
                     </Link>
                   </div>
 
-                  <div className="flex overflow-x-auto no-scrollbar gap-4 md:gap-10 pb-6 snap-x">
+                  <div className="flex overflow-x-auto no-scrollbar gap-2 md:gap-10 pb-6 snap-x">
                     {categoryProducts.slice(0, 6).map((product: any) => (
-                      <div key={product.id} className="flex-shrink-0 w-[160px] md:w-[350px] snap-start mb-2">
+                      <div key={product.id} className="flex-shrink-0 w-[115px] md:w-[350px] snap-start mb-2">
                         <ProductCard {...product} />
                       </div>
                     ))}
-                    <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[120px] md:w-[250px] snap-start flex flex-col items-center justify-center gap-4 rounded-[2rem] md:rounded-[4rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer">
-                      <div className="w-12 h-12 md:w-24 md:h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <ArrowLeft className="h-6 w-6 md:h-12 md:w-12" />
+                    <Link href={`/shop?category=${cat.id}`} className="flex-shrink-0 w-[80px] md:w-[250px] snap-start flex flex-col items-center justify-center gap-2 rounded-[1.5rem] md:rounded-[4rem] border-2 border-dashed border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all cursor-pointer">
+                      <div className="w-8 h-8 md:w-24 md:h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <ArrowLeft className="h-4 w-4 md:h-12 md:w-12" />
                       </div>
-                      <span className="font-heading font-black text-sm md:text-2xl text-primary">المزيد</span>
+                      <span className="font-heading font-black text-[10px] md:text-2xl text-primary">المزيد</span>
                     </Link>
                   </div>
                 </div>
