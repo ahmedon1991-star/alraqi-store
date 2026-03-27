@@ -112,10 +112,15 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
 
         {/* Status Badges */}
         {(discountBadge || badge) && (
-          <div className="absolute top-0 right-0 z-10 bg-gradient-to-br from-primary to-primary-foreground text-black text-[9px] md:text-sm font-black px-3 py-1 md:px-5 md:py-2 rounded-bl-[1.5rem] md:rounded-bl-[3rem] shadow-xl flex flex-col items-center">
-            {discountBadge && <span className="leading-none">{discountBadge}</span>}
-            {discountBadge && <span className="text-[7px] md:text-[11px] leading-tight uppercase">خصم</span>}
-            {!discountBadge && badge && <span>{badge}</span>}
+          <div className={cn(
+            "absolute top-0 right-0 z-30 text-[9px] md:text-sm font-black px-3 py-1 md:px-5 md:py-2 rounded-bl-[1.5rem] md:rounded-bl-[3.5rem] shadow-xl flex flex-col items-center transition-all duration-300",
+            discountBadge 
+              ? "bg-gradient-to-br from-red-600 via-rose-500 to-red-700 text-white animate-pulse shadow-red-500/40" 
+              : "bg-gradient-to-br from-primary to-primary-foreground text-black shadow-primary/20"
+          )}>
+            {discountBadge && <span className="leading-none text-[11px] md:text-lg">{discountBadge}</span>}
+            {discountBadge && <span className="text-[7px] md:text-[11px] leading-tight uppercase font-black">خصم</span>}
+            {!discountBadge && badge && <span className="py-1">{badge}</span>}
           </div>
         )}
         
