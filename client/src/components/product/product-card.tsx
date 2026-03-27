@@ -65,25 +65,25 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   return (
     <Card className="group overflow-hidden border-none shadow-none bg-transparent relative flex flex-col h-full animate-fade-up" data-testid={`card-product-${id}`}>
       {/* Image Area */}
-      <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[3rem] bg-[#1A1710] border border-primary/10 shadow-2xl transition-all duration-500 group-hover:border-primary/40 group-hover:shadow-[0_0_30px_rgba(200,150,62,0.15)] group-hover:-translate-y-1">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[3rem] bg-card shadow-lg shadow-black/5 transition-all duration-500 group-hover:shadow-[0_20px_40px_rgba(200,150,62,0.1)] group-hover:-translate-y-1">
         <Link href={`/product/${id}`}>
           <img
             src={image || "/images/product-spices.png"}
             alt={name}
             loading="lazy"
-            className="w-full h-full object-contain p-1 md:p-2 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+            className="w-full h-full object-contain p-2 md:p-4 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/images/category-spices.png";
             }}
           />
         </Link>
-
+ 
         {/* Floating Add Button (HungerStation Style) */}
         {inStock && (
           <button
             onClick={handleAddToCart}
             disabled={addToCart.isPending}
-            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/40 bg-[#0E0D0B]/80 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-black transition-all transform active:scale-90"
+            className="absolute bottom-2 left-2 z-20 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-card/80 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-primary-foreground transition-all transform active:scale-90"
           >
             {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-7 md:w-7 animate-spin" /> : <Plus className="h-4 w-4 md:h-7 md:w-7 stroke-[3]" />}
           </button>
