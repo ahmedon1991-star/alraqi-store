@@ -113,7 +113,10 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/sharp": "^0.31.1",
-    "@types/ws": "^8.5.13"
+    "@types/ws": "^8.5.13",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
+    "eslint": "^10.1.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
