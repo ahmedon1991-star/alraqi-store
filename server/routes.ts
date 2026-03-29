@@ -560,46 +560,53 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
-    const { email } = req.body as { email?: string };
+    try {
+      const { email } = req.body as { email?: string };
 
-    if (!email) {
-      return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
+      if (!email) {
+        return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
+      }
+
+      const user = await storage.getUserByEmail(email.trim().toLowerCase());
+
+      // For security, we usually return success even if user not found, 
+      // but for debugging purposes we will check existence here.
+      if (!user) {
+        return res.status(404).json({ message: "لم يتم العثور على حساب بهذا البريد الإلكتروني" });
+      }
+
+      // Generate a reset token
+      const resetToken = createToken();
+      // In a real app, you would save this token to the database with an expiration time
+      // and send it via email.
+
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+      const host = req.headers.host || req.get('host');
+      const resetLink = `${protocol}://${host}/reset-password?token=${resetToken}&email=${user.email}`;
+
+      // Attempt to send real email asynchronously to prevent hanging if SMTP is slow/blocked
+      sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم")
+        .then(emailSent => {
+          if (emailSent) {
+            console.log(`✅ Email sent to ${user.email}`);
+          } else {
+            console.log(`\n--- [Password Reset Request (Email Not Configured)] ---`);
+            console.log(`User: ${user?.name} (${user?.email})`);
+            console.log(`Token: ${resetToken}`);
+            console.log(`Reset Link: ${resetLink}`);
+            console.log(`---------------------------------\n`);
+          }
+        })
+        .catch(err => console.error("Error in background email task:", err));
+
+      res.json({
+        success: true,
+        message: "تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني (يرجى التحقق من الرسائل المهملة أيضاً)."
+      });
+    } catch (e: any) {
+      console.error("Forgot password API error:", e);
+      res.status(500).json({ message: "حدث خطأ غير متوقع أثناء المعالجة" });
     }
-
-    const user = await storage.getUserByEmail(email.trim().toLowerCase());
-
-    // For security, we usually return success even if user not found, 
-    // but for debugging purposes we will check existence here.
-    if (!user) {
-      return res.status(404).json({ message: "لم يتم العثور على حساب بهذا البريد الإلكتروني" });
-    }
-
-    // Generate a reset token
-    const resetToken = createToken();
-    // In a real app, you would save this token to the database with an expiration time
-    // and send it via email.
-
-    const protocol = req.protocol;
-    const host = req.get('host');
-    const resetLink = `${protocol}://${host}/reset-password?token=${resetToken}&email=${user.email}`;
-
-    // Attempt to send real email
-    const emailSent = await sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم");
-
-    if (emailSent) {
-      console.log(`✅ Email sent to ${user.email}`);
-    } else {
-      console.log(`\n--- [Password Reset Request (Email Not Configured)] ---`);
-      console.log(`User: ${user.name} (${user.email})`);
-      console.log(`Token: ${resetToken}`);
-      console.log(`Reset Link: ${resetLink}`);
-      console.log(`---------------------------------\n`);
-    }
-
-    res.json({
-      success: true,
-      message: "تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني (يرجى التحقق من الرسائل المهملة أيضاً)."
-    });
   });
 
   app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
