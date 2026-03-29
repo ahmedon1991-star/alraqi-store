@@ -96,7 +96,7 @@ export default function Home() {
               </p>
             </div>
             
-            <a href="/app-release.apk" download="Al-Raqi-Store.apk" className="z-10 w-full md:w-auto">
+            <a href="/api/download-app" download="Al-Raqi-Store.apk" className="z-10 w-full md:w-auto">
               <Button size="lg" className="w-full md:w-auto h-14 md:h-16 px-8 rounded-2xl bg-white text-primary hover:bg-gray-50 text-lg font-black shadow-xl hover:scale-105 transition-all border-none flex items-center justify-center gap-3 active:scale-95">
                 <Download className="h-6 w-6" />
                 تحميل التطبيق مباشرة

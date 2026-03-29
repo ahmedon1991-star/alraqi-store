@@ -559,6 +559,27 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
+  app.get("/api/download-app", (req: Request, res: Response) => {
+    const apkPath = path.resolve(process.cwd(), "public", "app-release.apk");
+    if (fs.existsSync(apkPath)) {
+      res.setHeader('Content-Disposition', 'attachment; filename="Al-Raqi-Store.apk"');
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      const fileStream = fs.createReadStream(apkPath);
+      fileStream.pipe(res);
+    } else {
+      // Fallback if built
+      const distApkPath = path.resolve(process.cwd(), "dist", "public", "app-release.apk");
+      if (fs.existsSync(distApkPath)) {
+        res.setHeader('Content-Disposition', 'attachment; filename="Al-Raqi-Store.apk"');
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        const fileStream = fs.createReadStream(distApkPath);
+        fileStream.pipe(res);
+      } else {
+        res.status(404).send("App not found");
+      }
+    }
+  });
+
   app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
     try {
       const { email } = req.body as { email?: string };
