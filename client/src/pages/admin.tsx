@@ -1833,7 +1833,7 @@ export default function AdminPage() {
               </div>
 
               {/* Mobile View Cards */}
-              <div className="md:hidden p-4 space-y-3 bg-background/50">
+              <div className="md:hidden p-2 space-y-1.5 bg-background/50">
                 {customersQuery.data?.map((customer) => {
                   const isActive = customer.lastActive && new Date().getTime() - new Date(customer.lastActive).getTime() < 10 * 60 * 1000;
                   const isExpanded = expandedCustomerId === customer.id;
@@ -1842,49 +1842,49 @@ export default function AdminPage() {
                     <div 
                       key={customer.id} 
                       className={cn(
-                        "rounded-[1.5rem] border border-border/40 bg-white shadow-sm overflow-hidden transition-all duration-300",
-                        isExpanded ? "ring-2 ring-primary/20 shadow-md" : "hover:border-primary/20"
+                        "rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden transition-all duration-300",
+                        isExpanded ? "ring-1 ring-primary/20 shadow-md" : "hover:border-primary/20"
                       )}
                     >
                       <button 
-                         className="w-full text-right p-4 flex items-center justify-between"
+                         className="w-full text-right px-3 py-2 flex items-center justify-between"
                          onClick={() => setExpandedCustomerId(isExpanded ? null : customer.id)}
                       >
-                         <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-xl shrink-0">
+                         <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-sm shrink-0">
                                {(customer.name || customer.username || "U").charAt(0).toUpperCase()}
                             </div>
                             <div className="text-right">
-                               <h3 className="font-black text-base text-foreground leading-tight mb-1">{customer.name || customer.username || "بدون اسم"}</h3>
-                               <p className="text-[11px] text-muted-foreground font-medium">عضو منذ {formatAdminDate(customer.createdAt)}</p>
+                               <h3 className="font-black text-sm text-foreground leading-none mb-1 mt-0.5">{customer.name || customer.username || "بدون اسم"}</h3>
+                               <p className="text-[9px] text-muted-foreground font-medium">عضو منذ {formatAdminDate(customer.createdAt)}</p>
                             </div>
                          </div>
-                         <div className="flex items-center gap-3 shrink-0">
+                         <div className="flex items-center gap-2 shrink-0">
                             {isActive ? (
-                               <span className="flex h-3 w-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
+                               <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
                             ) : (
-                               <span className="flex h-3 w-3 rounded-full bg-slate-300"></span>
+                               <span className="flex h-2.5 w-2.5 rounded-full bg-slate-200"></span>
                             )}
                          </div>
                       </button>
                       
                       {isExpanded && (
-                         <div className="px-4 pb-4 animate-in slide-in-from-top-2 fade-in duration-200">
-                            <div className="space-y-3 bg-slate-50 p-4 rounded-[1.2rem] border border-slate-100">
+                         <div className="px-3 pb-3 animate-in slide-in-from-top-2 fade-in duration-200">
+                            <div className="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                {customer.email && (
-                                  <div className="flex items-center gap-3 text-sm text-slate-700">
-                                     <Mail className="h-4 w-4 shrink-0 text-primary/60" />
+                                  <div className="flex items-center gap-2 text-xs text-slate-700">
+                                     <Mail className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                                      <span className="truncate flex-1 font-medium" dir="ltr">{customer.email}</span>
                                   </div>
                                )}
                                {customer.phone && (
-                                  <div className="flex items-center gap-3 text-sm text-slate-700">
-                                     <Phone className="h-4 w-4 shrink-0 text-primary/60" />
+                                  <div className="flex items-center gap-2 text-xs text-slate-700">
+                                     <Phone className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                                      <span dir="ltr" className="font-mono font-bold tracking-wide">{customer.phone}</span>
                                   </div>
                                )}
-                               <div className="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-200/60 mt-3">
-                                  <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                               <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-1.5 border-t border-slate-200/60 mt-1.5">
+                                  <Clock3 className="h-3 w-3 shrink-0" />
                                   <span>تاريخ آخر نشاط: {formatAdminDate(customer.lastActive) || "غير معروف"}</span>
                                </div>
                             </div>
