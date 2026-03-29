@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/home/hero";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, ShieldCheck, Loader2, Send, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck, Loader2, Send, ShoppingBag, Smartphone, Download } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest, seedDatabase } from "@/lib/api";
@@ -79,6 +79,29 @@ export default function Home() {
                 </Link>
               ))
             )}
+          </div>
+        </section>
+
+        {/* App Download Banner */}
+        <section className="container mx-auto px-4 mt-2 md:mt-8 mb-8 md:mb-12">
+          <div className="bg-gradient-to-r from-primary/90 to-primary text-primary-foreground rounded-[2rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl shadow-primary/20">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/4 opacity-10 pointer-events-none">
+              <Smartphone className="h-48 w-48 md:h-64 md:w-64" />
+            </div>
+            
+            <div className="flex flex-col gap-2 z-10 text-center md:text-right">
+              <h2 className="text-2xl md:text-4xl font-black mb-1">حمّل تطبيق متجر الراقي! 📱</h2>
+              <p className="text-sm md:text-lg opacity-90 max-w-lg leading-relaxed">
+                اطلب منتجاتك المفضلة بسرعة وسهولة عبر تطبيق الأندرويد الخاص بنا، واستمتع بتجربة تسوق أسرع.
+              </p>
+            </div>
+            
+            <a href="/app-release.apk" download="Al-Raqi-Store.apk" className="z-10 w-full md:w-auto">
+              <Button size="lg" className="w-full md:w-auto h-14 md:h-16 px-8 rounded-2xl bg-white text-primary hover:bg-gray-50 text-lg font-black shadow-xl hover:scale-105 transition-all border-none flex items-center justify-center gap-3 active:scale-95">
+                <Download className="h-6 w-6" />
+                تحميل التطبيق مباشرة
+              </Button>
+            </a>
           </div>
         </section>
 
