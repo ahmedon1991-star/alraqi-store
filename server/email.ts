@@ -5,7 +5,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_FROM = process.env.SMTP_FROM || '"الراقي للمنتجات الغذائية" <noreply@alraqi-store.com>';
+const SMTP_FROM = process.env.SMTP_FROM || (SMTP_USER ? `"الراقي" <${SMTP_USER}>` : '"الراقي" <noreply@alraqi-store.com>');
 
 const transporter = (SMTP_HOST && SMTP_USER && SMTP_PASS) 
   ? nodemailer.createTransport({
