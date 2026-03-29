@@ -27,8 +27,10 @@ export default function Home() {
   });
 
   useEffect(() => {
-    seedDatabase().catch(() => {});
-  }, []);
+    if (productsData && productsData.length === 0 && !productsLoading) {
+      seedDatabase().catch(() => {});
+    }
+  }, [productsData, productsLoading]);
 
   const featuredProducts = useMemo(() => (productsData || []).filter((p: any) => p.isVisible !== false), [productsData]);
   const cats = useMemo(() => categoriesData || [], [categoriesData]);

@@ -8,6 +8,8 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
 
 interface ProductProps {
   id: string;
@@ -30,6 +32,16 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { isInWishlist, toggleItem } = useWishlist();
+  const queryClient = useQueryClient();
+
+  const handlePrefetchProduct = () => {
+    if (!id) return;
+    queryClient.prefetchQuery({
+      queryKey: ["/api/products", id],
+      queryFn: () => apiRequest(`/api/products/${id}`),
+      staleTime: 5 * 60 * 1000,
+    });
+  };
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,15 +88,17 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       {/* Image Area */}
       <div className="relative aspect-square w-full overflow-hidden rounded-[1.2rem] md:rounded-[3rem] bg-card shadow-lg shadow-black/5 transition-all duration-500 group-hover:shadow-[0_20px_40px_rgba(200,150,62,0.1)] group-hover:-translate-y-1">
         <Link href={`/product/${id}`}>
-          <img
-            src={image || "/images/product-spices.png"}
-            alt={name}
-            loading="lazy"
-            className="w-full h-full object-contain p-2 md:p-4 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/images/category-spices.png";
-            }}
-          />
+          <div onMouseEnter={handlePrefetchProduct}>
+            <img
+              src={image || "/images/product-spices.png"}
+              alt={name}
+              loading="lazy"
+              className="w-full h-full object-contain p-2 md:p-4 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/images/category-spices.png";
+              }}
+            />
+          </div>
         </Link>
         
 
@@ -132,7 +146,10 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         </div>
 
         <Link href={`/product/${id}`}>
-          <h3 className="font-heading font-black text-[11px] md:text-2xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer group-hover:text-primary transition-colors">
+          <h3 
+            onMouseEnter={handlePrefetchProduct}
+            className="font-heading font-black text-[11px] md:text-2xl text-foreground line-clamp-2 leading-tight md:leading-snug cursor-pointer group-hover:text-primary transition-colors"
+          >
             {name}
           </h3>
         </Link>

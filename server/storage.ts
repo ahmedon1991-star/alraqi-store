@@ -104,6 +104,7 @@ export interface IStorage {
   getProducts(limit?: number): Promise<Product[]>;
   getProductById(id: string): Promise<Product | undefined>;
   getProductsByCategory(category: string, limit?: number): Promise<Product[]>;
+  countProducts(): Promise<number>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<Product | undefined>;
@@ -251,6 +252,12 @@ export class DatabaseStorage implements IStorage {
     return query;
   }
 
+  async countProducts(): Promise<number> {
+    if (!db) return 0;
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(products);
+    return Number(result.count || 0);
+  }
+
   async createProduct(product: InsertProduct): Promise<Product> {
     if (!db) {
       throw new Error("Database is not configured");
@@ -354,17 +361,21 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
 
-    const items = await db.select().from(cartItems).where(eq(cartItems.sessionId, sessionId));
-    const result: CartItemWithProduct[] = [];
+    const rows = await db
+      .select({
+        cartItem: cartItems,
+        product: products,
+      })
+      .from(cartItems)
+      .leftJoin(products, eq(cartItems.productId, products.id))
+      .where(eq(cartItems.sessionId, sessionId));
 
-    for (const item of items) {
-      const [product] = await db.select().from(products).where(eq(products.id, item.productId));
-      if (product) {
-        result.push({ ...item, product });
-      }
-    }
-
-    return result;
+    return rows
+      .filter((row) => row.product !== null)
+      .map((row) => ({
+        ...row.cartItem,
+        product: row.product!,
+      }));
   }
 
   async addToCart(item: InsertCartItem): Promise<CartItem> {
@@ -753,6 +764,10 @@ export class MemoryStorage implements IStorage {
       .filter((product) => product.category === category)
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     return limit ? filtered.slice(0, limit) : filtered;
+  }
+
+  async countProducts(): Promise<number> {
+    return this.products.size;
   }
 
   async createProduct(product: InsertProduct): Promise<Product> {

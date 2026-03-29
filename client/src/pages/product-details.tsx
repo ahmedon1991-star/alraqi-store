@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2, Package } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { cn } from "@/lib/utils";
@@ -23,21 +22,41 @@ export default function ProductDetails() {
   const [hoverRating, setHoverRating] = useState(0);
   const { isInWishlist, toggleItem } = useWishlist();
   const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data: product, isLoading } = useQuery({
+  const { data: product, isLoading: queryLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
     queryFn: () => apiRequest(`/api/products/${params?.id}`),
     enabled: !!params?.id,
+    initialData: () => {
+      // Find the product in existing list data for instant display
+      const queryCache = queryClient.getQueryCache();
+      const allListQueries = queryCache.findAll({ queryKey: ["/api/products"] });
+      
+      for (const query of allListQueries) {
+        // Skip specific product queries, only look in lists
+        if (query.queryKey.length > 1 && typeof query.queryKey[1] === 'string') continue;
+        
+        if (Array.isArray(query.state.data)) {
+          const found = query.state.data.find((p: any) => String(p.id) === String(params?.id));
+          if (found) return found;
+        }
+      }
+      return undefined;
+    },
   });
+
+  // We consider it loading only if we have NO data yet
+  const isLoading = queryLoading && !product;
 
   function handleAddToCart() {
     if (!product) return;
     
     for (let i = 0; i < quantity; i++) {
-      addToCart.mutate({ 
-        productId: product.id, 
-        price: product.price, 
-      });
+        addToCart.mutate({ 
+            productId: product.id, 
+            price: product.price, 
+        });
     }
     toast({ title: "تمت الإضافة", description: `${product.name} أُضيف إلى السلة بنجاح` });
   }
@@ -172,8 +191,6 @@ export default function ProductDetails() {
                 </div>
               </div>
             </div>
-
-            {/* Removed the entire product options section (variants, sizes, measurements) and its IIFE */}
 
             <div className="bg-muted/20 px-4 py-3 rounded-xl border border-border/40 flex items-center justify-between mt-1">
               <span className="font-bold text-xs md:text-sm text-foreground/70">قيّم المنتج:</span>

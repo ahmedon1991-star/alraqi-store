@@ -1421,9 +1421,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/seed", async (req: Request, res: Response) => {
     const force = req.query.force === "true";
-    const existingProducts = await storage.getProducts();
+    const productCount = await storage.countProducts();
     
-    if (existingProducts.length > 0 && !force) {
+    if (productCount > 0 && !force) {
       return res.json({ message: "البيانات موجودة بالفعل. استخدم ?force=true لإعادة التأسيس.", seeded: false });
     }
 
