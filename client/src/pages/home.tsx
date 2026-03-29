@@ -15,8 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const { data: productsData, isLoading: productsLoading } = useQuery<any[]>({
-    queryKey: ["/api/products", { limit: 30 }],
-    queryFn: () => apiRequest("/api/products?limit=30"),
+    queryKey: ["/api/products", { limit: 100 }],
+    queryFn: () => apiRequest("/api/products?limit=100"),
     staleTime: 5 * 60 * 1000, // 5 minutes cache
   });
 
@@ -124,7 +124,7 @@ export default function Home() {
                     </div>
 
                     <div className="flex overflow-x-auto no-scrollbar gap-2 md:gap-4 pb-6 snap-x">
-                      {categoryProducts.slice(0, 6).map((product: any) => (
+                      {categoryProducts.slice(0, 10).map((product: any) => (
                         <div key={product.id} className="flex-shrink-0 w-[115px] md:w-[220px] snap-start mb-2">
                           <ProductCard {...product} />
                         </div>
