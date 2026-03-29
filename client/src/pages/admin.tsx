@@ -942,10 +942,10 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="flex flex-row gap-2 md:gap-3 w-full sm:w-auto">
+              <div className="flex flex-wrap gap-2 md:gap-3 w-full sm:w-auto">
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={openCreateDialog} className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 text-sm md:text-base font-bold shadow-lg shadow-primary/20">
+                    <Button onClick={openCreateDialog} className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 text-sm md:text-base font-bold shadow-lg shadow-primary/20 whitespace-nowrap">
                       <PlusCircle className="h-4 w-4" />
                       إضافة منتج
                     </Button>
@@ -1163,14 +1163,14 @@ export default function AdminPage() {
 
                 <Button 
                   variant="outline" 
-                  className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base gap-2 border-primary/30 text-primary hover:bg-primary/5" 
+                  className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base gap-2 border-primary/30 text-primary hover:bg-primary/5 whitespace-nowrap" 
                   onClick={() => playNotification(true)}
                 >
                   <Volume2 className="h-4 w-4" />
                   اختبار الصوت
                 </Button>
 
-                <Button variant="outline" className="flex-1 sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => logoutMutation.mutate()}>
+                <Button variant="outline" className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-rose-200 text-rose-600 hover:bg-rose-50 whitespace-nowrap" onClick={() => logoutMutation.mutate()}>
                   تسجيل الخروج
                 </Button>
               </div>
