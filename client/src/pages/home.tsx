@@ -82,24 +82,27 @@ export default function Home() {
           </div>
         </section>
 
-        {/* App Download Banner */}
-        <section className="container mx-auto px-4 mt-2 md:mt-8 mb-8 md:mb-12">
-          <div className="bg-gradient-to-r from-primary/90 to-primary text-primary-foreground rounded-[2rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-2xl shadow-primary/20">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/4 opacity-10 pointer-events-none">
-              <Smartphone className="h-48 w-48 md:h-64 md:w-64" />
+        {/* App Download Banner Compact */}
+        <section className="container mx-auto px-4 mt-2 md:mt-6 mb-6 md:mb-10">
+          <div className="bg-gradient-to-r from-primary/95 to-primary text-primary-foreground rounded-2xl p-3 md:px-6 md:py-4 flex items-center justify-between gap-3 shadow-lg shadow-primary/20">
+            
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="bg-white/20 p-2 md:p-3 rounded-xl shrink-0">
+                <Smartphone className="h-5 w-5 md:h-7 md:w-7 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-xs md:text-lg font-bold leading-tight mb-0.5">تطبيق أندرويد 📱</h2>
+                <p className="text-[9px] md:text-xs opacity-90 truncate md:whitespace-normal leading-tight">
+                  تجربة أسرع للطلب المباشر
+                </p>
+              </div>
             </div>
             
-            <div className="flex flex-col gap-2 z-10 text-center md:text-right">
-              <h2 className="text-2xl md:text-4xl font-black mb-1">حمّل تطبيق متجر الراقي! 📱</h2>
-              <p className="text-sm md:text-lg opacity-90 max-w-lg leading-relaxed">
-                اطلب منتجاتك المفضلة بسرعة وسهولة عبر تطبيق الأندرويد الخاص بنا، واستمتع بتجربة تسوق أسرع.
-              </p>
-            </div>
-            
-            <a href="/api/download-app" download="Al-Raqi-Store.apk" className="z-10 w-full md:w-auto">
-              <Button size="lg" className="w-full md:w-auto h-14 md:h-16 px-8 rounded-2xl bg-white text-primary hover:bg-gray-50 text-lg font-black shadow-xl hover:scale-105 transition-all border-none flex items-center justify-center gap-3 active:scale-95">
-                <Download className="h-6 w-6" />
-                تحميل التطبيق مباشرة
+            <a href="/api/download-app" download="Al-Raqi-Store.apk" className="shrink-0">
+              <Button size="sm" className="h-8 md:h-11 px-3 md:px-6 rounded-xl bg-white text-primary hover:bg-gray-100 font-bold shadow-sm transition-transform active:scale-95 text-[10px] md:text-sm flex gap-1.5 md:gap-2">
+                <Download className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">تحميل التطبيق</span>
+                <span className="sm:hidden">تحميل</span>
               </Button>
             </a>
           </div>
