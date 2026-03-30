@@ -984,6 +984,20 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ success: true });
   });
 
+  app.get("/api/admin/notifications", requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const allOrders = await storage.getAllOrders();
+      const allMessages = await storage.getMessages();
+      res.json({
+        orders: allOrders.length,
+        messages: allMessages.length,
+        pendingOrders: allOrders.filter(o => o.status === "pending").length,
+      });
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   app.get("/api/admin/overview", requireAdmin, async (_req: Request, res: Response) => {
     try {
       const [products, categories, allOrders, allMessages, settings] = await Promise.all([

@@ -262,7 +262,13 @@ export default function AdminPage() {
     queryKey: ["/api/admin/overview"],
     queryFn: () => apiRequest("/api/admin/overview"),
     enabled: authQuery.isSuccess,
-    refetchInterval: 10000, // 10 seconds polling for new orders/messages
+  });
+
+  const notificationsQuery = useQuery<{orders: number, messages: number, pendingOrders: number}>({
+    queryKey: ["/api/admin/notifications"],
+    queryFn: () => apiRequest("/api/admin/notifications"),
+    enabled: authQuery.isSuccess,
+    refetchInterval: 10000, // Lightweight polling (only counts) to stop freezing the DB
   });
 
   const settingsQuery = useQuery({
@@ -513,11 +519,12 @@ export default function AdminPage() {
 
 
   useEffect(() => {
-    const stats = overviewQuery.data?.stats;
+    const stats = notificationsQuery.data;
     if (!stats) return;
 
     const currentOrdersCount = stats.orders;
     const currentMessagesCount = stats.messages;
+    let shouldInvalidateOverview = false;
 
     // Handle NEW ORDERS
     if (prevOrdersCountRef.current !== null && currentOrdersCount > prevOrdersCountRef.current) {
@@ -543,8 +550,8 @@ export default function AdminPage() {
         description: `تم استلام طلب جديد رقم ${currentOrdersCount} من أحد العملاء.`,
         className: "bg-primary text-white font-bold animate-pulse",
       });
+      shouldInvalidateOverview = true;
     }
-    prevOrdersCountRef.current = currentOrdersCount;
 
     // Handle NEW MESSAGES
     if (prevMessagesCountRef.current !== null && currentMessagesCount > prevMessagesCountRef.current) {
@@ -555,35 +562,38 @@ export default function AdminPage() {
         description: "وصلتك مراجعة أو استفسار جديد من أحد العملاء، يرجى مراجعته.",
         className: "bg-blue-600 text-white font-bold",
       });
+      shouldInvalidateOverview = true;
+    }
+
+    if (shouldInvalidateOverview) {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/overview"] });
     }
 
     prevMessagesCountRef.current = currentMessagesCount;
     prevOrdersCountRef.current = currentOrdersCount;
 
-  }, [overviewQuery.data?.stats, toast, playNotification]);
+  }, [notificationsQuery.data, toast, playNotification]);
 
   // Persistent reminder for pending orders every 2 minutes
   useEffect(() => {
-    const stats = overviewQuery.data?.stats;
+    const stats = notificationsQuery.data;
     const hasPendingOrders = stats && stats.pendingOrders > 0;
     
     if (!hasPendingOrders) return;
 
     const intervalId = setInterval(() => {
-      const currentStats = overviewQuery.data?.stats;
-      if (currentStats && currentStats.pendingOrders > 0) {
-        console.log("⏰ Pending order reminder! Playing sound...");
-        playNotification();
-        toast({
-          title: "⏰ تنبيه: طلبات معلقة",
-          description: `تنبيه: يوجد عدد (${currentStats.pendingOrders}) طلبات معلقة لم يتم التعامل معها بعد.`,
-          className: "bg-orange-600 text-white font-black border-2 border-white/20",
-        });
-      }
+      // Use closure but safe since the effect re-runs on update
+      console.log("⏰ Pending order reminder! Playing sound...");
+      playNotification();
+      toast({
+        title: "⏰ تنبيه: طلبات معلقة",
+        description: `تنبيه: يوجد طلبات معلقة لم يتم التعامل معها بعد.`,
+        className: "bg-orange-600 text-white font-black border-2 border-white/20",
+      });
     }, 120000);
 
     return () => clearInterval(intervalId);
-  }, [overviewQuery.data?.stats?.pendingOrders, playNotification, toast]);
+  }, [notificationsQuery.data?.pendingOrders, playNotification, toast]);
 
   const updateOrderMutation = useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
