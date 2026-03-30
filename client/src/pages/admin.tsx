@@ -195,12 +195,9 @@ function formatAdminDate(value: string | null) {
 export default function AdminPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [form, setForm] = useState<ProductFormState>(initialForm);
-  const [orderSearch, setOrderSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [messageFilter, setMessageFilter] = useState("active");
   const [productSearch, setProductSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [orderTimeFilter, setOrderTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -230,21 +227,35 @@ export default function AdminPage() {
           body: formData,
         });
 
+        const data = await res.json();
+
         if (!res.ok) {
-          throw new Error("فشل رفع الصورة");
+          throw new Error(data.message || "فشل نظام الرفع");
         }
 
-        const data = await res.json();
         const imageUrl = data.url;
 
         if (target === "product") {
           setForm(prev => ({ ...prev, image: imageUrl }));
         }
         
-        toast({ title: "تم رفع الصورة بنجاح" });
+        if (data.warning) {
+          toast({ 
+            title: "تنبيه أثناء الرفع", 
+            description: data.warning,
+            variant: "default"
+          });
+        } else {
+          toast({ title: "تم رفع الصورة بنجاح" });
+        }
+
         resolve(imageUrl);
       } catch (err: any) {
-        toast({ title: "خطأ في رفع الصورة", description: err.message, variant: "destructive" });
+        toast({ 
+          title: "خطأ في رفع الصورة", 
+          description: err.message || "حدث خطأ غير متوقع", 
+          variant: "destructive" 
+        });
         resolve(undefined);
       } finally {
         setIsUploading(false);
@@ -743,57 +754,43 @@ export default function AdminPage() {
     return data?.topCategories.find((c) => c.id === id)?.name || id;
   };
 
+  const [orderSearch, setOrderSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [orderTimeFilter, setOrderTimeFilter] = useState<'today' | 'week' | 'month' | 'all'>('all');
+
+  const ordersQuery = useQuery({
+    queryKey: ["/api/admin/orders", { search: orderSearch, status: statusFilter }],
+    queryFn: ({ queryKey }) => {
+      const [, params] = queryKey as [string, { search: string, status: string }];
+      const url = new URL("/api/admin/orders", window.location.origin);
+      if (params.search) url.searchParams.set("search", params.search);
+      if (params.status) url.searchParams.set("status", params.status);
+      return apiRequest(url.pathname + url.search);
+    },
+  });
+
   const filteredOrders = useMemo(() => {
-    const orders = data?.orders || [];
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    if (!ordersQuery.data) return [];
+    let orders = [...ordersQuery.data as any[]];
 
-    return orders.filter((order) => {
-      const matchesSearch =
-        !orderSearch ||
-        order.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-        order.phone?.includes(orderSearch) ||
-        order.address?.toLowerCase().includes(orderSearch.toLowerCase());
-        
-      const timeReference = order.updatedAt || order.createdAt;
-      const t = timeReference ? new Date(timeReference).getTime() : 0;
-      const isOlderThan24h = timeReference ? new Date().getTime() - new Date(timeReference).getTime() > 24 * 60 * 60 * 1000 : false;
-      const isArchived = order.isArchived || (order.status === "completed" && isOlderThan24h);
-
-      const matchesTime = (() => {
-        if (orderTimeFilter === "today") return t >= startOfToday;
-        if (orderTimeFilter === "week") return t >= past7Days;
-        if (orderTimeFilter === "month") return t >= startOfMonth;
+    if (orderTimeFilter !== "all") {
+      const now = new Date();
+      orders = orders.filter((order) => {
+        const orderDate = new Date(order.updatedAt || order.createdAt);
+        if (orderTimeFilter === "today") return orderDate.toDateString() === now.toDateString();
+        if (orderTimeFilter === "week") return now.getTime() - orderDate.getTime() < 7 * 24 * 60 * 60 * 1000;
+        if (orderTimeFilter === "month") return now.getTime() - orderDate.getTime() < 30 * 24 * 60 * 60 * 1000;
         return true;
-      })();
+      });
+    }
 
-      if (statusFilter === "archived") {
-        return matchesSearch && isArchived && matchesTime;
-      }
-      
-      const matchesStatus = statusFilter === "all" ? true : order.status === statusFilter;
-      return matchesSearch && matchesStatus && !isArchived && matchesTime;
-    });
-  }, [data?.orders, orderSearch, statusFilter, orderTimeFilter]);
+    return orders;
+  }, [ordersQuery.data, orderTimeFilter]);
 
   const orderStats = useMemo(() => {
-    if (!data?.orders) return { today: 0, week: 0, month: 0, all: 0 };
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-
-    const activeOrders = data.orders.filter(o => !o.isArchived);
-
-    return {
-      today: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= startOfToday).length,
-      week: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= past7Days).length,
-      month: activeOrders.filter(o => (o.updatedAt || o.createdAt) && new Date(o.updatedAt || o.createdAt!).getTime() >= startOfMonth).length,
-      all: activeOrders.length
-    };
-  }, [data?.orders]);
+    if (!data?.stats?.orders) return { today: 0, week: 0, month: 0, all: 0 };
+    return data.stats.orders;
+  }, [data?.stats?.orders]);
 
   const filteredProducts = useMemo(() => {
     const products = data?.products || [];

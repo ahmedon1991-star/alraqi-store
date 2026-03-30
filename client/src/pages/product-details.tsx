@@ -24,41 +24,42 @@ export default function ProductDetails() {
   const [isExpanded, setIsExpanded] = useState(false);
   const queryClient = useQueryClient();
 
+  const { data: categories } = useQuery<any[]>({ queryKey: ["/api/categories"] });
+  
   const { data: product, isLoading: queryLoading } = useQuery({
     queryKey: ["/api/products", params?.id],
     queryFn: () => apiRequest(`/api/products/${params?.id}`),
     enabled: !!params?.id,
-    initialData: () => {
-      // Find the product in existing list data for instant display
-      const queryCache = queryClient.getQueryCache();
-      const allListQueries = queryCache.findAll({ queryKey: ["/api/products"] });
-      
-      for (const query of allListQueries) {
-        // Skip specific product queries, only look in lists
-        if (query.queryKey.length > 1 && typeof query.queryKey[1] === 'string') continue;
-        
-        if (Array.isArray(query.state.data)) {
-          const found = query.state.data.find((p: any) => String(p.id) === String(params?.id));
-          if (found) return found;
-        }
-      }
-      return undefined;
-    },
   });
 
   // We consider it loading only if we have NO data yet
   const isLoading = queryLoading && !product;
+  
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(-1);
+  const variants = product?.variants ? (typeof product.variants === 'string' ? JSON.parse(product.variants) : product.variants) : [];
+  
+  const activePrice = selectedVariantIndex >= 0 ? variants[selectedVariantIndex].price : product?.price;
+  const activeOriginalPrice = selectedVariantIndex >= 0 ? variants[selectedVariantIndex].originalPrice : product?.originalPrice;
+  const activeImage = (selectedVariantIndex >= 0 && variants[selectedVariantIndex].image) ? variants[selectedVariantIndex].image : (product?.image || "/images/product-spices.png");
+  
+  function getCategoryName(id: string) {
+    return categories?.find(c => c.id === id)?.name || id;
+  }
 
   function handleAddToCart() {
     if (!product) return;
     
+    const variantData = selectedVariantIndex >= 0 ? variants[selectedVariantIndex] : null;
+    
     for (let i = 0; i < quantity; i++) {
         addToCart.mutate({ 
             productId: product.id, 
-            price: product.price, 
+            price: Number(activePrice),
+            size: variantData?.name || null,
+            image: variantData?.image || null,
         });
     }
-    toast({ title: "تمت الإضافة", description: `${product.name} أُضيف إلى السلة بنجاح` });
+    toast({ title: "تمت الإضافة", description: `${product.name} ${variantData ? `(${variantData.name})` : ''} أُضيف إلى السلة بنجاح` });
   }
 
   const rateMutation = useMutation({
@@ -130,9 +131,9 @@ export default function ProductDetails() {
                 </div>
               )}
               <img
-                src={product.image || "/images/product-spices.png"}
+                src={activeImage}
                 alt={product.name}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain transition-all duration-500"
                 onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
               />
             </div>
@@ -141,7 +142,7 @@ export default function ProductDetails() {
           <div className="flex flex-col gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-bold text-primary uppercase tracking-wider">{product.category}</span>
+                <span className="text-sm font-black text-primary uppercase tracking-wider">{getCategoryName(product.category)}</span>
                 <span className="text-border">|</span>
                 <div className="flex items-center text-amber-400">
                   <Star className="h-4 w-4 fill-current" />
@@ -153,10 +154,49 @@ export default function ProductDetails() {
               <h2 className="text-lg text-muted-foreground font-medium mb-4 md:mb-6 opacity-80">{product.nameEn}</h2>
 
               <div className="flex items-end gap-3 mb-4 md:mb-8">
-                <span className="text-3xl md:text-4xl font-black text-primary font-mono" data-testid="text-product-price">{product.price.toLocaleString()}</span>
+                <span className="text-3xl md:text-4xl font-black text-primary font-mono" data-testid="text-product-price">{Number(activePrice).toLocaleString()}</span>
                 <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
+                {activeOriginalPrice && Number(activeOriginalPrice) > Number(activePrice) && (
+                  <span className="text-xl text-muted-foreground/50 line-through mb-2 mr-2">
+                    {Number(activeOriginalPrice).toLocaleString()}
+                  </span>
+                )}
               </div>
               
+              {/* Variants Selection */}
+              {variants.length > 0 && (
+                <div className="space-y-3 mb-6">
+                  <p className="text-sm font-black text-foreground/80">اختر النوع / المقاس:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setSelectedVariantIndex(-1)}
+                      className={cn(
+                        "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all",
+                        selectedVariantIndex === -1 
+                        ? "border-primary bg-primary/10 text-primary" 
+                        : "border-border bg-white text-muted-foreground hover:border-border/80"
+                      )}
+                    >
+                      الأساسي
+                    </button>
+                    {variants.map((v: any, idx: number) => (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedVariantIndex(idx)}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all",
+                          selectedVariantIndex === idx 
+                          ? "border-primary bg-primary/10 text-primary" 
+                          : "border-border bg-white text-muted-foreground hover:border-border/80"
+                        )}
+                      >
+                        {v.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {product.inStock && product.stock !== undefined && product.stock !== null && product.stock > 0 && product.stock <= 5 && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-2xl text-orange-700 animate-pulse mb-4">
                   <Package className="h-5 w-5" />
@@ -244,7 +284,7 @@ export default function ProductDetails() {
                 {product.inStock ? (
                   <>
                     <ShoppingCart className="h-5 w-5" />
-                    إضافة للسلة - {(product.price * quantity).toLocaleString()} ج.س
+                    إضافة للسلة - {(Number(activePrice) * quantity).toLocaleString()} ج.س
                   </>
                 ) : (
                   <>

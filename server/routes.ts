@@ -39,7 +39,7 @@ const storageMemory = multer.memoryStorage();
 // ✅ REQUIREMENT: Size Validation (Max 2MB)
 const upload = multer({ 
   storage: storageMemory, 
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB Limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // Increased to 10MB for mobile high-res photos
   fileFilter: (_req, file, cb) => {
     // ✅ REQUIREMENT: File Format Sanitation (Secure extensions only)
     const allowed = /jpeg|jpg|png|webp/;
@@ -772,40 +772,68 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         const uniqueId = Date.now() + "-" + Math.round(Math.random() * 1e9);
         const fileName = `${uniqueId}.webp`;
         const localPath = path.join(uploadDir, fileName);
+        const publicUrl = `/uploads/${fileName}`;
 
         // Optimization: Use sharp to compress locally before sending to cloud
-        // This saves upload bandwidth.
+        // This saves upload bandwidth and ensures consistent format
         const optimizedBuffer = await sharp(req.file.buffer)
-          .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
-          .webp({ quality: 80 })
+          .resize(1500, 1500, { fit: "inside", withoutEnlargement: true }) // Balanced resolution
+          .webp({ quality: 80, force: true })
           .toBuffer();
 
+        // Save local backup FIRST - this gives us an immediate fallback
+        try {
+          await fs.promises.writeFile(localPath, optimizedBuffer);
+          console.log(`💾 LOCAL BACKUP SUCCESS: ${localPath}`);
+        } catch (localErr) {
+          console.error("❌ Local Write Error:", localErr);
+        }
+
         // ✅ REQUIREMENT: Permanent Cloud Upload (Upload to Cloudinary)
-        const cloudResult = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { 
-              folder: "alraqi-store",
-              public_id: uniqueId,
-              resource_type: "auto" 
-            },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          uploadStream.end(optimizedBuffer);
+        try {
+          const cloudResult = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              { 
+                folder: "alraqi-store",
+                public_id: uniqueId,
+                resource_type: "auto",
+                overwrite: true
+              },
+              (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+              }
+            );
+            uploadStream.end(optimizedBuffer);
+          });
+
+          const cloudUrl = (cloudResult as any).secure_url;
+          console.log(`✅ CLOUD UPLOAD SUCCESS: Persistent URL -> ${cloudUrl}`);
+          return res.json({ url: cloudUrl, source: "cloud" });
+
+        } catch (cloudError: any) {
+          console.error("❌ Cloudinary Upload Failed:", cloudError);
+          
+          // FALLBACK: Return the local URL if cloud fails but local write succeeded
+          // This ensures the user can still save the product even if Cloudinary is down
+          if (fs.existsSync(localPath)) {
+            console.warn("⚠️ Using local fallback URL because cloud upload failed");
+            return res.json({ 
+              url: publicUrl, 
+              source: "local", 
+              warning: "تم الحفظ محلياً فقط بسبب تعذر الاتصال بالسيرفر السحابي." 
+            });
+          }
+          
+          throw cloudError;
+        }
+
+      } catch (uploadError: any) {
+        console.error("❌ Final Upload Pipeline Error:", uploadError);
+        res.status(500).json({ 
+          message: "فشل نظام الرفع. يرجى التأكد من جودة اتصال الإنترنت والمحاولة لاحقاً.",
+          details: uploadError.message 
         });
-
-        const cloudUrl = (cloudResult as any).secure_url;
-        console.log(`✅ CLOUD UPLOAD SUCCESS: Persistent URL -> ${cloudUrl}`);
-
-        // OPTIONAL: Local backup for safety
-        await fs.promises.writeFile(localPath, optimizedBuffer);
-        
-        res.json({ url: cloudUrl });
-      } catch (uploadError) {
-        console.error("❌ Final Upload Error:", uploadError);
-        res.status(500).json({ message: "فشل نظام الرفع السحابي. يرجى المحاولة لاحقاً." });
       }
     });
   });
@@ -1048,18 +1076,30 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         })
         .slice(0, 50); // Only return 50 most recent for performance
 
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const past7Days = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6).getTime();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+      const orderStats = {
+        today: allOrders.filter(o => o.createdAt && new Date(o.createdAt).getTime() >= startOfToday).length,
+        week: allOrders.filter(o => o.createdAt && new Date(o.createdAt).getTime() >= past7Days).length,
+        month: allOrders.filter(o => o.createdAt && new Date(o.createdAt).getTime() >= startOfMonth).length,
+        all: allOrders.length
+      };
+
       res.json({
         stats: {
           products: products.length,
           categories: categories.length,
-          orders: allOrders.length,
+          orders: orderStats,
           pendingOrders: pendingOrdersCount,
           messages: allMessages.length,
           unreadMessages,
           revenue,
         },
-        orders: recentOrders,
-        products: products, // Returning all products for management is okay for now, but consider pagination if > 1000
+        orders: recentOrders, // Still return recent for the dashboard summary
+        products: products, 
         topCategories,
       });
     } catch (error) {
@@ -1071,6 +1111,40 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.get("/api/admin/orders", requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const search = req.query.search as string | undefined;
+      const status = req.query.status as string | undefined;
+      
+      const allOrders = await storage.getAllOrders();
+      let filtered = [...allOrders];
+
+      if (status && status !== "all") {
+        filtered = filtered.filter(o => o.status === status);
+      }
+
+      if (search) {
+        const s = search.toLowerCase();
+        filtered = filtered.filter(o => 
+          (o.name?.toLowerCase().includes(s)) || 
+          (o.phone?.includes(s)) || 
+          (o.id.includes(s))
+        );
+      }
+
+      // Sort newest first
+      filtered.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      });
+
+      res.json(filtered);
+    } catch (error) {
+      res.status(500).json({ message: "فشل تصفية الطلبات" });
+    }
+  });
+  
   app.patch("/api/admin/orders/:id", requireAdmin, async (req: Request, res: Response) => {
     const orderId = getSingleParam(req.params.id);
     const { status } = req.body as { status?: string };
@@ -1578,6 +1652,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
 
+
+  // App Download Route
+  app.get("/api/download-app", (_req, res) => {
+    const apkPath = path.resolve(process.cwd(), "public", "apps", "Al-Raqi-Store.apk");
+    // In a real scenario, check if file exists, then send it
+    // For now, return friendly error or placeholder
+    res.status(404).json({ 
+      message: "نعتذر، رابط التحميل المباشر غير متوفر حالياً. يرجى التواصل مع الدعم الفني عبر واتساب للحصول على نسخة التطبيق.",
+      whatsapp_contact: "https://wa.me/249912345678"
+    });
+  });
 
   return httpServer;
 }

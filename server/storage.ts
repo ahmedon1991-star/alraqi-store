@@ -562,19 +562,43 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminSettings(): Promise<AdminSettings | undefined> {
     if (!db) return undefined;
-    const [settings] = await db.select().from(adminSettings).where(eq(adminSettings.id, 1));
-    if (!settings) {
-      console.log("🛠️  STORAGE: Creating initial admin settings record...");
-      const [created] = await db.insert(adminSettings).values({ 
-        id: 1,
-        username: process.env.ADMIN_USERNAME || "admin",
-        password: process.env.ADMIN_PASSWORD || "admin12345",
-        email: process.env.SMTP_USER || "admin@example.com",
-        phone: process.env.ADMIN_PHONE || "+249912345678",
-      }).returning();
-      return created;
+    try {
+      const [settings] = await db.select().from(adminSettings).where(eq(adminSettings.id, 1));
+      
+      const envUser = process.env.ADMIN_USERNAME || "admin";
+      const envPass = process.env.ADMIN_PASSWORD || "admin12345";
+      const envEmail = process.env.SMTP_USER || "admin@example.com";
+      const envPhone = process.env.ADMIN_PHONE || "+249912345678";
+
+      if (!settings) {
+        console.log("🛠️  STORAGE: Creating initial admin settings record from environment variables...");
+        const [created] = await db.insert(adminSettings).values({ 
+          id: 1,
+          username: envUser,
+          password: envPass,
+          email: envEmail,
+          phone: envPhone,
+        }).returning();
+        return created;
+      }
+
+      // 🔍 CRITICAL SYNC: If .env values changed, update DB to match
+      // This is a safety measure to prevent lockout if user updates .env
+      const needsUpdate = settings.username !== envUser || settings.password !== envPass;
+      if (needsUpdate) {
+        console.log("🔄 STORAGE: Detected .env credential changes. Syncing database record...");
+        const [updated] = await db.update(adminSettings)
+          .set({ username: envUser, password: envPass })
+          .where(eq(adminSettings.id, 1))
+          .returning();
+        return updated;
+      }
+
+      return settings;
+    } catch (err) {
+      console.error("❌ STORAGE: Error fetching admin settings:", err);
+      return undefined;
     }
-    return settings;
   }
 
   async updateAdminSettings(settings: Partial<InsertAdminSettings>): Promise<AdminSettings> {
