@@ -78,7 +78,7 @@ export default function Shop() {
       );
     }
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p: any) => selectedCategories.includes(p.category));
+      filtered = filtered.filter((p: any) => selectedCategories.includes(String(p.category)));
     }
     // No price filter by default (slider is 0-100 mapped to 0-maxPriceValue)
     if (priceRange[0] < 100) {
@@ -97,9 +97,10 @@ export default function Shop() {
     return filtered;
   }, [allProducts, searchTerm, selectedCategories, priceRange, showWishlistOnly, showOffersOnly, wishlistItems]);
 
-  function toggleCategory(catId: string) {
+  function toggleCategory(catId: string | number) {
+    const id = String(catId);
     setSelectedCategories(prev =>
-      prev.includes(catId) ? prev.filter(c => c !== catId) : [...prev, catId]
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
   }
 
@@ -149,8 +150,8 @@ export default function Shop() {
             <div key={cat.id} className="flex items-center space-x-2 space-x-reverse">
               <Checkbox
                 id={`cat-${cat.id}`}
-                checked={selectedCategories.includes(cat.id)}
-                onCheckedChange={() => toggleCategory(cat.id)}
+                checked={selectedCategories.includes(String(cat.id))}
+                onCheckedChange={() => toggleCategory(String(cat.id))}
               />
               <Label htmlFor={`cat-${cat.id}`} className="text-base font-medium cursor-pointer">
                 {cat.name}
@@ -226,11 +227,11 @@ export default function Shop() {
                 <Button
                   key={cat.id}
                   size="sm"
-                  variant={selectedCategories.includes(cat.id) ? "default" : "outline"}
-                  onClick={() => toggleCategory(cat.id)}
+                  variant={selectedCategories.includes(String(cat.id)) ? "default" : "outline"}
+                  onClick={() => toggleCategory(String(cat.id))}
                   className={cn(
                     "rounded-full px-6 h-10 font-bold shrink-0 whitespace-nowrap transition-all",
-                    selectedCategories.includes(cat.id) ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
+                    selectedCategories.includes(String(cat.id)) ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
                   )}
                 >
                   {cat.name}
