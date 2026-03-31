@@ -2,7 +2,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2, Package } from "lucide-react";
+import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2, Package, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -294,14 +294,42 @@ export default function ProductDetails() {
                 )}
               </Button>
 
-              <Button
-                size="icon"
-                variant="outline"
-                className={`h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-200 hover:bg-red-50 ${isInWishlist(product.id) ? "text-red-500 bg-red-50 border-red-200" : ""}`}
-                onClick={() => toggleItem(product.id, product.name)}
-              >
-                <Heart className={`h-6 w-6 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={`h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-200 hover:bg-red-50 ${isInWishlist(product.id) ? "text-red-500 bg-red-50 border-red-200" : ""}`}
+                  onClick={() => toggleItem(product.id, product.name)}
+                  title="أضف للمفضلة"
+                >
+                  <Heart className={`h-6 w-6 ${isInWishlist(product.id) ? "fill-current" : ""}`} />
+                </Button>
+
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-14 w-14 rounded-full border-border hover:text-primary hover:border-primary/50 hover:bg-primary/5"
+                  onClick={async () => {
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: product.name,
+                          text: product.description || "شاهد هذا المنتج الرائع من الراقي",
+                          url: window.location.href,
+                        });
+                      } catch (err) {
+                        console.log("تم إلغاء المشاركة");
+                      }
+                    } else {
+                      navigator.clipboard.writeText(window.location.href);
+                      toast({ title: "تم النسخ", description: "تم نسخ رابط المنتج بنجاح." });
+                    }
+                  }}
+                  title="مشاركة المنتج"
+                >
+                  <Share2 className="h-6 w-6" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

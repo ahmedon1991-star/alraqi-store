@@ -756,47 +756,63 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     upload.single("image")(req, res, async (err: any) => {
       // ✅ REQUIREMENT: Comprehensive Error Handling (JSON Responses)
       if (err instanceof multer.MulterError) {
+        console.error("❌ Multer Error:", err);
         if (err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى هو 2 ميجابايت." });
+          return res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى هو 10 ميجابايت." });
         }
         return res.status(400).json({ message: `خطأ أثناء الرفع: ${err.message}` });
       } else if (err) {
-        return res.status(400).json({ message: err.message });
+        console.error("❌ Pre-processing Error:", err);
+        return res.status(400).json({ message: `خطأ في معالجة الملف: ${err.message}` });
       }
 
       if (!req.file) {
         return res.status(400).json({ message: "يرجى اختيار ملف لرفعه" });
       }
 
+      console.log(`📸 Processing upload for file: ${req.file.originalname} (${req.file.size} bytes)`);
+
       try {
         const uniqueId = Date.now() + "-" + Math.round(Math.random() * 1e9);
-        const fileName = `${uniqueId}.webp`;
+        let finalBuffer = req.file.buffer;
+        let fileName = `${uniqueId}.webp`;
+        let isOptimized = false;
+
+        // Optimization: Use sharp to compress locally if possible
+        try {
+          finalBuffer = await sharp(req.file.buffer)
+            .resize(1500, 1500, { fit: "inside", withoutEnlargement: true })
+            .webp({ quality: 80, force: true })
+            .toBuffer();
+          isOptimized = true;
+          console.log("⚡ Image optimized successfully");
+        } catch (sharpError) {
+          console.warn("⚠️ Sharp optimization failed, using raw buffer:", sharpError);
+          // If sharp fails (e.g. missing binary on Windows), we use the original extension
+          const originalExt = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+          fileName = `${uniqueId}${originalExt}`;
+        }
+
         const localPath = path.join(uploadDir, fileName);
         const publicUrl = `/uploads/${fileName}`;
 
-        // Optimization: Use sharp to compress locally before sending to cloud
-        // This saves upload bandwidth and ensures consistent format
-        const optimizedBuffer = await sharp(req.file.buffer)
-          .resize(1500, 1500, { fit: "inside", withoutEnlargement: true }) // Balanced resolution
-          .webp({ quality: 80, force: true })
-          .toBuffer();
-
-        // Save local backup FIRST - this gives us an immediate fallback
+        // Save local backup FIRST
         try {
-          await fs.promises.writeFile(localPath, optimizedBuffer);
+          await fs.promises.writeFile(localPath, finalBuffer);
           console.log(`💾 LOCAL BACKUP SUCCESS: ${localPath}`);
         } catch (localErr) {
-          console.error("❌ Local Write Error:", localErr);
+          console.error("❌ Local Write Error (non-fatal):", localErr);
         }
 
         // ✅ REQUIREMENT: Permanent Cloud Upload (Upload to Cloudinary)
         try {
+          console.log("☁️ Attempting Cloudinary upload...");
           const cloudResult = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               { 
                 folder: "alraqi-store",
                 public_id: uniqueId,
-                resource_type: "auto",
+                resource_type: "image",
                 overwrite: true
               },
               (error, result) => {
@@ -804,24 +820,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
                 else resolve(result);
               }
             );
-            uploadStream.end(optimizedBuffer);
+            uploadStream.end(finalBuffer);
           });
 
           const cloudUrl = (cloudResult as any).secure_url;
-          console.log(`✅ CLOUD UPLOAD SUCCESS: Persistent URL -> ${cloudUrl}`);
-          return res.json({ url: cloudUrl, source: "cloud" });
+          console.log(`✅ CLOUD UPLOAD SUCCESS: ${cloudUrl}`);
+          return res.json({ 
+            url: cloudUrl, 
+            source: "cloud",
+            optimized: isOptimized
+          });
 
         } catch (cloudError: any) {
           console.error("❌ Cloudinary Upload Failed:", cloudError);
           
-          // FALLBACK: Return the local URL if cloud fails but local write succeeded
-          // This ensures the user can still save the product even if Cloudinary is down
+          // FALLBACK: Return local URL if local write succeeded
           if (fs.existsSync(localPath)) {
-            console.warn("⚠️ Using local fallback URL because cloud upload failed");
+            console.warn("⚠️ Using local fallback URL");
             return res.json({ 
               url: publicUrl, 
               source: "local", 
-              warning: "تم الحفظ محلياً فقط بسبب تعذر الاتصال بالسيرفر السحابي." 
+              optimized: isOptimized,
+              warning: "تم الحفظ محلياً فقط بسبب تعذر الاتصال بالسيرفر السحابي. يرجى التحقق من جودة الإنترنت." 
             });
           }
           
@@ -832,7 +852,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         console.error("❌ Final Upload Pipeline Error:", uploadError);
         res.status(500).json({ 
           message: "فشل نظام الرفع. يرجى التأكد من جودة اتصال الإنترنت والمحاولة لاحقاً.",
-          details: uploadError.message 
+          details: uploadError.message || "Unknown error"
         });
       }
     });

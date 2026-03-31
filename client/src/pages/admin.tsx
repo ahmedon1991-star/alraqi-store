@@ -230,7 +230,8 @@ export default function AdminPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || "فشل نظام الرفع");
+          const errorMessage = data.details ? `${data.message} (${data.details})` : (data.message || "فشل نظام الرفع");
+          throw new Error(errorMessage);
         }
 
         const imageUrl = data.url;
@@ -243,17 +244,22 @@ export default function AdminPage() {
           toast({ 
             title: "تنبيه أثناء الرفع", 
             description: data.warning,
-            variant: "default"
+            variant: "default",
+            duration: 10000 // Show longer for visibility
           });
         } else {
-          toast({ title: "تم رفع الصورة بنجاح" });
+          toast({ 
+            title: "تم رفع الصورة بنجاح",
+            description: data.source === "cloud" ? "تم الحفظ على السيرفر السحابي" : "تم الحفظ محلياً"
+          });
         }
 
         resolve(imageUrl);
       } catch (err: any) {
+        console.error("Upload Error Details:", err);
         toast({ 
           title: "خطأ في رفع الصورة", 
-          description: err.message || "حدث خطأ غير متوقع", 
+          description: err.message || "حدث خطأ غير متوقع أثناء الاتصال بالسيرفر", 
           variant: "destructive" 
         });
         resolve(undefined);
