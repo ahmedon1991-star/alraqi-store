@@ -19,8 +19,8 @@ git commit -m "%commitMsg%"
 echo.
 
 echo [4] Pushing to GitHub...
-git push origin master
-:: Or change 'master' to 'main' if your default branch is 'main'
+git push origin main
+:: Pushing to main branch automatically
 echo.
 
 echo ===================================================
