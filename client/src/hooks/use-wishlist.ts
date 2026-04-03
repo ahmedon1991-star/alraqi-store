@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // حدث مخصص لمزامنة الحالة بين المكونات المختلفة
+// Sync update trigger
 const WISHLIST_UPDATED = "wishlist-updated";
 
 export function useWishlist() {

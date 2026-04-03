@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { useState, useMemo, useEffect } from "react";
-import { useWishlist } from "@/hooks/use-wishlist";
+import { useWishlist } from "@/hooks/use-wishlist"; // Sync with latest hook
 
 import { useLocation, useSearch } from "wouter";
 import { cn } from "@/lib/utils";
