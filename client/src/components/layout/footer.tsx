@@ -133,7 +133,7 @@ export function Footer() {
       {/* Bottom Bar */}
       <div className="border-t border-primary/10 py-8 bg-background/50 relative z-10">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-sm md:text-base font-bold text-muted-foreground/60">
-          <p className="font-heading">© 2024 متجر الراقي الفاخر. جميع الحقوق محفوظة.</p>
+          <p className="font-heading">© 2024 متجر الراقي الفاخر. v1.1 - النسخة المحدثة</p>
           <div className="flex items-center gap-8">
             <a href="#" className="hover:text-primary transition-colors">سياسة الخصوصية</a>
             <span className="text-primary/20">|</span>
