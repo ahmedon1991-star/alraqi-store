@@ -4,7 +4,7 @@ import { useCart, useUpdateCartQuantity, useRemoveFromCart } from "@/hooks/use-c
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { cn, optimizedImage } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -136,7 +136,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                 {cartItems.map((item: any) => (
                   <div key={item.id} className="flex gap-4 p-4 rounded-3xl bg-card border border-primary/5 items-center shadow-sm hover:shadow-md transition-shadow">
                     <div className="w-20 h-20 md:w-24 md:h-24 bg-muted/50 rounded-2xl overflow-hidden shrink-0 p-2 border border-primary/5">
-                      <img src={item.image || item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
+                      <img src={optimizedImage(item.image || item.product.image, 200) || ""} loading="lazy" alt={item.product.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1 min-w-0 text-right">
                       <h3 className="font-black text-sm md:text-xl truncate text-foreground">{item.product.name}</h3>

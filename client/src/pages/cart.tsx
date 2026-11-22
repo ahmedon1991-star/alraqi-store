@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
+import { optimizedImage } from "@/lib/utils";
 import { useCategoryName } from "@/hooks/use-categories";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
@@ -139,7 +140,7 @@ export default function Cart() {
               {cartItems.map((item: any) => (
                 <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-card border border-border/50 items-center" data-testid={`card-cart-item-${item.id}`}>
                   <div className="w-24 h-24 bg-card border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1">
-                    <img src={item.image || item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
+                    <img src={optimizedImage(item.image || item.product.image, 200) || ""} loading="lazy" alt={item.product.name} className="w-full h-full object-contain" />
                   </div>
 
                   <div className="flex-1 min-w-0">
