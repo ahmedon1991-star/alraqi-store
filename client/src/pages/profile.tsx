@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -9,777 +9,741 @@ import {
   Package,
   ShieldCheck,
   MapPin,
-  ChevronLeft,
-  Heart,
-  FileText,
-  Settings,
   Clock,
   CheckCircle2,
   XCircle,
-  Truck,
   RotateCcw,
-  Search,
-  ChevronRight,
   User as UserIcon,
   LogOut,
-  UserCog,
   ShoppingBag,
-  Bell,
-  Wallet,
-  ArrowRight,
   Fingerprint,
-  Check,
-  ImageIcon,
-  Mail,
-  Lock,
-  Key,
-  RefreshCw,
-  History as HistoryIcon,
+  KeyRound,
+  Receipt,
+  Wallet,
+  Phone,
+  CalendarDays,
+  ChevronLeft,
+  BellDot,
+  Truck,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { apiRequest, setCustomerToken } from "../lib/api";
+import { apiRequest } from "../lib/api";
 import { useCurrentUser, useLogout } from "../hooks/use-auth";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
-import { useAddToCart } from "@/hooks/use-cart";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-function formatOrderDate(value: string | null) {
-  if (!value) return "غير متوفر";
-  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+type OrderItem = { id: string; name: string; price: number; quantity: number; size?: string | null };
+type Order = {
+  id: string;
+  status: string;
+  total: number;
+  createdAt: string | null;
+  updatedAt?: string | null;
+  address: string | null;
+  phone: string | null;
+  name: string | null;
+  items: string | null;
+  paymentMethod?: string;
+  statusTimeline?: string | null;
+  hasNewNotification?: boolean;
+};
+
+const DATE_LOCALE = "ar-EG-u-nu-latn";
+
+function formatDate(value: string | null | undefined, withTime = true) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat(DATE_LOCALE, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...(withTime ? { hour: "numeric", minute: "2-digit" } : {}),
+  }).format(new Date(value));
 }
 
+function parseItems(order: Order): OrderItem[] {
+  try {
+    const items = JSON.parse(order.items || "[]");
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function orderNumber(order: Order) {
+  return order.id.slice(0, 8).toUpperCase();
+}
+
+const STATUS: Record<string, { label: string; icon: any; chip: string }> = {
+  pending: { label: "قيد المراجعة", icon: Clock, chip: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25" },
+  processing: { label: "قيد التجهيز", icon: Truck, chip: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/25" },
+  completed: { label: "تم التوصيل", icon: CheckCircle2, chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25" },
+  cancelled: { label: "ملغي", icon: XCircle, chip: "bg-destructive/10 text-destructive border-destructive/25" },
+};
+
+const STEPS = [
+  { key: "pending", label: "استلام الطلب", icon: ClipboardCheck },
+  { key: "processing", label: "التجهيز", icon: Package },
+  { key: "completed", label: "التوصيل", icon: CheckCircle2 },
+];
+
+function StatusChip({ status, className }: { status: string; className?: string }) {
+  const s = STATUS[status] || STATUS.pending;
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold whitespace-nowrap", s.chip, className)}>
+      <s.icon className="h-3.5 w-3.5" />
+      {s.label}
+    </span>
+  );
+}
+
+/** Three-step progress: استلام ← تجهيز ← توصيل (hidden for cancelled orders). */
+function OrderProgress({ status }: { status: string }) {
+  const current = STEPS.findIndex((s) => s.key === status);
+  if (current === -1) return null;
+  return (
+    <div className="flex items-center" aria-label={`حالة الطلب: ${STATUS[status]?.label}`}>
+      {STEPS.map((step, i) => {
+        const done = i <= current;
+        return (
+          <div key={step.key} className={cn("flex items-center", i < STEPS.length - 1 && "flex-1")}>
+            <div className="flex flex-col items-center gap-1">
+              <span className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full border-2 transition-colors",
+                done ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground",
+              )}>
+                <step.icon className="h-3.5 w-3.5" />
+              </span>
+              <span className={cn("text-[10px] md:text-xs font-bold whitespace-nowrap", done ? "text-foreground" : "text-muted-foreground")}>{step.label}</span>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div className={cn("mx-1 mb-5 h-0.5 flex-1 rounded-full", i < current ? "bg-primary" : "bg-border")} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Forms
+// ---------------------------------------------------------------------------
+
 const profileSchema = z.object({
-  name: z.string().min(2, { message: "الاسم يجب أن يكون حرفين على الأقل" }),
-  phone: z.string().min(9, { message: "رقم الهاتف غير صحيح" }),
+  name: z.string().trim().min(2, { message: "الاسم يجب أن يكون حرفين على الأقل" }),
+  phone: z.string().trim().min(9, { message: "رقم الهاتف غير صحيح" }),
   email: z.string().email({ message: "البريد الإلكتروني غير صحيح" }),
 });
 
-const statusData: Record<string, { label: string; icon: any; color: string; bg: string; border: string }> = {
-  pending: { label: "قيد المراجعة", icon: Clock, color: "text-amber-600", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  processing: { label: "قيد التجهيز", icon: Package, color: "text-blue-600", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-  completed: { label: "تم التوصيل", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  cancelled: { label: "ملغي", icon: XCircle, color: "text-rose-600", bg: "bg-rose-500/10", border: "border-rose-500/20" },
-};
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, { message: "أدخل كلمة السر الحالية" }),
+  newPassword: z.string().min(6, { message: "كلمة السر الجديدة يجب أن تكون 6 أحرف على الأقل" }),
+  confirmPassword: z.string().min(1, { message: "أعد كتابة كلمة السر الجديدة" }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  path: ["confirmPassword"],
+  message: "كلمة السر الجديدة وتأكيدها غير متطابقين",
+});
+
+type Tab = "orders" | "account" | "security";
+type OrderFilter = "all" | "active" | "completed" | "cancelled";
+
+const inputClass = "h-12 rounded-xl bg-background text-right";
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function ProfilePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("orders");
   const { data: user, isLoading: isUserLoading } = useCurrentUser();
   const logoutMutation = useLogout();
-  const addToCartMutation = useAddToCart();
-  
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [isTrackOpen, setIsTrackOpen] = useState(false);
+
+  const [tab, setTab] = useState<Tab>("orders");
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>("all");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
 
-  const ordersQuery = useQuery({
+  const ordersQuery = useQuery<Order[]>({
     queryKey: ["/api/orders/me"],
     queryFn: () => apiRequest("/api/orders/me"),
     enabled: !!user,
   });
+  const orders = ordersQuery.data || [];
 
-  // Mutation to close an order (set status to cancelled)
-  const closeOrderMutation = useMutation({
-    mutationFn: (orderId: string) =>
-      apiRequest(`/api/orders/${orderId}/close`, { method: "POST" }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/orders/me"] });
-      toast({ title: "تم إغلاق الطلب", description: "تم إغلاق الطلب بنجاح." });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "خطأ في إغلاق الطلب",
-        description: error.message || "حدث خطأ غير متوقع.",
-        variant: "destructive",
-      });
-    },
-  });
+  const stats = useMemo(() => {
+    const active = orders.filter((o) => o.status === "pending" || o.status === "processing").length;
+    const spent = orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + (o.total || 0), 0);
+    return { total: orders.length, active, spent };
+  }, [orders]);
 
+  const filterCounts = useMemo(() => ({
+    all: orders.length,
+    active: orders.filter((o) => o.status === "pending" || o.status === "processing").length,
+    completed: orders.filter((o) => o.status === "completed").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
+  }), [orders]);
+
+  const visibleOrders = useMemo(() => orders.filter((o) => {
+    if (orderFilter === "active") return o.status === "pending" || o.status === "processing";
+    if (orderFilter === "completed") return o.status === "completed";
+    if (orderFilter === "cancelled") return o.status === "cancelled";
+    return true;
+  }), [orders, orderFilter]);
+
+  const hasUpdates = orders.some((o) => o.hasNewNotification);
+
+  // ----- forms -----
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: { name: "", phone: "", email: "" },
-  });
-
-  // Password change form schema and hook
-  const passwordSchema = z.object({
-    currentPassword: z.string().min(6, { message: "كلمة السر الحالية يجب أن تكون 6 أحرف على الأقل" }),
-    newPassword: z.string().min(6, { message: "كلمة السر الجديدة يجب أن تكون 6 أحرف على الأقل" }),
-    confirmPassword: z.string().min(6),
-  }).refine((data) => data.newPassword === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "كلمة السر الجديدة وتأكيدها غير متطابقين",
   });
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
 
-  const changePasswordMutation = useMutation({
-    mutationFn: (values: z.infer<typeof passwordSchema>) =>
-      apiRequest("/api/auth/change-password", { method: "POST", body: JSON.stringify(values) }),
-    onSuccess: () => {
-      toast({ title: "تم تغيير كلمة السر", description: "تم حفظ كلمة السر الجديدة بنجاح." });
-      passwordForm.reset();
-    },
-    onError: (error: any) => {
-      toast({ title: "خطأ", description: error.message || "فشل تغيير كلمة السر", variant: "destructive" });
-    },
-  });
-
   useEffect(() => {
     if (user) {
-      profileForm.reset({
-        name: user.name || "",
-        phone: user.phone || "",
-        email: user.email || "",
-      });
+      profileForm.reset({ name: user.name || "", phone: user.phone || "", email: user.email || "" });
     } else if (!isUserLoading) {
       setLocation("/login");
     }
   }, [user, profileForm, isUserLoading, setLocation]);
 
+  // ----- mutations -----
   const updateProfileMutation = useMutation({
-    mutationFn: (values: any) => apiRequest("/api/auth/me", { method: "PATCH", body: JSON.stringify(values) }),
+    mutationFn: (values: z.infer<typeof profileSchema>) =>
+      apiRequest("/api/auth/me", { method: "PATCH", body: JSON.stringify({ name: values.name, phone: values.phone }) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      toast({ title: "تم التحديث", description: "تم تحديث بياناتك الشخصية بنجاح." });
+      toast({ title: "تم الحفظ", description: "تم تحديث بياناتك بنجاح." });
     },
-    onError: (error: any) => toast({ title: "خطأ", description: error.message, variant: "destructive" }),
+    onError: (error: any) => toast({ title: "تعذر الحفظ", description: error.message, variant: "destructive" }),
   });
 
-  const markNotificationReadMutation = useMutation({
-    mutationFn: (orderId: string) => apiRequest(`/api/orders/${orderId}/read-notification`, { method: "POST" }),
+  const changePasswordMutation = useMutation({
+    mutationFn: (values: z.infer<typeof passwordSchema>) =>
+      apiRequest("/api/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: values.currentPassword, newPassword: values.newPassword }),
+      }),
+    onSuccess: () => {
+      toast({ title: "تم تغيير كلمة السر", description: "تم تسجيل خروج أجهزتك الأخرى للأمان." });
+      passwordForm.reset();
+    },
+    onError: (error: any) => toast({ title: "تعذر تغيير كلمة السر", description: error.message, variant: "destructive" }),
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: (orderId: string) => apiRequest(`/api/orders/${orderId}/close`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders/me"] });
+      toast({ title: "تم إلغاء الطلب" });
     },
+    onError: (error: any) => toast({ title: "تعذر إلغاء الطلب", description: error.message, variant: "destructive" }),
   });
 
-  const handleTrackClick = (order: any) => {
+  const markSeenMutation = useMutation({
+    mutationFn: (orderId: string) => apiRequest(`/api/orders/${orderId}/read-notification`, { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/orders/me"] }),
+  });
+
+  // ----- actions -----
+  const openOrder = (order: Order) => {
     setSelectedOrder(order);
-    setIsTrackOpen(true);
-    if (order.hasNewNotification) {
-      markNotificationReadMutation.mutate(order.id);
-    }
+    if (order.hasNewNotification) markSeenMutation.mutate(order.id);
   };
 
-  const handleEnableBiometrics = async () => {
+  /** Put the same products (and quantities / sizes) back in the cart. */
+  const reorder = async (order: Order) => {
+    const items = parseItems(order);
+    if (items.length === 0) return;
+    setReorderingId(order.id);
+    let added = 0;
+    for (const item of items) {
+      try {
+        await apiRequest("/api/cart", {
+          method: "POST",
+          body: JSON.stringify({ productId: item.id, quantity: item.quantity || 1, size: item.size || undefined }),
+        });
+        added++;
+      } catch {
+        // product no longer available — skip it
+      }
+    }
+    setReorderingId(null);
+    queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    if (added === 0) {
+      toast({ title: "المنتجات غير متوفرة حالياً", description: "لم نتمكن من إضافة منتجات هذا الطلب للسلة.", variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "أُضيفت المنتجات للسلة",
+      description: added < items.length ? `أُضيف ${added} من ${items.length} — بعض المنتجات غير متوفرة حالياً.` : undefined,
+    });
+    setLocation("/cart");
+  };
+
+  const enableBiometrics = async () => {
+    if (!user) return;
+    if (!window.PublicKeyCredential) {
+      toast({ title: "غير مدعوم", description: "جهازك أو متصفحك لا يدعم الدخول بالبصمة.", variant: "destructive" });
+      return;
+    }
     try {
       setIsBiometricLoading(true);
-      if (!window.PublicKeyCredential) {
-        toast({
-          title: "غير مدعوم",
-          description: "جهازك أو متصفحك لا يدعم السمات الحيوية (WebAuthn).",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
-      
-      if (!user) return;
-      const userIdBuffer = new TextEncoder().encode(user.id);
-      
-      // We use a shorter timeout and more specific options to prevent "hanging"
       const credential = await navigator.credentials.create({
         publicKey: {
-          challenge: challenge,
-          rp: { 
-            name: "الراقي للمنتجات الغذائية"
-          },
-          user: {
-            id: userIdBuffer,
-            name: user?.email || "user",
-            displayName: user?.name || "User",
-          },
-          pubKeyCredParams: [
-            { alg: -7, type: "public-key" }, // ES256
-            { alg: -257, type: "public-key" } // RS256
-          ],
-          authenticatorSelection: {
-            userVerification: "required",
-            residentKey: "preferred",
-            requireResidentKey: false,
-          },
+          challenge,
+          rp: { name: "الراقي للمنتجات الغذائية" },
+          user: { id: new TextEncoder().encode(user.id), name: user.email || "user", displayName: user.name || "User" },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+          authenticatorSelection: { userVerification: "required", residentKey: "preferred", requireResidentKey: false },
           timeout: 60000,
-          attestation: "none", 
-        }
+          attestation: "none",
+        },
       });
-
       if (credential) {
         // The server generates a strong random device secret and stores only its hash
-        const result = await apiRequest("/api/auth/biometric/enable", {
-          method: "POST",
-          body: JSON.stringify({}),
-        });
-
-        localStorage.setItem("alraqi_biometric_email", user?.email || "");
+        const result = await apiRequest("/api/auth/biometric/enable", { method: "POST", body: JSON.stringify({}) });
+        localStorage.setItem("alraqi_biometric_email", user.email || "");
         localStorage.setItem("alraqi_biometric_token", result.deviceToken);
-
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-        toast({ title: "تم التفعيل", description: "تم تفعيل الدخول بالبصمة/الوجه بنجاح لهذا الجهاز." });
+        toast({ title: "تم التفعيل", description: "يمكنك الآن الدخول بالبصمة أو الوجه من هذا الجهاز." });
       }
     } catch (error: any) {
-      console.error(error);
-      // Don't toast if the user just cancelled
-      if (error.name !== "NotAllowedError" && error.name !== "AbortError") {
-        toast({
-          title: "فشل التفعيل",
-          description: error.message || "تعذر إكمال عملية التحقق",
-          variant: "destructive",
-        });
+      if (error?.name !== "NotAllowedError" && error?.name !== "AbortError") {
+        toast({ title: "تعذر التفعيل", description: error?.message || "تعذر إكمال عملية التحقق", variant: "destructive" });
       }
     } finally {
       setIsBiometricLoading(false);
     }
   };
 
-  const handleReorder = async (itemsJson: string) => {
-    try {
-      const items = JSON.parse(itemsJson);
-      for (const item of items) {
-        await addToCartMutation.mutateAsync(item.id);
-      }
-      toast({ title: "تمت إعادة الطلب", description: "تمت إضافة كافة المنتجات إلى سلتك." });
-      setLocation("/cart");
-    } catch (e) {
-      toast({ title: "خطأ", description: "حدث خطأ أثناء إضافة المنتجات للسلة.", variant: "destructive" });
-    }
-  };
-
+  // ----- render -----
   if (isUserLoading) {
     return (
-      <div className="flex min-h-screen flex-col bg-muted/40">
+      <div className="flex min-h-screen flex-col bg-background">
         <Navbar />
         <div className="flex flex-1 items-center justify-center p-20">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
-        <Footer />
       </div>
     );
   }
-
   if (!user) return null;
 
+  const memberSince = (user as any).createdAt ? formatDate((user as any).createdAt, false) : null;
+  const initial = (user.name || user.email || "؟").trim().charAt(0);
+  const isGoogle = user.authProvider === "google";
+
+  const tabs: Array<{ id: Tab; label: string; icon: any; dot?: boolean }> = [
+    { id: "orders", label: "طلباتي", icon: ShoppingBag, dot: hasUpdates },
+    { id: "account", label: "بياناتي", icon: UserIcon },
+    { id: "security", label: "الأمان", icon: ShieldCheck },
+  ];
+
   return (
-    <div className="flex min-h-screen flex-col bg-muted/40" dir="rtl">
+    <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
-      
-      <div className="bg-card border-b sticky top-0 z-40 md:relative">
-         <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-               <div className="flex items-center gap-5 w-full md:w-auto">
-                  <div className="h-20 w-20 md:h-24 md:w-24 rounded-full border-4 border-primary/10 shadow-xl overflow-hidden bg-primary/5 flex items-center justify-center text-4xl font-black text-primary hover:scale-105 transition-transform cursor-pointer">
-                    {user.avatar ? <img src={user.avatar} className="h-full w-full object-cover" /> : user.name?.charAt(0) || "U"}
-                  </div>
-                  <div className="text-right flex-1">
-                     <h1 className="text-2xl md:text-3xl font-black text-foreground leading-tight">{user.name || "مرحباً بك"}</h1>
-                     <p className="text-muted-foreground font-bold text-sm">{user.email}</p>
-                     <div className="flex gap-2 mt-3 overflow-x-auto pb-1 invisible-scrollbar">
-                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-emerald-500/10 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-black text-emerald-600 border border-emerald-500/20">
-                           <ShieldCheck className="h-3 w-3 md:h-4 md:w-4" /> عضو بلاتيني
-                        </div>
-                        <div className="flex-shrink-0 flex items-center gap-1.5 bg-primary/5 px-3 py-1.5 rounded-full text-[10px] md:text-xs font-black text-primary border border-primary/10">
-                           <ShoppingBag className="h-3 w-3 md:h-4 md:w-4" /> {ordersQuery.data?.length || 0} طلبات
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               
-               <div className="hidden md:flex items-center gap-3">
-                  <Button variant="outline" className="rounded-2xl font-black h-12 px-6 border-2 hover:bg-muted/50" onClick={() => setLocation("/")}>العودة للتسوق <ChevronLeft className="h-5 w-5 rotate-180 mr-2" /></Button>
-               </div>
+
+      <main className="container mx-auto max-w-4xl flex-1 px-4 py-5 md:py-10 space-y-5 md:space-y-6">
+        {/* ---------- Header ---------- */}
+        <section className="rounded-3xl border border-border bg-card p-5 md:p-7 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden rounded-full border-2 border-primary/20 bg-primary/10 flex items-center justify-center text-2xl md:text-3xl font-black text-primary">
+              {user.avatar ? <img src={user.avatar} alt="" className="h-full w-full object-cover" /> : initial}
             </div>
-         </div>
-      </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl md:text-2xl font-black text-foreground truncate">{user.name || "مرحباً بك"}</h1>
+              <p className="text-sm text-muted-foreground truncate" dir="ltr" style={{ textAlign: "right" }}>{user.email}</p>
+              {memberSince && (
+                <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  عضو منذ {memberSince}
+                </p>
+              )}
+            </div>
+          </div>
 
-      <main className="container mx-auto flex-1 px-4 py-6 md:py-10">
-         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <aside className="w-full lg:w-80 space-y-4">
-                   <div className="bg-card rounded-[2.5rem] p-8 shadow-sm border border-border overflow-hidden relative">
-                      <div className="flex items-center gap-5 mb-8">
-                         <div className="h-16 w-16 rounded-[1.5rem] bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                            <UserIcon className="h-8 w-8" />
-                         </div>
-                         <div className="text-right">
-                            <h2 className="font-black text-xl text-foreground leading-tight">{user.name}</h2>
-                            <p className="text-sm font-bold text-muted-foreground/70">عميل الراقي المميز</p>
-                         </div>
-                     </div>
+          <div className="mt-5 grid grid-cols-3 gap-2 md:gap-3">
+            {[
+              { label: "الطلبات", value: stats.total.toLocaleString(DATE_LOCALE), icon: Receipt },
+              { label: "قيد التنفيذ", value: stats.active.toLocaleString(DATE_LOCALE), icon: Clock },
+              { label: "مشترياتك (ج.س)", value: stats.spent.toLocaleString(DATE_LOCALE), icon: Wallet },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl bg-muted/60 px-3 py-3 text-center">
+                <s.icon className="mx-auto mb-1 h-4 w-4 text-primary" />
+                <p className="font-mono text-sm md:text-lg font-black text-foreground leading-tight truncate">{s.value}</p>
+                <p className="text-[11px] md:text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-                      <nav className="space-y-1">
-                         {[
-                            { id: "orders", label: "طلباتي", icon: ShoppingBag, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status !== 'cancelled') },
-                            { id: "wallet", label: "المحفظة", icon: Wallet },
-                            { id: "profile", label: "البيانات الشخصية", icon: Settings },
-                            { id: "password", label: "كلمة السر", icon: Key },
-                             { id: "orderHistory", label: "الطلبات الملغية", icon: HistoryIcon, hasNtf: ordersQuery.data?.some((o: any) => o.hasNewNotification && o.status === 'cancelled') },
-                            { id: "settings", label: "الأمان", icon: ShieldCheck },
-                         ].map((tab) => (
-                            <button
-                               key={tab.id}
-                               onClick={() => setActiveTab(tab.id)}
-                               className={cn(
-                                  "w-full flex items-center justify-between p-4 rounded-2xl transition-all font-black relative group",
-                                  activeTab === tab.id 
-                                     ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]" 
-                                     : "text-muted-foreground hover:bg-muted/50"
-                               )}
-                            >
-                               <div className="flex items-center gap-4">
-                                  <tab.icon className={cn("h-5 w-5", activeTab === tab.id ? "text-white" : "text-muted-foreground/70 group-hover:text-primary")} />
-                                  <span>{tab.label}</span>
-                               </div>
-                               {tab.hasNtf && (
-                                  <div className="h-2.5 w-2.5 rounded-full bg-rose-500 ring-4 ring-rose-500/20 animate-pulse" />
-                               )}
-                               {activeTab === tab.id && <ChevronLeft className="h-5 w-5 opacity-50" />}
-                            </button>
-                         ))}
-                      </nav>
-                   </div>
-                  <button onClick={() => logoutMutation.mutate()} className="flex items-center gap-4 px-6 py-4 rounded-2xl font-black text-rose-600 hover:bg-rose-500/10 transition-all mt-6"><LogOut className="h-5 w-5 text-rose-400" /> تسجيل الخروج</button>
-               </aside>
+        {/* ---------- Tabs ---------- */}
+        <nav className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-card p-1 shadow-sm" role="tablist">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "relative flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-colors",
+                tab === t.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted/60",
+              )}
+            >
+              <t.icon className="h-4 w-4" />
+              {t.label}
+              {t.dot && tab !== t.id && <span className="absolute top-2 left-3 h-2 w-2 rounded-full bg-destructive" />}
+            </button>
+          ))}
+        </nav>
 
-                <div className="flex md:hidden items-center justify-between gap-2 overflow-x-auto pb-4 invisible-scrollbar sticky top-[80px] z-30 bg-muted/40">
-                  {[
-                    { id: "orders", label: "طلباتي", icon: ShoppingBag },
-                     { id: "orderHistory", label: "ملغية", icon: HistoryIcon },
-                    { id: "profile", label: "الملف", icon: UserCog },
-                    { id: "password", label: "كلمة السر", icon: Settings },
-                    { id: "settings", label: "الأمان", icon: ShieldCheck }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={cn(
-                        "flex-1 min-w-[70px] flex flex-col items-center justify-center p-3 rounded-2xl font-black text-[10px] transition-all whitespace-nowrap",
-                        activeTab === item.id ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" : "bg-card text-muted-foreground shadow-sm"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 mb-1" />
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+        {/* ---------- Orders ---------- */}
+        {tab === "orders" && (
+          <section className="space-y-4">
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+              {([
+                ["all", "الكل"],
+                ["active", "الحالية"],
+                ["completed", "المكتملة"],
+                ["cancelled", "الملغية"],
+              ] as Array<[OrderFilter, string]>).map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setOrderFilter(id)}
+                  className={cn(
+                    "shrink-0 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors",
+                    orderFilter === id ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                  <span className="mr-1.5 font-mono text-xs opacity-70">{filterCounts[id]}</span>
+                </button>
+              ))}
+            </div>
 
-            <div className="lg:col-span-9 space-y-6">
-               {activeTab === "orders" && (
-                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between mb-4">
-                       <h2 className="text-xl md:text-2xl font-black text-foreground">سجل طلباتي</h2>
-                       <Search className="h-5 w-5 text-muted-foreground/70 cursor-pointer hover:text-primary transition-colors" />
-                    </div>
-
-                    {ordersQuery.isLoading ? (
-                      <div className="flex flex-col items-center py-20 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="font-bold text-muted-foreground">جاري استرجاع طلباتك...</p></div>
-                    ) : ordersQuery.data?.filter((order: any) => order.status !== "cancelled").length ? (
-                      <div className="grid gap-5">
-                         {ordersQuery.data.filter((order: any) => order.status !== "cancelled").map((order: any) => {
-                            const status = statusData[order.status] || statusData.pending;
-                            const items = JSON.parse(order.items || "[]");
-                            return (
-                              <Card key={order.id} className="border-none shadow-sm md:shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-visible rounded-[2rem] bg-card group transition-all duration-300 relative">
-                                 {/* "Red Mark" Close Button (Top Left in RTL) */}
-                                 {order.status === "pending" && (
-                                   <button 
-                                      onClick={() => closeOrderMutation.mutate(order.id)}
-                                      className="absolute -top-3 -right-3 md:top-4 md:right-4 z-20 h-8 w-8 md:h-10 md:w-10 bg-card border-2 border-rose-500/20 text-rose-500 rounded-full flex items-center justify-center shadow-lg hover:bg-rose-500 hover:text-white transition-all transform hover:rotate-90"
-                                      title="إغلاق / إلغاء الطلب"
-                                   >
-
-                                      <XCircle className="h-5 w-5 md:h-6 md:w-6" />
-                                   </button>
-                                 )}
-
-                                 <div className="flex flex-col">
-                                    <div className="p-5 md:p-6 flex items-center justify-between border-b border-border">
-                                       <div className="flex items-center gap-3">
-                                          <div className={cn("p-2.5 rounded-2xl", status.bg)}>
-                                             <status.icon className={cn("h-5 w-5", status.color)} />
-                                          </div>
-                                          <div>
-                                             <div className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-widest">{formatOrderDate(order.createdAt)}</div>
-                                             <h3 className="font-black text-foreground">طلب #{order.id.slice(0, 8).toUpperCase()}</h3>
-                                          </div>
-                                       </div>
-                                       <Badge className={cn("px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black border", status.bg, status.color, status.border)}>
-                                          {status.label}
-                                       </Badge>
-                                    </div>
-
-                                    <div className="p-5 md:p-6">
-                                       <div className="flex flex-wrap items-center justify-between gap-3">
-                                           <div className="flex items-center gap-4">
-                                              <div className="text-right">
-                                                 <p className="text-[10px] font-bold text-muted-foreground/70 mb-1">إجمالي المبلغ</p>
-                                                 <p className="text-lg md:text-xl font-black text-primary">{formatPrice(order.total)}</p>
-                                              </div>
-                                              {order.hasNewNotification && (
-                                                <div className="flex items-center gap-2 bg-rose-500/10 px-3 py-1.5 rounded-full text-rose-500 animate-pulse">
-                                                  <Bell className="h-3 w-3" />
-                                                  <span className="text-[10px] font-black">تحديث جديد!</span>
-                                                </div>
-                                              )}
-                                           </div>
-                                          <div className="flex flex-wrap gap-2">
-                                             <Button 
-                                                size="sm" 
-                                                className="rounded-full font-black px-4 md:px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
-                                                onClick={() => handleTrackClick(order)}
-                                             >
-                                                تفاصيل الطلب <FileText className="h-4 w-4 mr-1.5" />
-                                              </Button>
-                                              <Button 
-                                                 size="sm" 
-                                                 variant="outline" 
-                                                 className="rounded-full font-black px-4 md:px-6 h-10 border-2"
-                                                 onClick={() => handleReorder(order.items)}
-                                              >
-                                                 إعادة طلب <RotateCcw className="h-4 w-4 mr-1.5 text-primary" />
-                                              </Button>
-                                           </div>
-                                        </div>
-                                     </div>
-                                  </div>
-                               </Card>
-                             )
-                          })}
-                      </div>
-
-                    ) : (
-                      <div className="bg-card rounded-[2rem] p-16 text-center shadow-lg shadow-gray-100 animate-in zoom-in-95">
-                         <div className="bg-primary/5 h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
-                            <ShoppingBag className="h-12 w-12 text-primary/40" />
-                         </div>
-                         <h3 className="text-2xl font-black text-foreground mb-3">سجل طلباتك خالي حالياً</h3>
-                         <p className="text-muted-foreground mb-10 max-w-sm mx-auto font-medium">ابدأ الآن رحلة تسوق ممتعة واستمتع بأفضل المنتجات السودانية الأصيلة.</p>
-                         <Button onClick={() => setLocation("/shop")} className="rounded-full px-10 h-14 text-lg font-black shadow-xl shadow-primary/20">ابدأ التسوق الآن <ArrowRight className="h-5 w-5 mr-2 rotate-180" /></Button>
-                      </div>
-                    )}
-                 </div>
-               )}
-
-               {activeTab === "profile" && (
-                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <h2 className="text-2xl font-black text-foreground">البيانات الشخصية</h2>
-                    <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-card">
-                       <Form {...profileForm}>
-                          <form onSubmit={profileForm.handleSubmit((v) => updateProfileMutation.mutate(v))} className="space-y-6">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={profileForm.control} name="name" render={({ field }) => (
-                                   <FormItem><FormLabel className="font-bold pr-2">الاسم الكامل</FormLabel><FormControl><Input {...field} className="h-14 rounded-2xl bg-muted/50 border-none text-right font-black focus-visible:ring-primary/20" /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={profileForm.control} name="phone" render={({ field }) => (
-                                   <FormItem><FormLabel className="font-bold pr-2">رقم الموبايل</FormLabel><FormControl><Input {...field} className="h-14 rounded-2xl bg-muted/50 border-none text-right font-black focus-visible:ring-primary/20" /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={profileForm.control} name="email" render={({ field }) => (
-                                   <FormItem className="md:col-span-2"><FormLabel className="font-bold pr-2">البريد الإلكتروني</FormLabel><FormControl><Input {...field} disabled className="h-14 rounded-2xl bg-muted border-none text-right font-black opacity-70" /></FormControl><FormMessage /></FormItem>
-                                )} />
-                             </div>
-                             <Button type="submit" className="w-full md:w-auto rounded-full px-12 h-14 font-black text-lg shadow-xl shadow-primary/10" disabled={updateProfileMutation.isPending}>
-                                {updateProfileMutation.isPending ? "جاري الحفظ..." : "تحديث البيانات"}
-                             </Button>
-                          </form>
-                       </Form>
-                    </Card>
-                 </div>
-               )}
-               
-               {activeTab === "wallet" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                     <h2 className="text-2xl font-black text-foreground">محفظتك</h2>
-                     <Card className="border-none bg-gradient-to-br from-primary to-secondary text-white p-10 rounded-[2.5rem] shadow-2xl shadow-primary/20 relative overflow-hidden">
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-                        <div className="relative z-10">
-                           <div className="flex items-center gap-3 mb-8 opacity-90"><Wallet className="h-6 w-6" /><span className="font-bold text-sm tracking-widest uppercase">الرصيد المتاح</span></div>
-                           <h3 className="text-5xl font-black mb-10 tracking-tighter">0.00 <span className="text-lg opacity-80">ج.س</span></h3>
-                           <div className="flex flex-wrap gap-4">
-                              <Button className="bg-card text-primary hover:bg-card/90 rounded-full font-black px-8 h-12 shadow-lg">تعريف الحساب</Button>
-                              <Button className="bg-white/10 hover:bg-white/20 text-white border-white/20 rounded-full font-black px-8 h-12">سجل العمليات</Button>
-                           </div>
-                        </div>
-                     </Card>
-                  </div>
-               )}
-
-               {activeTab === "settings" && (
-                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <h2 className="text-2xl font-black text-foreground">إعدادات الحساب والأمان</h2>
-                    <Card className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-card">
-                      <CardHeader className="bg-muted/50/50 border-b p-8">
-                        <CardTitle className="text-xl font-black flex items-center gap-3">
-                          <ShieldCheck className="h-6 w-6 text-primary" />
-                          الأمان والسمات الحيوية
-                        </CardTitle>
-                        <CardDescription className="text-muted-foreground font-bold">
-                          قم بتفعيل الدخول السريع عبر بصمة الإصبع أو التعرف على الوجه
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-8">
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-[1.5rem] bg-muted/50 border-2 border-dashed border-border">
-                          <div className="flex items-center gap-4 text-right">
-                            <div className={cn(
-                              "h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg transition-all",
-                              user.biometricEnabled ? "bg-primary text-white" : "bg-card text-muted-foreground/70"
-                            )}>
-                              <Fingerprint className="h-8 w-8" />
-                            </div>
-                            <div>
-                              <h3 className="font-black text-foreground">الدخول بالبصمة / الوجه</h3>
-                              <p className="text-sm text-muted-foreground font-bold">
-                                {user.biometricEnabled ? "مفعل على هذا الحساب" : "غير مفعل حالياً"}
-                              </p>
-                            </div>
-                          </div>
-                          <Button 
-                            onClick={() => handleEnableBiometrics()}
-                            variant={user.biometricEnabled ? "outline" : "default"}
-                            className="rounded-full px-8 h-12 font-black shadow-lg"
-                            disabled={isBiometricLoading}
-                          >
-                            {isBiometricLoading ? (
-                              <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري التفعيل...</>
-                            ) : (
-                              user.biometricEnabled ? "إعادة ضبط البصمة" : "تفعيل الآن"
+            {ordersQuery.isLoading ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                جاري تحميل طلباتك...
+              </div>
+            ) : visibleOrders.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-border bg-card px-6 py-14 text-center">
+                <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-primary/40" />
+                <h3 className="text-lg font-black text-foreground">
+                  {orders.length === 0 ? "لم تطلب أي شيء بعد" : "لا توجد طلبات هنا"}
+                </h3>
+                <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">
+                  {orders.length === 0 ? "تصفح منتجاتنا السودانية الأصيلة واطلب ما يعجبك." : "جرّب تصنيفاً آخر من الأعلى."}
+                </p>
+                {orders.length === 0 && (
+                  <Button className="mt-6 rounded-full px-8" onClick={() => setLocation("/shop")}>تسوق الآن</Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {visibleOrders.map((order) => {
+                  const items = parseItems(order);
+                  const summary = items.slice(0, 2).map((i) => `${i.name} × ${i.quantity}`).join("، ");
+                  const more = items.length - 2;
+                  return (
+                    <article key={order.id} className="rounded-3xl border border-border bg-card p-4 md:p-5 shadow-sm">
+                      <header className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-black text-foreground">طلب <span className="font-mono">#{orderNumber(order)}</span></h3>
+                            {order.hasNewNotification && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-bold text-destructive">
+                                <BellDot className="h-3 w-3" /> تحديث
+                              </span>
                             )}
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(order.createdAt)}</p>
+                        </div>
+                        <StatusChip status={order.status} />
+                      </header>
+
+                      {order.status !== "cancelled" && (
+                        <div className="mt-4"><OrderProgress status={order.status} /></div>
+                      )}
+
+                      {items.length > 0 && (
+                        <p className="mt-3 text-sm text-muted-foreground line-clamp-1">
+                          {summary}{more > 0 && ` و${more} ${more === 1 ? "منتج آخر" : "منتجات أخرى"}`}
+                        </p>
+                      )}
+
+                      <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                        <p className="font-mono text-lg font-black text-primary">{formatPrice(order.total)}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {order.status === "pending" && (
+                            <Button size="sm" variant="ghost" className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setOrderToCancel(order)}>
+                              إلغاء
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" className="rounded-full gap-1.5" disabled={reorderingId === order.id} onClick={() => reorder(order)}>
+                            {reorderingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                            اطلبه مجدداً
+                          </Button>
+                          <Button size="sm" className="rounded-full gap-1" onClick={() => openOrder(order)}>
+                            التفاصيل
+                            <ChevronLeft className="h-4 w-4" />
                           </Button>
                         </div>
+                      </footer>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
 
-                        <div className="mt-8 p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 flex items-start gap-3">
-                          <CheckCircle2 className="h-5 w-5 text-amber-600 mt-0.5" />
-                          <p className="text-xs text-amber-700 font-bold leading-relaxed">
-                            ملاحظة: تفعيل السمات الحيوية يعتمد على تقنية WebAuthn وسيعمل فقط على هذا المتصفح/الجهاز الذي تقوم بتفعيله منه حالياً.
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
+        {/* ---------- Account ---------- */}
+        {tab === "account" && (
+          <section className="rounded-3xl border border-border bg-card p-5 md:p-7 shadow-sm">
+            <h2 className="text-lg font-black text-foreground">بياناتي</h2>
+            <p className="mb-5 text-sm text-muted-foreground">تُستخدم لتعبئة طلباتك تلقائياً والتواصل معك بشأن التوصيل.</p>
+            <Form {...profileForm}>
+              <form onSubmit={profileForm.handleSubmit((v) => updateProfileMutation.mutate(v))} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FormField control={profileForm.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الاسم الكامل</FormLabel>
+                      <FormControl><Input {...field} className={inputClass} autoComplete="name" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={profileForm.control} name="phone" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الهاتف</FormLabel>
+                      <FormControl><Input {...field} className={inputClass} inputMode="tel" autoComplete="tel" dir="ltr" style={{ textAlign: "right" }} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+                <FormField control={profileForm.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
+                    <FormControl><Input {...field} disabled className={cn(inputClass, "opacity-70")} dir="ltr" style={{ textAlign: "right" }} /></FormControl>
+                    <p className="text-xs text-muted-foreground">البريد الإلكتروني هو اسم الدخول لحسابك ولا يمكن تغييره من هنا.</p>
+                  </FormItem>
+                )} />
+                <Button type="submit" className="h-11 w-full rounded-xl md:w-auto md:px-10" disabled={updateProfileMutation.isPending || !profileForm.formState.isDirty}>
+                  {updateProfileMutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
+                </Button>
+              </form>
+            </Form>
+          </section>
+        )}
 
-                    <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-card border-t-4 border-t-rose-500">
-                       <h3 className="text-xl font-black text-rose-600 mb-2">منطقة الخطر</h3>
-                       <p className="text-muted-foreground font-bold mb-6">حذف الحساب سيؤدي إلى فقدان جميع بياناتك وطلباتك بشكل نهائي.</p>
-                       <Button variant="destructive" className="rounded-full px-8 h-12 font-black">حذف الحساب نهائياً</Button>
-                    </Card>
-                  </div>
-               )}
-
-               {/* Change Password Tab */}
-               {activeTab === "password" && (
-                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                   <h2 className="text-2xl font-black text-foreground">تغيير كلمة السر</h2>
-                   <Card className="border-none shadow-sm p-8 rounded-[2rem] bg-card">
-                     <Form {...passwordForm}>
-                       <form onSubmit={passwordForm.handleSubmit((v) => changePasswordMutation.mutate(v))} className="space-y-6">
-                         <FormField control={passwordForm.control} name="currentPassword" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel className="font-bold pr-2">كلمة السر الحالية</FormLabel>
-                             <FormControl>
-                               <Input type="password" {...field} className="h-14 rounded-2xl bg-muted/50 border-none text-right font-black focus-visible:ring-primary/20" />
-                             </FormControl>
-                             <FormMessage />
-                           </FormItem>
-                         )} />
-                         <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel className="font-bold pr-2">كلمة السر الجديدة</FormLabel>
-                             <FormControl>
-                               <Input type="password" {...field} className="h-14 rounded-2xl bg-muted/50 border-none text-right font-black focus-visible:ring-primary/20" />
-                             </FormControl>
-                             <FormMessage />
-                           </FormItem>
-                         )} />
-                         <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
-                           <FormItem>
-                             <FormLabel className="font-bold pr-2">تأكيد كلمة السر</FormLabel>
-                             <FormControl>
-                               <Input type="password" {...field} className="h-14 rounded-2xl bg-muted/50 border-none text-right font-black focus-visible:ring-primary/20" />
-                             </FormControl>
-                             <FormMessage />
-                           </FormItem>
-                         )} />
-                         <Button type="submit" className="w-full md:w-auto rounded-full px-12 h-14 font-black text-lg shadow-xl shadow-primary/10" disabled={changePasswordMutation.isPending}>
-                           {changePasswordMutation.isPending ? "جاري الحفظ..." : "تغيير كلمة السر"}
-                         </Button>
-                       </form>
-                     </Form>
-                   </Card>
-                 </div>
-               )}
-
-                {/* Cancelled Order History */}
-                {activeTab === "orderHistory" && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="flex items-center justify-between mb-4">
-                       <h2 className="text-xl md:text-2xl font-black text-foreground">سجل الطلبات الملغية</h2>
-                       <HistoryIcon className="h-5 w-5 text-muted-foreground/70" />
+        {/* ---------- Security ---------- */}
+        {tab === "security" && (
+          <section className="space-y-4">
+            <div className="rounded-3xl border border-border bg-card p-5 md:p-7 shadow-sm">
+              <h2 className="flex items-center gap-2 text-lg font-black text-foreground">
+                <KeyRound className="h-5 w-5 text-primary" />
+                كلمة السر
+              </h2>
+              {isGoogle ? (
+                <p className="mt-2 text-sm text-muted-foreground">حسابك مرتبط بحساب Google، فتسجيل الدخول يتم عبر Google ولا تحتاج كلمة سر للمتجر.</p>
+              ) : (
+                <Form {...passwordForm}>
+                  <form onSubmit={passwordForm.handleSubmit((v) => changePasswordMutation.mutate(v))} className="mt-4 space-y-4">
+                    <FormField control={passwordForm.control} name="currentPassword" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>كلمة السر الحالية</FormLabel>
+                        <FormControl><Input type="password" {...field} className={inputClass} autoComplete="current-password" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <FormField control={passwordForm.control} name="newPassword" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>كلمة السر الجديدة</FormLabel>
+                          <FormControl><Input type="password" {...field} className={inputClass} autoComplete="new-password" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={passwordForm.control} name="confirmPassword" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>تأكيد كلمة السر</FormLabel>
+                          <FormControl><Input type="password" {...field} className={inputClass} autoComplete="new-password" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
-
-                    {ordersQuery.isLoading ? (
-                      <div className="flex flex-col items-center py-20 gap-4"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="font-bold text-muted-foreground">جاري تحميل سجل المحفوظات...</p></div>
-                    ) : (ordersQuery.data || []).filter((order: any) => order.status === "cancelled").length ? (
-                      <div className="grid gap-5">
-                         {ordersQuery.data?.filter((order: any) => order.status === "cancelled").map((order: any) => {
-                            const s = statusData[order.status] || statusData.cancelled;
-                            return (
-                              <Card key={order.id} className="border-none shadow-sm overflow-hidden rounded-[2rem] bg-card border-r-4 border-r-rose-400">
-                                 <div className="p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-center gap-4">
-                                       <div className="h-12 w-12 rounded-2xl bg-rose-500/10 flex items-center justify-center">
-                                          <XCircle className="h-6 w-6 text-rose-500" />
-                                       </div>
-                                       <div>
-                                          <div className="text-[10px] font-bold text-muted-foreground/70">{formatOrderDate(order.createdAt)}</div>
-                                          <h3 className="font-black text-foreground leading-none">طلب #{order.id.slice(0, 8).toUpperCase()}</h3>
-                                          <Badge className={cn("mt-2 px-3 py-0.5 rounded-full border-none font-black text-[10px]", s.color, "text-white")}>{s.label}</Badge>
-                                       </div>
-                                    </div>
-                                    <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-none pt-5 md:pt-0">
-                                       {order.hasNewNotification && (
-                                         <div className="flex items-center gap-2 bg-rose-500/10 px-3 py-1.5 rounded-full text-rose-500 animate-pulse">
-                                           <Bell className="h-3 w-3" />
-                                           <span className="text-[10px] font-black">تحديث جديد!</span>
-                                         </div>
-                                       )}
-                                       <div className="text-right shrink-0">
-                                          <p className="text-[10px] font-black text-muted-foreground/70 mb-0.5">الإجمالي كاش</p>
-                                          <p className="text-xl font-black text-primary">{formatPrice(order.total)}</p>
-                                       </div>
-                                       <Button 
-                                          size="sm" 
-                                          className="rounded-full font-black px-6 h-12 shadow-lg shadow-primary/10"
-                                          onClick={() => handleTrackClick(order)}
-                                       >
-                                          تتبع الطلب
-                                       </Button>
-                                    </div>
-                                 </div>
-                              </Card>
-                            )
-                          })}
-                      </div>
-                    ) : (
-                      <div className="bg-card rounded-[2rem] p-16 text-center shadow-lg shadow-gray-100/50">
-                          <HistoryIcon className="h-16 w-16 text-muted-foreground/40 mx-auto mb-4" />
-                         <h3 className="text-xl font-black text-foreground mb-2">لا توجد طلبات ملغية</h3>
-                         <p className="text-muted-foreground font-medium">سجلك نظيف جداً! لم تقم بإلغاء أي طلب مؤخراً.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
+                    <Button type="submit" className="h-11 w-full rounded-xl md:w-auto md:px-10" disabled={changePasswordMutation.isPending}>
+                      {changePasswordMutation.isPending ? "جاري الحفظ..." : "تغيير كلمة السر"}
+                    </Button>
+                  </form>
+                </Form>
+              )}
             </div>
-         </div>
+
+            <div className="flex flex-col gap-4 rounded-3xl border border-border bg-card p-5 md:flex-row md:items-center md:justify-between md:p-7 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", user.biometricEnabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                  <Fingerprint className="h-6 w-6" />
+                </span>
+                <div>
+                  <h2 className="font-black text-foreground">الدخول بالبصمة أو الوجه</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {user.biometricEnabled ? "مفعّل — يعمل على الجهاز الذي فعّلته منه." : "ادخل بسرعة من هذا الجهاز بدون كتابة كلمة السر."}
+                  </p>
+                </div>
+              </div>
+              <Button variant={user.biometricEnabled ? "outline" : "default"} className="h-11 rounded-xl md:px-8" onClick={enableBiometrics} disabled={isBiometricLoading}>
+                {isBiometricLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : user.biometricEnabled ? "إعادة الضبط على هذا الجهاز" : "تفعيل"}
+              </Button>
+            </div>
+
+            <Button
+              variant="outline"
+              className="h-12 w-full rounded-2xl gap-2 border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+            >
+              <LogOut className="h-4 w-4" />
+              تسجيل الخروج
+            </Button>
+          </section>
+        )}
       </main>
 
-      <Dialog open={isTrackOpen} onOpenChange={setIsTrackOpen}>
-         <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] p-0 overflow-hidden border-none w-[95vw] max-w-lg max-h-[90vh] flex flex-col hide-scrollbar">
-             {selectedOrder && (
-               <div className="flex flex-col h-full overflow-y-auto scrollbar-hide">
-                  <div className="bg-primary p-6 md:p-8 text-white relative shrink-0">
-                     <DialogClose className="absolute top-4 outline-none left-4 md:top-6 md:left-6 text-white/70 hover:text-white"><XCircle className="h-6 w-6 md:h-7 md:w-7" /></DialogClose>
-                     <h2 className="text-lg md:text-xl font-black mb-1 md:mb-2 opacity-80 text-right">تتبع طلبك</h2>
-                     <h3 className="text-2xl md:text-3xl font-black text-right">#{selectedOrder.id.slice(0, 8).toUpperCase()}</h3>
-                     <div className="flex items-center gap-2 mt-3 md:mt-4 bg-white/10 w-fit px-3 py-1.5 md:px-4 md:py-1.5 rounded-full text-[10px] md:text-xs font-bold capitalize ml-auto">
-                        {statusData[selectedOrder.status as keyof typeof statusData]?.icon && React.createElement(statusData[selectedOrder.status as keyof typeof statusData].icon, { className: "h-4 w-4" })} {selectedOrder.status === 'delivered' ? 'وصلت بسلام' : 'قيد المتابعة'}
-                     </div>
+      {/* ---------- Order details ---------- */}
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        {/* close (X) moved to the left so it does not cover the title in RTL */}
+        <DialogContent className="w-[95vw] max-w-lg max-h-[88vh] overflow-y-auto rounded-3xl p-0 [&>button]:left-4 [&>button]:right-auto">
+          {selectedOrder && (() => {
+            const items = parseItems(selectedOrder);
+            const itemsTotal = items.reduce((sum, i) => sum + (i.price || 0) * (i.quantity || 1), 0);
+            const delivery = Math.max(0, (selectedOrder.total || 0) - itemsTotal);
+            let timeline: Array<{ status: string; time: string }> = [];
+            try { timeline = JSON.parse(selectedOrder.statusTimeline || "[]"); } catch {}
+            if (timeline.length === 0) timeline = [{ status: selectedOrder.status, time: selectedOrder.createdAt || "" }];
+            return (
+              <>
+                <DialogHeader className="border-b border-border p-5 text-right">
+                  <div className="flex items-center justify-between gap-3 pl-6">
+                    <DialogTitle className="text-lg font-black">طلب <span className="font-mono">#{orderNumber(selectedOrder)}</span></DialogTitle>
+                    <StatusChip status={selectedOrder.status} />
                   </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-8 bg-card">
-                     <div className="space-y-6 md:space-y-8 relative before:absolute before:inset-y-0 before:right-6 md:before:right-7 before:w-0.5 before:bg-muted pb-2">
-                        {(() => {
-                           try {
-                              const timeline = JSON.parse(selectedOrder.statusTimeline || '[]');
-                              if (timeline.length === 0) {
-                                 const s = statusData[selectedOrder.status as keyof typeof statusData] || statusData.pending;
-                                 return (
-                                    <div className="flex items-start gap-4 md:gap-5 relative group">
-                                       <div className={cn("z-10 h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-lg", s.color)}>
-                                          <s.icon className="h-6 w-6 text-white" />
-                                       </div>
-                                       <div className="pt-1 text-right">
-                                          <h4 className="text-base font-black text-foreground leading-none mb-1">{s.label}</h4>
-                                          <p className="text-[10px] text-muted-foreground font-medium">{formatOrderDate(selectedOrder.createdAt)}</p>
-                                       </div>
-                                    </div>
-                                 );
-                              }
-                              return timeline.map((event: any, idx: number) => {
-                                 const s = statusData[event.status as keyof typeof statusData] || statusData.pending;
-                                 return (
-                                    <div key={idx} className="flex items-start gap-4 md:gap-5 relative group">
-                                       <div className={cn(
-                                          "z-10 h-14 w-14 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-lg",
-                                          idx === timeline.length - 1 ? `${s.color} text-white` : "bg-muted text-muted-foreground/70"
-                                       )}>
-                                          <s.icon className="h-6 w-6" />
-                                       </div>
-                                       <div className="pt-1 text-right">
-                                          <h4 className={cn("text-base font-black leading-none mb-1", idx === timeline.length - 1 ? "text-foreground" : "text-muted-foreground/70")}>{s.label}</h4>
-                                          <p className="text-[10px] text-muted-foreground font-medium">{formatOrderDate(event.time)}</p>
-                                       </div>
-                                    </div>
-                                 );
-                              });
-                           } catch (e) {
-                              return null;
-                           }
-                        })()}
-                     </div>
-                     
-                     <div className="mt-8 border-t pt-8">
-                       <h4 className="text-sm md:text-base font-black text-foreground mb-4 text-right">تفاصيل المنتجات:</h4>
-                       <div className="space-y-3">
-                         {(() => {
-                           try {
-                             const items = JSON.parse(selectedOrder.items || '[]');
-                             return items.map((item: any, idx: number) => (
-                               <div key={idx} className="flex items-center justify-between p-4 bg-muted/50 rounded-2xl border border-border">
-                                 <div className="text-right">
-                                   <p className="text-xs md:text-sm font-bold text-foreground">{item.name}</p>
-                                   <p className="text-[10px] md:text-xs text-muted-foreground mt-1">الكمية: {item.quantity}</p>
-                                 </div>
-                                 <p className="text-sm md:text-base font-black text-primary shrink-0 mr-2">{formatPrice(item.price)}</p>
-                               </div>
-                             ));
-                           } catch(e) {
-                             return <p className="text-muted-foreground text-xs md:text-sm">خطأ في عرض تفاصيل المنتجات.</p>;
-                           }
-                         })()}
-                       </div>
-                     </div>
-                     
-                     <div className="bg-muted/50 rounded-[2rem] p-6">
-                        <div className="flex items-center gap-3 mb-4 justify-end">
-                           <h4 className="text-sm md:text-base font-black text-foreground">عنوان التوصيل</h4>
-                           <MapPin className="h-5 w-5 text-primary" />
-                        </div>
-                        <p className="text-xs md:text-sm font-medium text-muted-foreground leading-relaxed text-right">{selectedOrder.address}</p>
-                     </div>
+                  <DialogDescription className="text-right">{formatDate(selectedOrder.createdAt)}</DialogDescription>
+                </DialogHeader>
 
-                     <Button className="w-full h-14 rounded-full font-black text-lg shadow-xl shadow-primary/20" onClick={() => setIsTrackOpen(false)}>إغلاق التفاصيل</Button>
+                <div className="space-y-5 p-5">
+                  {selectedOrder.status !== "cancelled" && <OrderProgress status={selectedOrder.status} />}
+
+                  {/* Timeline */}
+                  <div>
+                    <h4 className="mb-3 text-sm font-black text-foreground">سجل الحالة</h4>
+                    <ol className="relative space-y-4 border-r-2 border-border pr-5">
+                      {timeline.map((event, idx) => {
+                        const s = STATUS[event.status] || STATUS.pending;
+                        const last = idx === timeline.length - 1;
+                        return (
+                          <li key={idx} className="relative">
+                            <span className={cn("absolute -right-[29px] top-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2", last ? "border-primary bg-primary" : "border-border bg-card")} />
+                            <p className={cn("text-sm font-bold", last ? "text-foreground" : "text-muted-foreground")}>{s.label}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(event.time)}</p>
+                          </li>
+                        );
+                      })}
+                    </ol>
                   </div>
-               </div>
 
-            )}
-         </DialogContent>
+                  {/* Items */}
+                  <div>
+                    <h4 className="mb-2 text-sm font-black text-foreground">المنتجات</h4>
+                    <ul className="divide-y divide-border rounded-2xl border border-border">
+                      {items.map((item, idx) => (
+                        <li key={idx} className="flex items-center justify-between gap-3 px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-foreground">{item.name}{item.size ? ` (${item.size})` : ""}</p>
+                            <p className="font-mono text-xs text-muted-foreground">{item.quantity} × {formatPrice(item.price)}</p>
+                          </div>
+                          <p className="shrink-0 font-mono text-sm font-bold text-foreground">{formatPrice((item.price || 0) * (item.quantity || 1))}</p>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-3 space-y-1.5 px-1 text-sm">
+                      <div className="flex justify-between text-muted-foreground"><span>المنتجات</span><span className="font-mono">{formatPrice(itemsTotal)}</span></div>
+                      <div className="flex justify-between text-muted-foreground"><span>التوصيل</span><span className="font-mono">{delivery > 0 ? formatPrice(delivery) : "مجاني"}</span></div>
+                      <div className="flex justify-between border-t border-border pt-2 text-base font-black text-foreground"><span>الإجمالي</span><span className="font-mono text-primary">{formatPrice(selectedOrder.total)}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Delivery & payment */}
+                  <div className="space-y-2 rounded-2xl bg-muted/60 p-4 text-sm">
+                    <p className="flex items-start gap-2 text-foreground"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{selectedOrder.address || "—"}</p>
+                    {selectedOrder.phone && <p className="flex items-center gap-2 text-foreground"><Phone className="h-4 w-4 shrink-0 text-primary" /><span dir="ltr">{selectedOrder.phone}</span></p>}
+                    <p className="flex items-center gap-2 text-foreground"><Wallet className="h-4 w-4 shrink-0 text-primary" />{selectedOrder.paymentMethod === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام"}</p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="h-11 flex-1 rounded-xl gap-1.5" disabled={reorderingId === selectedOrder.id} onClick={() => reorder(selectedOrder)}>
+                      <RotateCcw className="h-4 w-4" /> اطلبه مجدداً
+                    </Button>
+                    <Button className="h-11 flex-1 rounded-xl" onClick={() => setSelectedOrder(null)}>تم</Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
       </Dialog>
-      
+
+      {/* ---------- Cancel confirmation ---------- */}
+      <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
+        <AlertDialogContent className="rounded-3xl text-right">
+          <AlertDialogHeader className="text-right sm:text-right">
+            <AlertDialogTitle>إلغاء الطلب {orderToCancel ? `#${orderNumber(orderToCancel)}` : ""}؟</AlertDialogTitle>
+            <AlertDialogDescription className="text-right">
+              سيتم إلغاء الطلب ولن يتم تجهيزه. يمكنك طلب المنتجات مرة أخرى في أي وقت.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:flex-row-reverse sm:justify-start">
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => orderToCancel && cancelOrderMutation.mutate(orderToCancel.id)}
+            >
+              نعم، ألغِ الطلب
+            </AlertDialogAction>
+            <AlertDialogCancel>تراجع</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Footer />
     </div>
   );
