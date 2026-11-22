@@ -68,7 +68,7 @@ export function CustomerService() {
       {/* Floating Action Button */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 h-12 w-12 md:h-16 md:w-16 rounded-full shadow-2xl z-40 hover:scale-110 transition-transform bg-primary hover:bg-primary/90 text-primary-foreground group border-4 border-white"
+        className="fixed bottom-[96px] right-4 md:bottom-6 md:right-6 h-12 w-12 md:h-16 md:w-16 rounded-full shadow-lg z-40 hover:scale-105 transition-transform bg-primary hover:bg-primary/90 text-primary-foreground group border-4 border-background"
         size="icon"
       >
         <Send className="h-6 w-6 md:h-8 md:w-8 -mr-1" />

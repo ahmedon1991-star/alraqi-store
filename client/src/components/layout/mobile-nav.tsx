@@ -1,53 +1,41 @@
-import { Home, LayoutGrid, ShoppingBag, User, Heart, Shield } from "lucide-react";
-import { Link, useLocation } from "wouter";
-import { Badge } from "@/components/ui/badge";
+import { Heart, Home, LayoutGrid, ShoppingBag, User } from "lucide-react";
+import { Link, useLocation, useSearch } from "wouter";
 import { useCartCount } from "@/hooks/use-cart";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCurrentUser } from "@/hooks/use-auth";
-import { getAdminToken } from "@/lib/api";
 import { CartSheet } from "@/components/layout/cart-sheet";
 import { cn } from "@/lib/utils";
 
+type Item = {
+  label: string;
+  icon: typeof Home;
+  href: string;
+  active: boolean;
+  count?: number;
+  isCart?: boolean;
+};
+
+/**
+ * Floating bottom navigation for phones: five equal items, the current one
+ * highlighted with a filled pill behind its icon.
+ */
 export function MobileNav() {
   const [location] = useLocation();
+  const search = useSearch();
   const cartCount = useCartCount();
   const { count: wishlistCount } = useWishlist();
   const { data: user } = useCurrentUser();
-  const adminToken = getAdminToken();
 
-  // Hide on admin routes
-  if (location.startsWith("/admin")) {
-    return null;
-  }
+  // The admin panel has its own layout
+  if (location.startsWith("/admin")) return null;
 
-  const navItems = [
-    {
-      label: "الرئيسية",
-      icon: Home,
-      href: "/",
-      active: location === "/",
-    },
-    {
-      label: "الأقسام",
-      icon: LayoutGrid,
-      href: "/shop",
-      active: location === "/shop" && !new URLSearchParams(window.location.search).get("wishlist"),
-    },
-    {
-      label: "المفضلة",
-      icon: Heart,
-      href: "/shop?wishlist=true",
-      active: new URLSearchParams(window.location.search).get("wishlist") === "true",
-      count: wishlistCount,
-    },
-    {
-      label: "السلة",
-      icon: ShoppingBag,
-      href: "/cart",
-      active: location === "/cart",
-      count: cartCount,
-      isCart: true,
-    },
+  const isWishlist = location === "/shop" && search.includes("wishlist=true");
+
+  const items: Item[] = [
+    { label: "الرئيسية", icon: Home, href: "/", active: location === "/" },
+    { label: "الأقسام", icon: LayoutGrid, href: "/shop", active: location === "/shop" && !isWishlist },
+    { label: "المفضلة", icon: Heart, href: "/shop?wishlist=true", active: isWishlist, count: wishlistCount },
+    { label: "السلة", icon: ShoppingBag, href: "/cart", active: location === "/cart", count: cartCount, isCart: true },
     {
       label: user ? "حسابي" : "دخول",
       icon: User,
@@ -56,56 +44,57 @@ export function MobileNav() {
     },
   ];
 
-  if (adminToken) {
-    navItems.push({
-      label: "الإدارة",
-      icon: Shield,
-      href: "/admin",
-      active: location.startsWith("/admin"),
-    });
-  }
-
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-primary/10 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
-      <div className="flex items-center justify-between h-16 px-4">
-        {navItems.map((item: any) => {
+    <nav
+      aria-label="التنقل السفلي"
+      className="md:hidden fixed inset-x-0 bottom-0 z-50 px-3"
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+    >
+      <div className="mx-auto grid h-16 max-w-md grid-cols-5 rounded-2xl border border-border bg-card/90 px-1 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/75">
+        {items.map((item) => {
           const Icon = item.icon;
           const content = (
-            <div className={`flex flex-col items-center justify-center gap-1 group relative cursor-pointer min-w-[64px]`}>
-              <div className="relative">
-                <Icon
-                  className={`h-6 w-6 transition-all duration-300 ${item.active
-                      ? "text-primary scale-110 drop-shadow-[0_0_8px_rgba(200,150,62,0.4)]"
-                      : "text-muted-foreground group-hover:text-primary/70"
-                    }`}
-                />
-                {item.count !== undefined && item.count > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-primary-foreground  text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
-                    {item.count}
-                  </Badge>
+            <span className="flex h-full flex-col items-center justify-center gap-1">
+              <span
+                className={cn(
+                  "relative flex h-8 w-14 items-center justify-center rounded-full transition-all duration-200",
+                  item.active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground",
                 )}
-              </div>
-              <span className={`text-[9px] font-black transition-colors duration-300 ${item.active ? "text-primary" : "text-muted-foreground"
-                }`}>
+              >
+                <Icon className="h-[20px] w-[20px]" strokeWidth={item.active ? 2.4 : 2} fill={item.active && item.icon === Heart ? "currentColor" : "none"} />
+                {!!item.count && item.count > 0 && (
+                  <span
+                    className={cn(
+                      "absolute -top-1 left-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-mono text-[10px] font-bold leading-none ring-2 ring-card",
+                      item.active ? "bg-card text-primary" : "bg-primary text-primary-foreground",
+                    )}
+                  >
+                    {item.count > 99 ? "99+" : item.count}
+                  </span>
+                )}
+              </span>
+              <span className={cn("text-[11px] leading-none", item.active ? "font-bold text-primary" : "font-medium text-muted-foreground")}>
                 {item.label}
               </span>
-              {item.active && (
-                <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full shadow-[0_0_12px_rgba(200,150,62,0.6)] transition-all duration-500" />
-              )}
-            </div>
+            </span>
           );
 
           if (item.isCart) {
-            return <CartSheet key={item.label}>{content}</CartSheet>;
+            return (
+              <CartSheet key={item.label}>
+                <button type="button" className="h-full w-full" aria-label={item.label}>
+                  {content}
+                </button>
+              </CartSheet>
+            );
           }
-
           return (
-            <Link key={item.label} href={item.href}>
+            <Link key={item.label} href={item.href} className="h-full w-full" aria-current={item.active ? "page" : undefined}>
               {content}
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

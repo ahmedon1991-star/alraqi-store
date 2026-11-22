@@ -1,202 +1,186 @@
-import { LogOut, Menu, Search, Shield, ShoppingCart, User, Heart, X, Moon, Sun } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Heart, Moon, Search, Shield, ShoppingBag, Sun, User, X } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Link, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+import { Link, useLocation, useSearch } from "wouter";
 import { useCartCount } from "@/hooks/use-cart";
-import { useCurrentUser, useLogout } from "@/hooks/use-auth";
-import { getAdminToken } from "@/lib/api";
+import { useCurrentUser } from "@/hooks/use-auth";
 import { useWishlist } from "@/hooks/use-wishlist";
-import { useState } from "react";
+import { getAdminToken } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CartSheet } from "@/components/layout/cart-sheet";
 
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+/** Small round icon button used in the header (no heavy borders). */
+const iconButton =
+  "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/80 transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all group overflow-hidden relative"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      title={theme === "dark" ? "التغيير للوضع النهاري" : "التغيير للوضع الليلي"}
-    >
-      <div className="relative w-5 h-5 flex items-center justify-center">
-        <Sun className={cn(
-          "h-full w-full absolute transition-all duration-500",
-          theme === "dark" ? "rotate-90 scale-0 opacity-0" : "rotate-0 scale-100 opacity-100"
-        )} />
-        <Moon className={cn(
-          "h-full w-full absolute transition-all duration-500",
-          theme === "dark" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
-        )} />
-      </div>
-    </Button>
+    <span className="absolute -top-0.5 -left-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 font-mono text-[10px] font-bold leading-none text-primary-foreground ring-2 ring-background">
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }
 
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
+  return (
+    <button
+      type="button"
+      className={iconButton}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+      title={isDark ? "الوضع النهاري" : "الوضع الليلي"}
+    >
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </button>
+  );
+}
+
+/**
+ * Search field that sends the visitor to the shop with the typed text.
+ * Results update while typing (short pause) and on Enter.
+ */
+function SearchField({ className }: { className?: string }) {
+  const [location, setLocation] = useLocation();
+  const search = useSearch();
+  const [term, setTerm] = useState(() => new URLSearchParams(search).get("search") || "");
+  const typed = useRef(false);
+
+  // Keep the field in sync when the URL changes (e.g. clearing filters in the shop)
+  useEffect(() => {
+    if (!typed.current) setTerm(new URLSearchParams(search).get("search") || "");
+  }, [search]);
+
+  useEffect(() => {
+    if (!typed.current) return;
+    const id = setTimeout(() => {
+      const q = term.trim();
+      if (q) setLocation(`/shop?search=${encodeURIComponent(q)}`);
+      else if (location.startsWith("/shop")) setLocation("/shop");
+      typed.current = false;
+    }, 400);
+    return () => clearTimeout(id);
+  }, [term, location, setLocation]);
+
+  return (
+    <form
+      role="search"
+      className={cn("relative", className)}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const q = term.trim();
+        typed.current = false;
+        setLocation(q ? `/shop?search=${encodeURIComponent(q)}` : "/shop");
+        (document.activeElement as HTMLElement | null)?.blur();
+      }}
+    >
+      <Search className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="search"
+        inputMode="search"
+        enterKeyHint="search"
+        value={term}
+        onChange={(e) => { typed.current = true; setTerm(e.target.value); }}
+        placeholder="ابحث عن منتج..."
+        aria-label="ابحث عن منتج"
+        className="h-10 w-full rounded-full border border-border bg-muted/60 pr-10 pl-9 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary/40 focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 [&::-webkit-search-cancel-button]:hidden"
+      />
+      {term && (
+        <button
+          type="button"
+          aria-label="مسح البحث"
+          onClick={() => { typed.current = true; setTerm(""); }}
+          className="absolute left-2.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </form>
+  );
+}
+
+const NAV_LINKS = [
+  { label: "الرئيسية", path: "/" },
+  { label: "المتجر", path: "/shop" },
+  { label: "العروض", path: "/shop?offers=true" },
+];
+
 export function Navbar() {
   const [location] = useLocation();
+  const search = useSearch();
   const cartCount = useCartCount();
   const { count: wishlistCount } = useWishlist();
-  const currentUserQuery = useCurrentUser();
-  const user = currentUserQuery.data;
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [mobileSearchTerm, setMobileSearchTerm] = useState("");
-  const [, setLocation] = useLocation();
+  const { data: user } = useCurrentUser();
+  const isAdmin = !!getAdminToken();
 
-  const handleSearch = (val: string) => {
-    setMobileSearchTerm(val);
-    if (val.trim()) {
-      setLocation(`/shop?search=${encodeURIComponent(val.trim())}`);
-    } else if (location.startsWith("/shop")) {
-      setLocation("/shop");
-    }
+  const isActive = (path: string) => {
+    const [p, q] = path.split("?");
+    if (q) return location === p && search.includes(q);
+    if (p === "/shop") return location === "/shop" && !search.includes("offers=true") && !search.includes("wishlist=true");
+    return location === p;
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-primary/10 bg-background/95 backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex h-16 md:h-24 items-center justify-between gap-2 md:gap-8 flex-row-reverse">
-          
-          {/* Right: Brand Logo */}
-          <div className="flex h-full items-center justify-end">
-            <Link href="/">
-              <div className="group relative flex items-center cursor-pointer">
-                <div className="absolute -inset-2 rounded-xl bg-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100 blur-md" />
-                <img
-                  src="/logo-mark.png"
-                  alt="متجر الراقي"
-                  className="h-14 md:h-20 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px]"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
-                />
-              </div>
-            </Link>
-          </div>
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+      <div className="container mx-auto flex h-16 md:h-[76px] items-center gap-3 md:gap-6 px-4">
+        {/* Logo (right side in RTL) */}
+        <Link href="/" className="shrink-0" aria-label="متجر الراقي — الرئيسية">
+          <img
+            src="/logo-mark.png"
+            alt="متجر الراقي"
+            className="h-11 md:h-14 w-auto object-contain"
+            onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
+          />
+        </Link>
 
-          {/* Middle: Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-12 text-[16px] font-black justify-center flex-1">
-            {[
-              { label: "الرئيسية", path: "/" },
-              { label: "المتجر", path: "/shop" },
-              { label: "العروض", path: "/shop?offers=true" },
-            ].map((link) => {
-              const isActive = location === link.path || (link.path.includes("?") && location.includes(link.path.split("?")[0]));
-              return (
-                <Link key={link.label} href={link.path} className={cn(
-                  "relative py-2 transition-all duration-300 group font-bold tracking-wide",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-primary"
-                )}>
-                  {link.label}
-                  <span className={cn(
-                    "absolute bottom-0 right-0 h-0.5 bg-gradient-to-l from-primary to-primary/40 transition-all duration-300 rounded-full",
-                    isActive ? "w-full" : "w-0 group-hover:w-full"
-                  )} />
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Left Actions (Cart, Search, Profile) */}
-          <div className="flex items-center gap-2 md:gap-4 justify-start">
-             {/* Mobile Menu Trigger */}
-             <div className="md:hidden">
-               <Sheet>
-                 <SheetTrigger asChild>
-                   <Button variant="ghost" size="icon" className="h-10 w-10 text-foreground/80 bg-muted/50/50 border border-border rounded-2xl">
-                     <Menu className="h-5 w-5" />
-                   </Button>
-                 </SheetTrigger>
-                 <SheetContent side="right" className="w-[80%] rounded-l-3xl p-6 text-right">
-                   <div className="flex flex-col gap-6 mt-12">
-                     <Link href="/" className="text-xl font-black text-foreground">الرئيسية</Link>
-                     <Link href="/shop" className="text-xl font-black text-foreground border-t pt-4">المتجر</Link>
-                     <Link href="/shop?offers=true" className="text-xl font-black text-primary border-t pt-4">العروض الحصرية</Link>
-                     <div className="mt-auto border-t pt-8">
-                       <p className="text-sm font-bold text-muted-foreground/70 mb-4">متجر الراقي للمنتجات السودانية</p>
-                       {user ? (
-                         <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                              {user.name?.charAt(0) || "U"}
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-sm">{user.name}</p>
-                              <p className="text-xs text-muted-foreground">{user.email}</p>
-                            </div>
-                         </div>
-                       ) : (
-                        <Link href="/login">
-                          <Button className="w-full h-12 rounded-2xl font-bold">تسجيل الدخول</Button>
-                        </Link>
-                       )}
-                     </div>
-                   </div>
-                 </SheetContent>
-               </Sheet>
-             </div>
-
-             <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn(
-                  "h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary transition-all rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)]",
-                  isSearchOpen ? "bg-primary text-primary-foreground border-primary" : ""
-                )}
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
+        {/* Desktop links */}
+        <nav className="hidden md:flex items-center gap-1" aria-label="التنقل الرئيسي">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.path}
+              href={link.path}
+              className={cn(
+                "rounded-full px-4 py-2 text-[15px] font-bold transition-colors",
+                isActive(link.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
             >
-              {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-            </Button>
-
-            <CartSheet>
-              <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all cursor-pointer group">
-                <ShoppingCart className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-                {cartCount > 0 && (
-                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-primary text-primary-foreground p-0 text-[10px] border-2 border-background shadow-md font-black animate-in zoom-in ">
-                    {cartCount}
-                  </Badge>
-                )}
-              </div>
-            </CartSheet>
-
-            <Link href="/profile">
-              <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-foreground hover:text-primary rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all group">
-                {user ? (
-                  user.avatar ? <img src={user.avatar} className="h-5 w-5 rounded-full object-cover" /> : <User className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                ) : <User className="h-5 w-5" />}
-              </Button>
+              {link.label}
             </Link>
-            
-            <ThemeToggle />
+          ))}
+        </nav>
 
-            {getAdminToken() && (
-              <Link href="/admin">
-                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-primary hover:bg-primary/5 rounded-2xl border border-primary/20">
-                  <Shield className="h-5 w-5" />
-                </Button>
-              </Link>
-            )}
+        {/* Search: fills the middle on phones, fixed width on desktop */}
+        <SearchField className="flex-1 md:mr-auto md:max-w-xs md:flex-none md:w-72" />
+
+        {/* Actions */}
+        <div className="flex shrink-0 items-center gap-0.5 md:gap-1">
+          {isAdmin && (
+            <Link href="/admin" className={cn(iconButton, "text-primary")} aria-label="لوحة الإدارة" title="لوحة الإدارة">
+              <Shield className="h-5 w-5" />
+            </Link>
+          )}
+          <ThemeToggle />
+
+          {/* On phones these live in the bottom navigation bar */}
+          <Link href="/shop?wishlist=true" className={cn(iconButton, "hidden md:inline-flex")} aria-label="المفضلة" title="المفضلة">
+            <Heart className="h-5 w-5" />
+            <CountBadge count={wishlistCount} />
+          </Link>
+          <Link href={user ? "/profile" : "/login"} className={cn(iconButton, "hidden md:inline-flex")} aria-label={user ? "حسابي" : "تسجيل الدخول"} title={user ? "حسابي" : "تسجيل الدخول"}>
+            {user?.avatar ? <img src={user.avatar} alt="" className="h-7 w-7 rounded-full object-cover" /> : <User className="h-5 w-5" />}
+          </Link>
+          <div className="hidden md:block">
+            <CartSheet>
+              <button type="button" className={iconButton} aria-label="السلة" title="السلة">
+                <ShoppingBag className="h-5 w-5" />
+                <CountBadge count={cartCount} />
+              </button>
+            </CartSheet>
           </div>
         </div>
-
-        {/* Mobile Search Overlay */}
-        {isSearchOpen && (
-          <div className="md:hidden px-2 pb-3 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
-             <div className="relative group">
-                <Input
-                  autoFocus
-                  placeholder="ابحث عن المنتجات..."
-                  className="rounded-xl border-none bg-muted/50 focus:bg-card h-10 pr-9 text-right shadow-inner ring-1 ring-slate-200 focus:ring-2 focus:ring-primary/40 transition-all font-bold"
-                  value={mobileSearchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
-             </div>
-          </div>
-        )}
       </div>
-    </nav>
+    </header>
   );
 }
