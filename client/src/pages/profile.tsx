@@ -223,14 +223,14 @@ export default function ProfilePage() {
       });
 
       if (credential) {
-        const deviceToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
-        await apiRequest("/api/auth/biometric/enable", {
+        // The server generates a strong random device secret and stores only its hash
+        const result = await apiRequest("/api/auth/biometric/enable", {
           method: "POST",
-          body: JSON.stringify({ token: deviceToken }),
+          body: JSON.stringify({}),
         });
 
         localStorage.setItem("alraqi_biometric_email", user?.email || "");
-        localStorage.setItem("alraqi_biometric_token", deviceToken);
+        localStorage.setItem("alraqi_biometric_token", result.deviceToken);
 
         queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         toast({ title: "تم التفعيل", description: "تم تفعيل الدخول بالبصمة/الوجه بنجاح لهذا الجهاز." });

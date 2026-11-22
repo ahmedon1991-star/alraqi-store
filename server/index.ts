@@ -10,7 +10,16 @@ import { createServer } from "http";
 import path from "path";
 
 const app = express();
+// Render (and most hosts) sit behind one reverse proxy: needed for correct client IPs in rate limiting
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
 app.use(cors());
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -42,26 +51,15 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Request log: method, path, status and duration only.
+// Response bodies are NOT logged — they contain login tokens and customers' personal data.
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
-    const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} in ${Date.now() - start}ms`);
     }
   });
 
@@ -74,7 +72,8 @@ app.use((req, res, next) => {
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Don't leak internal error details (DB errors, stack info) to visitors
+    const message = status >= 500 ? "حدث خطأ في الخادم، يرجى المحاولة لاحقاً" : (err.message || "طلب غير صالح");
 
     console.error("Internal Server Error:", err);
 

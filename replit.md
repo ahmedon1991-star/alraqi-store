@@ -10,6 +10,20 @@ Preferred communication style: Simple, everyday language. The user communicates 
 
 - **2026-02-11**: Full-stack conversion complete. Database created with products, categories, cart_items, orders tables. All frontend pages now fetch real data from API. Cart operations (add, update quantity, remove) fully functional with session-based tracking via `x-session-id` header stored in localStorage. Seed endpoint populates 8 Sudanese products and 5 categories. Auth page exists with simulated login (not yet connected to real backend auth).
 
+# Environment Variables (production / Render)
+
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | yes | PostgreSQL connection string |
+| `ADMIN_PASSWORD` | yes | Admin "master" password (env login always works). The old default `admin12345` is rejected. |
+| `ADMIN_USERNAME` | no | Defaults to `admin` |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | recommended | Image uploads. Without them images are stored on the local disk only. Never commit these. |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | for password reset emails | |
+| `PUBLIC_URL` | no | Base URL used in emails/WhatsApp links (falls back to Render's `RENDER_EXTERNAL_URL`) |
+| `GOOGLE_CLIENT_ID` | for Google sign-in | |
+
+Security notes: prices are always computed on the server; password-reset and biometric tokens are stored only as SHA-256 hashes; sessions expire (customers 30 days, admin 7 days); login/reset/order endpoints are rate-limited. `npm run db:push` no longer uses `--force`, so it refuses schema changes that would delete data. Emergency admin reset: `ADMIN_PASSWORD="..." npx tsx scripts/reset-admin.ts`.
+
 # System Architecture
 
 ## Frontend Architecture

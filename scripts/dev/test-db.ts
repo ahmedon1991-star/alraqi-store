@@ -1,5 +1,5 @@
-import { db } from "./server/storage";
-import { users, products, categories, orders } from "./shared/schema";
+import { db } from "../../server/storage";
+import { users, products, categories, orders } from "../../shared/schema";
 import { sql } from "drizzle-orm";
 
 async function test() {
