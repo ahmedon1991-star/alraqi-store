@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
+import { useCategoryName } from "@/hooks/use-categories";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,7 +144,7 @@ export default function Cart() {
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg truncate">{item.product.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-1">{item.product.category}</p>
+                    <p className="text-muted-foreground text-sm mb-1"><CategoryName id={item.product.category} /></p>
                     {(item.size || item.measurement) && (
                       <div className="flex flex-wrap items-center gap-2 mb-2 text-xs md:text-sm font-bold w-fit">
                         {item.size && <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg shadow-sm border border-primary/20">المقاس: {item.size}</span>}
@@ -368,4 +369,8 @@ export default function Cart() {
       <Footer />
     </div>
   );
+}
+
+function CategoryName({ id }: { id: string }) {
+  return <>{useCategoryName(id)}</>;
 }

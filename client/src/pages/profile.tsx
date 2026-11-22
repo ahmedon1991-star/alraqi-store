@@ -60,7 +60,7 @@ import { cn } from "@/lib/utils";
 
 function formatOrderDate(value: string | null) {
   if (!value) return "غير متوفر";
-  return new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 const profileSchema = z.object({
@@ -425,7 +425,7 @@ export default function ProfilePage() {
                                     </div>
 
                                     <div className="p-5 md:p-6">
-                                       <div className="flex items-center justify-between">
+                                       <div className="flex flex-wrap items-center justify-between gap-3">
                                            <div className="flex items-center gap-4">
                                               <div className="text-right">
                                                  <p className="text-[10px] font-bold text-gray-400 mb-1">إجمالي المبلغ</p>
@@ -438,7 +438,7 @@ export default function ProfilePage() {
                                                 </div>
                                               )}
                                            </div>
-                                          <div className="flex gap-2">
+                                          <div className="flex flex-wrap gap-2">
                                              <Button 
                                                 size="sm" 
                                                 className="rounded-full font-black px-4 md:px-6 h-10 bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none"
@@ -452,7 +452,7 @@ export default function ProfilePage() {
                                                  className="rounded-full font-black px-4 md:px-6 h-10 border-2"
                                                  onClick={() => handleReorder(order.items)}
                                               >
-                                                 إعادة طلب <RotateCcw className="h-4 w-4 mr-1.5 text-orange-500" />
+                                                 إعادة طلب <RotateCcw className="h-4 w-4 mr-1.5 text-primary" />
                                               </Button>
                                            </div>
                                         </div>

@@ -8,7 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/use-auth";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export function CustomerService() {
   const [isOpen, setIsOpen] = useState(false);
@@ -58,6 +58,10 @@ export function CustomerService() {
     }
     sendMessageMutation.mutate({ name, email, phone, message });
   };
+
+  const [location] = useLocation();
+  // Customer chat is for shoppers — don't cover the admin screens with it
+  if (location.startsWith("/admin")) return null;
 
   return (
     <>

@@ -244,7 +244,7 @@ export default function AuthPage() {
           </CardHeader>
 
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl" className="w-full">
               <TabsList className="mb-8 grid w-full grid-cols-2 h-12 bg-gray-100 p-1 rounded-xl">
                 <TabsTrigger value="login" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">تسجيل الدخول</TabsTrigger>
                 <TabsTrigger value="register" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">حساب جديد</TabsTrigger>

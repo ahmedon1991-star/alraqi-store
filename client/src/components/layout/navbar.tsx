@@ -173,7 +173,7 @@ export function Navbar() {
 
             {getAdminToken() && (
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-orange-600 hover:bg-orange-50 rounded-2xl border border-orange-100 animate-pulse">
+                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-primary hover:bg-primary/5 rounded-2xl border border-primary/20">
                   <Shield className="h-5 w-5" />
                 </Button>
               </Link>

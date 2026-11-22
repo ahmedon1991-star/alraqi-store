@@ -186,10 +186,8 @@ function formatAdminDate(value: string | null) {
     return "غير متوفر";
   }
 
-  return new Intl.DateTimeFormat("ar-EG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  // Written-out month ("22 نوفمبر 2026 في 9:00 ص"): slash dates get scrambled inside Arabic text
+  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 export default function AdminPage() {
@@ -605,7 +603,7 @@ export default function AdminPage() {
       toast({
         title: "⏰ تنبيه: طلبات معلقة",
         description: `تنبيه: يوجد طلبات معلقة لم يتم التعامل معها بعد.`,
-        className: "bg-orange-600 text-white font-black border-2 border-white/20",
+        className: "bg-primary text-primary-foreground font-black border-2 border-white/20",
       });
     }, 120000);
 
@@ -748,7 +746,7 @@ export default function AdminPage() {
       }, 0);
       
       return { 
-          label: d.toLocaleDateString('ar-EG', { weekday: 'long' }).substring(0, 3), 
+          label: d.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long' }).replace(/^ال/, ''), // أحد، اثنين، … (first 3 letters were ambiguous)
           value: dayTotal 
       };
     });
@@ -926,16 +924,16 @@ export default function AdminPage() {
         <section className="mb-6 md:mb-10 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border border-white/60 bg-white/40 p-4 md:p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-right gap-4 md:gap-6">
-              <img src="/logo-mark.png" alt="الراقي" className="h-20 md:h-24 w-auto object-contain drop-shadow-md" />
+              <img src="/logo-mark.png" alt="الراقي" className="h-14 md:h-24 w-auto object-contain" />
               <div>
                 <div className="mb-2 md:mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
                   <Sparkles className="h-4 w-4" />
                   لوحة تحكم الإدارة
                 </div>
-                <h1 className="mb-2 text-2xl font-black tracking-tight text-foreground md:text-5xl leading-tight">
+                <h1 className="mb-2 text-xl font-black tracking-tight text-foreground md:text-5xl leading-tight">
                   إدارة المتجر من شاشة واحدة
                 </h1>
-                <p className="text-sm md:text-lg leading-relaxed text-muted-foreground">
+                <p className="hidden md:block text-lg leading-relaxed text-muted-foreground">
                   دخول محمي، متابعة الطلبات، وتحرير المنتجات مباشرة من لوحة تشغيل مصممة للاستخدام اليومي.
                 </p>
               </div>
@@ -945,7 +943,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 gap-3 md:gap-4 rounded-2xl md:rounded-3xl border border-border/60 bg-background/80 p-4 md:p-5">
                 <div className="text-center md:text-right">
                   <p className="text-xs md:text-sm text-muted-foreground">التصنيفات</p>
-                  <p className="mt-1 text-lg md:text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG")}</p>
+                  <p className="mt-1 text-lg md:text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                 </div>
                 <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
                   <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
@@ -1183,7 +1181,7 @@ export default function AdminPage() {
                   اختبار الصوت
                 </Button>
 
-                <Button variant="outline" className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-rose-200 text-rose-600 hover:bg-rose-50 whitespace-nowrap" onClick={() => logoutMutation.mutate()}>
+                <Button variant="outline" className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-destructive/30 text-destructive hover:bg-destructive/5 whitespace-nowrap" onClick={() => logoutMutation.mutate()}>
                   تسجيل الخروج
                 </Button>
               </div>
@@ -1191,7 +1189,7 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <Tabs defaultValue="overview" className="w-full space-y-6 md:space-y-8">
+        <Tabs defaultValue="overview" dir="rtl" className="w-full space-y-6 md:space-y-8">
           <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:mx-0 md:px-0">
             <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-9 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
               <TabsTrigger value="overview" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الرئيسية</TabsTrigger>
@@ -1219,13 +1217,13 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="overview" className="space-y-8">
-            <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] md:col-span-2 xl:col-span-2">
+            <section className="mb-8 grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-4 xl:grid-cols-6">
+              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] col-span-2 md:col-span-4 xl:col-span-2">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br from-orange-500/15 to-orange-500/5 p-6 flex flex-col h-full">
+                  <div className="rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 p-4 md:p-6 flex flex-col h-full">
                     <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="rounded-2xl bg-white/80 p-3 shadow-sm text-orange-700">
+                        <div className="rounded-2xl bg-white/80 p-3 shadow-sm text-primary">
                           <CreditCard className="h-5 w-5" />
                         </div>
                         <p className="font-bold text-gray-800">إجمالي المبيعات</p>
@@ -1241,7 +1239,7 @@ export default function AdminPage() {
                              <button 
                                key={f.id} 
                                onClick={() => setRevenueFilter(f.id as any)}
-                               className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-900")}
+                               className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-primary shadow-sm" : "text-gray-500 hover:text-gray-900")}
                              >
                                 {f.label}
                              </button>
@@ -1249,13 +1247,13 @@ export default function AdminPage() {
                         </div>
                         <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/40 text-orange-700 hover:bg-white hover:text-orange-900 border border-white/50 shadow-sm transition-all" title="تصفير الإيرادات">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/40 text-primary hover:bg-white hover:text-primary border border-white/50 shadow-sm transition-all" title="تصفير الإيرادات">
                               <RotateCcw className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-[400px] w-[95%] rounded-[1.5rem] md:rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
                             <DialogHeader className="text-right sm:text-right space-y-2">
-                              <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700 w-fit">
+                              <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold text-destructive w-fit">
                                 <AlertTriangle className="h-3.5 w-3.5" />
                                 إجراء حساس
                               </div>
@@ -1272,13 +1270,13 @@ export default function AdminPage() {
                                   placeholder="أدخل رمز التصفير" 
                                   value={resetCode} 
                                   onChange={(e) => setResetCode(e.target.value)}
-                                  className="text-center h-12 rounded-xl border-gray-200 focus:border-orange-300 text-lg tracking-widest"
+                                  className="text-center h-12 rounded-xl border-gray-200 focus:border-destructive/40 text-lg tracking-widest"
                                 />
                               </div>
                               <Button 
                                 onClick={() => resetRevenueMutation.mutate(resetCode)} 
                                 disabled={resetRevenueMutation.isPending || !resetCode}
-                                className="w-full h-12 rounded-xl font-black text-lg shadow-lg bg-orange-600 hover:bg-orange-700 shadow-orange-200 transition-all hover:scale-[1.02]"
+                                className="w-full h-12 rounded-xl font-black text-lg shadow-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-destructive/20 transition-all"
                               >
                                 {resetRevenueMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "تأكيد وبدء دورة جديدة"}
                               </Button>
@@ -1287,18 +1285,18 @@ export default function AdminPage() {
                         </Dialog>
                       </div>
                     </div>
-                    <p className="text-3xl md:text-4xl font-black tracking-tight text-orange-950 mb-6">{formatPrice(revenueData.total)}</p>
+                    <p className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-6">{formatPrice(revenueData.total)}</p>
                     
-                    <div className="mt-auto flex items-end justify-between gap-2 h-24 pt-4 border-t border-orange-500/10">
+                    <div className="mt-auto flex items-end justify-between gap-2 h-24 pt-4 border-t border-primary/10">
                       {revenueData.chartData.map((d, i) => {
                          const maxVal = Math.max(...revenueData.chartData.map(c => c.value), 1);
                          return (
                           <div key={i} className="flex flex-col items-center flex-1 gap-2 group">
-                              <div className="w-full relative h-[60px] flex items-end justify-center rounded overflow-hidden bg-orange-500/10 transition-all group-hover:bg-orange-500/20">
-                                  <div className="w-full bg-orange-500 rounded-t-sm transition-all duration-500 ease-out min-h-[4px]" style={{ height: `${(d.value / maxVal) * 100}%` }}></div>
+                              <div className="w-full relative h-[60px] flex items-end justify-center rounded overflow-hidden bg-primary/10 transition-all group-hover:bg-primary/20">
+                                  <div className="w-full bg-primary rounded-t-sm transition-all duration-500 ease-out min-h-[4px]" style={{ height: `${(d.value / maxVal) * 100}%` }}></div>
                                   <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-1 bg-gray-900 text-white text-[10px] p-1 rounded font-bold whitespace-nowrap z-10 pointer-events-none transition-opacity">{formatPrice(d.value)}</div>
                               </div>
-                              <span className="text-[10px] text-gray-600 font-bold">{d.label}</span>
+                              <span className="text-[9px] md:text-[10px] text-muted-foreground font-bold whitespace-nowrap">{d.label}</span>
                           </div>
                          );
                       })}
@@ -1310,16 +1308,16 @@ export default function AdminPage() {
               {/* Card 2 */}
               <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-teal-500/15 to-teal-500/5 text-teal-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
                       <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
                         <ShoppingBag className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-teal-800/60">الطلبات الكلية</p>
-                      <p className="text-3xl font-black tracking-tight text-teal-900">{(data.stats.orders?.all ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">الطلبات الكلية</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.orders?.all ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1328,16 +1326,16 @@ export default function AdminPage() {
               {/* Card 3 */}
               <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-amber-500/15 to-amber-500/5 text-amber-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
                       <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
                         <Clock3 className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-amber-800/60">طلبات معلقة</p>
-                      <p className="text-3xl font-black tracking-tight text-amber-900">{(data.stats.pendingOrders ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">طلبات معلقة</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.pendingOrders ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1346,16 +1344,16 @@ export default function AdminPage() {
               {/* Card 4 */}
               <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-sky-500/15 to-sky-500/5 text-sky-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
                       <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
                         <Package className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-sky-800/60">أنواع المنتجات</p>
-                      <p className="text-3xl font-black tracking-tight text-sky-900">{(data.stats.products ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">أنواع المنتجات</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.products ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1364,17 +1362,17 @@ export default function AdminPage() {
               {/* Card 5 */}
               <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-indigo-500/15 to-indigo-500/5 text-indigo-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
                       <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
                         <Boxes className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-indigo-800/60">إجمالي المخزون</p>
-                      <p className="text-3xl font-black tracking-tight text-indigo-900">
-                        {((data.products || []).reduce((sum, p) => sum + (p.stock || 0), 0)).toLocaleString("ar-EG")}
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">إجمالي المخزون</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
+                        {((data.products || []).reduce((sum, p) => sum + (p.stock || 0), 0)).toLocaleString("ar-EG-u-nu-latn")}
                       </p>
                     </div>
                   </div>
@@ -1409,7 +1407,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <Badge variant="outline" className="rounded-full">
-                      {(category.productCount ?? 0).toLocaleString("ar-EG")}
+                      {(category.productCount ?? 0).toLocaleString("ar-EG-u-nu-latn")}
                     </Badge>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -1528,7 +1526,7 @@ export default function AdminPage() {
                                  <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
                                    {product.inStock ? "متوفر" : "غير متوفر"}
                                  </Badge>
-                                 <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                 <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-primary/20 text-primary bg-primary/5")}>
                                    {product.stock || 0}
                                  </Badge>
                                  {!product.isVisible && (
@@ -1622,7 +1620,7 @@ export default function AdminPage() {
                       )}
                     >
                       <span className="text-[10px] font-bold mb-1">{f.label}</span>
-                      <span className="text-sm font-black">{f.count.toLocaleString("ar-EG")}</span>
+                      <span className="text-sm font-black">{f.count.toLocaleString("ar-EG-u-nu-latn")}</span>
                     </button>
                   ))}
                 </div>
@@ -2054,7 +2052,7 @@ export default function AdminPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right text-xs">
-                        {new Date(msg.createdAt).toLocaleDateString("ar-EG")}
+                        {new Date(msg.createdAt).toLocaleDateString("ar-EG-u-nu-latn", { day: "numeric", month: "short", year: "numeric" })}
                       </TableCell>
                       <TableCell className="text-right font-bold">{msg.name}</TableCell>
                       <TableCell className="text-right">
@@ -2086,7 +2084,7 @@ export default function AdminPage() {
                             <DialogContent className="max-w-md">
                               <DialogHeader>
                                 <DialogTitle>رسالة من: {msg.name}</DialogTitle>
-                                <DialogDescription>بتاريخ: {new Date(msg.createdAt).toLocaleString("ar-EG")}</DialogDescription>
+                                <DialogDescription>بتاريخ: {new Date(msg.createdAt).toLocaleString("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" })}</DialogDescription>
                               </DialogHeader>
                               <div className="mt-4 space-y-4">
                                 <div className="rounded-xl bg-muted p-4 text-right whitespace-pre-wrap leading-relaxed">
