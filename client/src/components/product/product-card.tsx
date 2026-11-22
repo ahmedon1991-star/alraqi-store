@@ -108,7 +108,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
           <button
             onClick={handleAddToCart}
             disabled={addToCart.isPending}
-            className="absolute bottom-1.5 left-1.5 z-30 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-white/95 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
+            className="absolute bottom-1.5 left-1.5 z-30 w-8 h-8 md:w-14 md:h-14 flex items-center justify-center rounded-xl md:rounded-2xl border border-primary/20 bg-card/95 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all transform active:scale-90"
           >
             {addToCart.isPending ? <Loader2 className="h-4 w-4 md:h-7 md:w-7 animate-spin" /> : <Plus className="h-4 w-4 md:h-7 md:w-7 stroke-[3]" />}
           </button>
@@ -179,7 +179,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
                 className={cn(
                   "w-8 h-8 md:w-11 md:h-11 flex items-center justify-center rounded-xl transition-all active:scale-95 border",
                   isInWishlist(id) 
-                    ? "bg-red-50 text-red-500 border-red-100 shadow-sm shadow-red-100" 
+                    ? "bg-red-500/10 text-red-500 border-red-500/20 shadow-sm shadow-red-100" 
                     : "bg-muted/20 text-muted-foreground/50 border-transparent hover:bg-muted/30"
                 )}
                 title="إضافة للمفضلة"

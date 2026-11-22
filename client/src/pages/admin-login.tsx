@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FDFBF7] selection:bg-primary/20">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-primary/20">
       <Navbar />
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         {/* Abstract Premium Background Elements */}
@@ -65,7 +65,7 @@ export default function AdminLoginPage() {
         </div>
 
         <div className="relative w-full max-w-[480px] animate-in fade-in zoom-in duration-700">
-          <Card className="border-white/40 bg-white/70 shadow-[0_40px_100px_-20px_rgba(27,112,92,0.12)] backdrop-blur-2xl rounded-[2.5rem] overflow-hidden">
+          <Card className="border-border bg-card/90 shadow-[0_40px_100px_-20px_rgba(27,112,92,0.12)] backdrop-blur-2xl rounded-[2.5rem] overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
             
             <CardHeader className="space-y-6 pt-12 pb-8 text-center relative">
@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
                     <Input
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="h-14 border-primary/10 bg-white/50 px-5 text-right font-medium transition-all focus:bg-white focus:ring-2 focus:ring-primary/10 rounded-2xl"
+                      className="h-14 border-primary/10 bg-card/50 px-5 text-right font-medium transition-all focus:bg-card focus:ring-2 focus:ring-primary/10 rounded-2xl"
                       placeholder="أدخل اسم المستخدم"
                       dir="ltr"
                     />
@@ -111,7 +111,7 @@ export default function AdminLoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    className="h-14 border-primary/10 bg-white/50 px-5 text-right font-medium transition-all focus:bg-white focus:ring-2 focus:ring-primary/10 rounded-2xl"
+                    className="h-14 border-primary/10 bg-card/50 px-5 text-right font-medium transition-all focus:bg-card focus:ring-2 focus:ring-primary/10 rounded-2xl"
                     placeholder="••••••••"
                     dir="ltr"
                   />

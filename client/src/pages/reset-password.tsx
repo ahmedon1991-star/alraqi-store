@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
         <main className="flex flex-1 items-center justify-center p-4">
           <Card className="w-full max-w-md text-center border-primary/20 shadow-xl">
             <CardHeader className="space-y-4">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
                 <CheckCircle2 className="h-10 w-10" />
               </div>
               <CardTitle className="text-2xl font-black">عملية ناجحة!</CardTitle>
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(27,112,92,0.05),_transparent_40%)]" />
         
-        <Card className="w-full max-w-md border-white/80 bg-white/90 shadow-2xl backdrop-blur-xl">
+        <Card className="w-full max-w-md border-white/80 bg-card/90 shadow-2xl backdrop-blur-xl">
           <CardHeader className="space-y-4 text-center">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <KeyRound className="h-7 w-7" />
@@ -108,7 +108,7 @@ export default function ResetPasswordPage() {
           </CardHeader>
           <CardContent>
             {!token ? (
-              <div className="p-4 bg-rose-50 text-rose-700 rounded-xl text-center font-bold">
+              <div className="p-4 bg-rose-500/10 text-rose-700 rounded-xl text-center font-bold">
                 رابط إعادة التعيين غير صالح أو منتهي الصلاحية.
               </div>
             ) : (

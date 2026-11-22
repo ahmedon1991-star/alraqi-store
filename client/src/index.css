@@ -75,15 +75,16 @@
   /* Luxurious Dark Mode (Charcoal & Gold) */
   --background: hsl(20 10% 5%);
   --foreground: hsl(40 25% 90%);
-  --card: hsl(30 15% 7%);
+  /* Cards a few shades lighter than the page so they stand out at night */
+  --card: hsl(30 12% 10%);
   --card-foreground: hsl(40 25% 90%);
-  --popover: hsl(30 15% 7%);
+  --popover: hsl(30 12% 11%);
   --popover-foreground: hsl(40 25% 90%);
   --primary: hsl(38 52% 51%);
   --primary-foreground: hsl(38 100% 5%);
   --secondary: hsl(124 30% 36%); /* logo green */
   --secondary-foreground: hsl(124 20% 96%);
-  --muted: hsl(30 10% 12%);
+  --muted: hsl(30 10% 15%);
   --muted-foreground: hsl(40 10% 65%);
   --accent: hsl(38 30% 15%);
   --accent-foreground: hsl(38 52% 51%);
@@ -106,7 +107,9 @@
     background: radial-gradient(ellipse at 50% 0%, #1a150a 0%, #080706 80%);
     background-attachment: fixed;
   }
-  body:not(.dark) {
+  /* The "dark" class is on <html>, not <body>: "body:not(.dark)" matched in dark mode too
+     and painted a light page background behind translucent sections */
+  :root:not(.dark) body {
     background: radial-gradient(ellipse at 50% 0%, hsl(40 30% 96%) 0%, hsl(40 10% 92%) 80%);
     background-attachment: fixed;
   }

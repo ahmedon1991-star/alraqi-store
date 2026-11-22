@@ -16,7 +16,7 @@ export default function NotFound() {
             <Sparkles className="h-4 w-4" />
             خطأ 404
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-800">عذراً، الصفحة غير موجودة!</h1>
+          <h1 className="text-4xl md:text-5xl font-black text-foreground">عذراً، الصفحة غير موجودة!</h1>
         </div>
         
         <p className="text-lg text-muted-foreground font-medium leading-relaxed">

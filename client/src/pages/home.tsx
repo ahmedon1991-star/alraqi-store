@@ -93,7 +93,7 @@ export default function Home() {
             </div>
             
             <a href="/api/download-app" download="Al-Raqi-Store.apk" className="shrink-0">
-              <Button size="sm" className="h-8 md:h-11 px-3 md:px-6 rounded-xl bg-white text-primary hover:bg-gray-100 font-bold shadow-sm transition-transform active:scale-95 text-[10px] md:text-sm flex gap-1.5 md:gap-2">
+              <Button size="sm" className="h-8 md:h-11 px-3 md:px-6 rounded-xl bg-card text-primary hover:bg-muted font-bold shadow-sm transition-transform active:scale-95 text-[10px] md:text-sm flex gap-1.5 md:gap-2">
                 <Download className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">تحميل التطبيق</span>
                 <span className="sm:hidden">تحميل</span>
