@@ -30,6 +30,8 @@ import {
   RotateCcw,
   AlertTriangle,
   Image as ImageIcon,
+  Download,
+  PackageX,
 } from "lucide-react";
 import { Reorder } from "framer-motion";
 import { CategoryIcon } from "@/components/ui/category-icon";
@@ -167,12 +169,54 @@ const initialForm: ProductFormState = {
   variants: [],
 };
 
+const LOW_STOCK_LIMIT = 5;
+
 const statusLabels: Record<string, string> = {
   pending: "قيد الانتظار",
   processing: "جارٍ التجهيز",
   completed: "تم التوصيل",
   cancelled: "ملغي",
 };
+
+/** Excel-friendly CSV of the given orders (UTF-8 BOM so Arabic opens correctly in Excel). */
+function exportOrdersCsv(orders: any[]) {
+  const cell = (value: unknown) => {
+    let text = value === null || value === undefined ? "" : String(value);
+    // Guard against spreadsheet formula injection from customer-entered text
+    if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+  const itemsText = (raw: string | null) => {
+    try {
+      return (JSON.parse(raw || "[]") as any[])
+        .map((i) => `${i.name}${i.size ? ` (${i.size})` : ""} × ${i.quantity}`)
+        .join(" | ");
+    } catch {
+      return "";
+    }
+  };
+  const header = ["رقم الطلب", "التاريخ", "اسم العميل", "الهاتف", "العنوان", "الحالة", "طريقة الدفع", "المنتجات", "الإجمالي (ج.س)"];
+  const rows = orders.map((o) => [
+    o.id.split("-")[0],
+    o.createdAt ? new Date(o.createdAt).toLocaleString("ar-EG-u-nu-latn", { day: "numeric", month: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "",
+    o.name,
+    o.phone,
+    o.address,
+    statusLabels[o.status] || o.status,
+    o.paymentMethod === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام",
+    itemsText(o.items),
+    o.total,
+  ]);
+  const csv = "\uFEFF" + [header, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `alraqi-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 const statusClasses: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-800 border-amber-500/30",
@@ -772,6 +816,14 @@ export default function AdminPage() {
       return apiRequest(url.pathname + url.search);
     },
   });
+
+  const lowStockProducts = useMemo(() => {
+    const products = data?.products || [];
+    return products
+      .filter((p) => p.isVisible !== false && (p.inStock === false || ((p.stock || 0) > 0 && (p.stock || 0) <= LOW_STOCK_LIMIT)))
+      .sort((a, b) => (a.inStock === false ? -1 : a.stock) - (b.inStock === false ? -1 : b.stock))
+      .slice(0, 12);
+  }, [data?.products]);
 
   const filteredOrders = useMemo(() => {
     if (!ordersQuery.data) return [];
@@ -1379,6 +1431,39 @@ export default function AdminPage() {
               </Card>
             </section>
 
+        {lowStockProducts.length > 0 && (
+          <section className="mb-6">
+            <Card className="border-amber-500/30 bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+                  تنبيه المخزون
+                </CardTitle>
+                <CardDescription>منتجات نفدت أو بقي منها {LOW_STOCK_LIMIT} قطع أو أقل — حدّث الكمية قبل أن يطلبها العملاء.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {lowStockProducts.map((product) => (
+                  <div key={product.id} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/60 p-3">
+                    <img src={optimizedImage(product.image, 120) || "/images/product-spices.png"} alt="" loading="lazy" className="h-12 w-12 rounded-xl object-contain bg-card shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm truncate">{product.name}</p>
+                      {product.inStock === false ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-destructive"><PackageX className="h-3.5 w-3.5" />نفد من المخزون</span>
+                      ) : (
+                        <span className="text-xs font-bold text-amber-700">متبقي {product.stock} فقط</span>
+                      )}
+                    </div>
+                    <Button size="sm" variant="outline" className="rounded-full h-8 px-3 text-xs font-bold shrink-0" onClick={() => openEditDialog(product)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                      تعديل
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
         <section className="grid grid-cols-1 gap-6">
           <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
             <CardHeader>
@@ -1648,6 +1733,16 @@ export default function AdminPage() {
                       <SelectItem value="archived">مؤرشف</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-2xl border-border/60 font-bold gap-2"
+                    disabled={filteredOrders.length === 0}
+                    onClick={() => exportOrdersCsv(filteredOrders)}
+                    title="تصدير الطلبات الظاهرة إلى ملف يفتح في Excel"
+                  >
+                    <Download className="h-4 w-4" />
+                    تصدير Excel
+                  </Button>
                 </div>
               </div>
             </CardHeader>
