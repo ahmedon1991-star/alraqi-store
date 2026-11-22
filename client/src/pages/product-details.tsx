@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Star, Truck, ShieldCheck, Heart, Minus, Plus, ShoppingCart, Loader2, Package, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
@@ -45,6 +45,14 @@ export default function ProductDetails() {
   function getCategoryName(id: string) {
     return categories?.find(c => c.id === id)?.name || id;
   }
+
+  // Browser tab / shared-link title shows the product
+  useEffect(() => {
+    if (!product?.name) return;
+    const previous = document.title;
+    document.title = `${product.name} | متجر الراقي`;
+    return () => { document.title = previous; };
+  }, [product?.name]);
 
   function handleAddToCart() {
     if (!product) return;
