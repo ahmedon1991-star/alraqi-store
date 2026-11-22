@@ -105,7 +105,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
         {children}
       </SheetTrigger>
       <SheetContent side="top" className="h-[95vh] md:h-[85vh] rounded-b-[2.5rem] p-0 flex flex-col border-primary/20 bg-background/98 backdrop-blur-2xl overflow-hidden shadow-2xl">
-        <SheetHeader className="p-6 border-b border-primary/10 bg-white/50">
+        <SheetHeader className="p-6 border-b border-primary/10 bg-card/50">
           <SheetTitle className="text-right font-display text-2xl md:text-3xl text-primary flex items-center justify-end gap-3">
             {step === "cart" ? (
               <>
@@ -134,8 +134,8 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
             ) : (
               <div className="space-y-4 max-w-3xl mx-auto">
                 {cartItems.map((item: any) => (
-                  <div key={item.id} className="flex gap-4 p-4 rounded-3xl bg-white border border-primary/5 items-center shadow-sm hover:shadow-md transition-shadow">
-                    <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-50 rounded-2xl overflow-hidden shrink-0 p-2 border border-primary/5">
+                  <div key={item.id} className="flex gap-4 p-4 rounded-3xl bg-card border border-primary/5 items-center shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-20 h-20 md:w-24 md:h-24 bg-muted/50 rounded-2xl overflow-hidden shrink-0 p-2 border border-primary/5">
                       <img src={item.image || item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1 min-w-0 text-right">
@@ -154,7 +154,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                       <div className="flex items-center gap-2 bg-primary/5 px-2 py-1 rounded-2xl border border-primary/10">
                         <button 
                           onClick={() => updateQuantity.mutate({ id: item.id, quantity: item.quantity + 1 })}
-                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-primary bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
+                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-primary bg-card rounded-xl shadow-sm hover:scale-110 transition-transform"
                         >
                           <Plus className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
@@ -164,7 +164,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                             if (item.quantity > 1) updateQuantity.mutate({ id: item.id, quantity: item.quantity - 1 });
                             else removeItem.mutate(item.id);
                           }}
-                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-muted-foreground hover:text-primary bg-white rounded-xl shadow-sm hover:scale-110 transition-transform"
+                          className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-muted-foreground hover:text-primary bg-card rounded-xl shadow-sm hover:scale-110 transition-transform"
                         >
                           <Minus className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
@@ -185,7 +185,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                       required
                       value={checkoutData.name}
                       onChange={e => setCheckoutData(prev => ({ ...prev, name: e.target.value }))}
-                      className="text-right h-14 rounded-2xl border-primary/10 bg-white shadow-inner focus:border-primary/40"
+                      className="text-right h-14 rounded-2xl border-primary/10 bg-card shadow-inner focus:border-primary/40"
                     />
                   </div>
                   <div className="space-y-2">
@@ -196,7 +196,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                       type="tel"
                       value={checkoutData.phone}
                       onChange={e => setCheckoutData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="text-right h-14 rounded-2xl border-primary/10 bg-white shadow-inner"
+                      className="text-right h-14 rounded-2xl border-primary/10 bg-card shadow-inner"
                     />
                   </div>
                 </div>
@@ -208,7 +208,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                     required
                     value={checkoutData.address}
                     onChange={e => setCheckoutData(prev => ({ ...prev, address: e.target.value }))}
-                    className="text-right h-14 rounded-2xl border-primary/10 bg-white shadow-inner"
+                    className="text-right h-14 rounded-2xl border-primary/10 bg-card shadow-inner"
                   />
                 </div>
 
@@ -219,12 +219,12 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                     onValueChange={(val) => setCheckoutData(prev => ({ ...prev, paymentMethod: val }))}
                     className="grid grid-cols-2 gap-4"
                   >
-                    <div className={cn("flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all cursor-pointer relative", checkoutData.paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-primary/5 bg-white hover:border-primary/20")}>
+                    <div className={cn("flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all cursor-pointer relative", checkoutData.paymentMethod === "cod" ? "border-primary bg-primary/5" : "border-primary/5 bg-card hover:border-primary/20")}>
                       <RadioGroupItem value="cod" id="drawer-cod" className="sr-only" />
                       <Label htmlFor="drawer-cod" className="cursor-pointer font-black text-center">الدفع عند الاستلام</Label>
                       {checkoutData.paymentMethod === "cod" && <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />}
                     </div>
-                    <div className={cn("flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all cursor-pointer relative", checkoutData.paymentMethod === "bank" ? "border-primary bg-primary/5" : "border-primary/5 bg-white hover:border-primary/20")}>
+                    <div className={cn("flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all cursor-pointer relative", checkoutData.paymentMethod === "bank" ? "border-primary bg-primary/5" : "border-primary/5 bg-card hover:border-primary/20")}>
                       <RadioGroupItem value="bank" id="drawer-bank" className="sr-only" />
                       <Label htmlFor="drawer-bank" className="cursor-pointer font-black text-center">تحويل بنكي</Label>
                       {checkoutData.paymentMethod === "bank" && <CheckCircle2 className="absolute top-2 right-2 h-4 w-4 text-primary" />}
@@ -235,7 +235,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                 {checkoutData.paymentMethod === "bank" && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                     <Select value={checkoutData.bankId} onValueChange={(val) => setCheckoutData(prev => ({ ...prev, bankId: val }))}>
-                      <SelectTrigger className="h-14 rounded-2xl border-primary/10 bg-white text-right">
+                      <SelectTrigger className="h-14 rounded-2xl border-primary/10 bg-card text-right">
                         <SelectValue placeholder="اختر البنك المحول إليه" />
                       </SelectTrigger>
                       <SelectContent className="rounded-2xl">
@@ -252,7 +252,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                           <>
                             <p className="text-xs text-muted-foreground font-black">تفاصيل الحساب:</p>
                             <p className="text-xl font-black text-primary">{banks.find(b => b.id === checkoutData.bankId).accountName}</p>
-                            <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-primary/10 mt-2">
+                            <div className="flex items-center justify-between bg-card p-3 rounded-xl border border-primary/10 mt-2">
                                <button 
                                  type="button" 
                                  onClick={() => { navigator.clipboard.writeText(banks.find(b => b.id === checkoutData.bankId).accountNumber); toast({ title: "تم النسخ" }); }}
@@ -273,7 +273,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
         </div>
 
         {cartItems.length > 0 && (
-          <div className="p-6 md:p-8 bg-white/80 border-t border-primary/10 space-y-6 rounded-b-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+          <div className="p-6 md:p-8 bg-card/80 border-t border-primary/10 space-y-6 rounded-b-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
             <div className="flex justify-between items-center px-2 max-w-3xl mx-auto">
               <div className="text-right">
                  <span className="block text-[10px] text-muted-foreground font-black mb-1 uppercase tracking-widest">الإجمالي التقريبي</span>
@@ -298,7 +298,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                       }
                       setStep("checkout");
                     }} 
-                    className="flex-1 h-14 md:h-16 rounded-[1.5rem] md:rounded-3xl text-lg md:text-xl font-black bg-primary text-black shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95 group"
+                    className="flex-1 h-14 md:h-16 rounded-[1.5rem] md:rounded-3xl text-lg md:text-xl font-black bg-primary text-primary-foreground shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95 group"
                   >
                     {user ? "إتمام الطلب الآن" : "سجل دخول للطلب"}
                     <ChevronRight className="mr-2 h-5 w-5 group-hover:translate-x-[-4px] transition-transform" />

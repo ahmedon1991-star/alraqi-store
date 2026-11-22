@@ -175,10 +175,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusClasses: Record<string, string> = {
-  pending: "bg-amber-100 text-amber-800 border-amber-200",
-  processing: "bg-blue-100 text-blue-800 border-blue-200",
-  completed: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  cancelled: "bg-rose-100 text-rose-800 border-rose-200",
+  pending: "bg-amber-500/15 text-amber-800 border-amber-500/30",
+  processing: "bg-blue-500/15 text-blue-800 border-blue-500/30",
+  completed: "bg-emerald-500/15 text-emerald-800 border-emerald-500/30",
+  cancelled: "bg-rose-500/15 text-rose-800 border-rose-500/30",
 };
 
 function formatAdminDate(value: string | null) {
@@ -186,10 +186,8 @@ function formatAdminDate(value: string | null) {
     return "غير متوفر";
   }
 
-  return new Intl.DateTimeFormat("ar-EG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  // Written-out month ("22 نوفمبر 2026 في 9:00 ص"): slash dates get scrambled inside Arabic text
+  return new Intl.DateTimeFormat("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
 export default function AdminPage() {
@@ -605,7 +603,7 @@ export default function AdminPage() {
       toast({
         title: "⏰ تنبيه: طلبات معلقة",
         description: `تنبيه: يوجد طلبات معلقة لم يتم التعامل معها بعد.`,
-        className: "bg-orange-600 text-white font-black border-2 border-white/20",
+        className: "bg-primary text-primary-foreground font-black border-2 border-white/20",
       });
     }, 120000);
 
@@ -748,7 +746,7 @@ export default function AdminPage() {
       }, 0);
       
       return { 
-          label: d.toLocaleDateString('ar-EG', { weekday: 'long' }).substring(0, 3), 
+          label: d.toLocaleDateString('ar-EG-u-nu-latn', { weekday: 'long' }).replace(/^ال/, ''), // أحد، اثنين، … (first 3 letters were ambiguous)
           value: dayTotal 
       };
     });
@@ -854,7 +852,7 @@ export default function AdminPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <Navbar />
         <div className="flex flex-1 flex-col items-center justify-center gap-6">
-          <img src="/logo.png" alt="الراقي" className="h-24 w-auto animate-pulse object-contain" />
+          <img src="/logo-mark.png" alt="الراقي" className="h-24 w-auto animate-pulse object-contain" />
           <div className="flex items-center gap-3">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <span className="text-lg font-bold text-muted-foreground">جاري تحميل لوحة التحكم...</span>
@@ -870,7 +868,7 @@ export default function AdminPage() {
       <div className="flex min-h-screen flex-col bg-background text-center p-20 gap-8">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="bg-rose-50 border border-rose-200 p-8 rounded-[2rem] shadow-2xl max-w-lg w-full">
+            <div className="bg-rose-500/10 border border-rose-500/30 p-8 rounded-[2rem] shadow-2xl max-w-lg w-full">
                 <h2 className="text-3xl font-black text-rose-600 mb-4">تعذر تحميل البيانات</h2>
                 <p className="text-rose-800/80 font-medium mb-6">
                     {(overviewQuery.error as any)?.message || "حدث خطأ غير متوقع أثناء الاتصال بسيرفر قاعدة البيانات."}
@@ -914,28 +912,28 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col relative overflow-hidden bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(248,244,238,1))]">
+    <div className="flex min-h-screen flex-col relative overflow-hidden bg-background">
       {/* Branded Background Background */}
       <div className="absolute inset-0 -z-10">
         <img src="/images/hero-main.png" alt="الخلفية" className="w-full h-full object-cover opacity-[0.03]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-white" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-card" />
       </div>
 
       <Navbar />
       <main className="container mx-auto flex-1 px-4 py-6 md:py-10 relative z-10">
-        <section className="mb-6 md:mb-10 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border border-white/60 bg-white/40 p-4 md:p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
+        <section className="mb-6 md:mb-10 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border border-border bg-card/40 p-4 md:p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-right gap-4 md:gap-6">
-              <img src="/logo.png" alt="الراقي" className="h-20 md:h-24 w-auto object-contain drop-shadow-md" />
+              <img src="/logo-mark.png" alt="الراقي" className="h-14 md:h-24 w-auto object-contain" />
               <div>
                 <div className="mb-2 md:mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
                   <Sparkles className="h-4 w-4" />
                   لوحة تحكم الإدارة
                 </div>
-                <h1 className="mb-2 text-2xl font-black tracking-tight text-foreground md:text-5xl leading-tight">
+                <h1 className="mb-2 text-xl font-black tracking-tight text-foreground md:text-5xl leading-tight">
                   إدارة المتجر من شاشة واحدة
                 </h1>
-                <p className="text-sm md:text-lg leading-relaxed text-muted-foreground">
+                <p className="hidden md:block text-lg leading-relaxed text-muted-foreground">
                   دخول محمي، متابعة الطلبات، وتحرير المنتجات مباشرة من لوحة تشغيل مصممة للاستخدام اليومي.
                 </p>
               </div>
@@ -945,7 +943,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 gap-3 md:gap-4 rounded-2xl md:rounded-3xl border border-border/60 bg-background/80 p-4 md:p-5">
                 <div className="text-center md:text-right">
                   <p className="text-xs md:text-sm text-muted-foreground">التصنيفات</p>
-                  <p className="mt-1 text-lg md:text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG")}</p>
+                  <p className="mt-1 text-lg md:text-2xl font-black">{(data?.stats?.categories ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                 </div>
                 <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
                   <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
@@ -963,8 +961,8 @@ export default function AdminPage() {
                       إضافة منتج
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] rounded-[1.5rem] md:rounded-[2rem] border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
-                    <div className="p-6 pb-2 border-b border-border/40 bg-white">
+                  <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] rounded-[1.5rem] md:rounded-[2rem] border-primary/10 shadow-2xl backdrop-blur-xl bg-card/95">
+                    <div className="p-6 pb-2 border-b border-border/40 bg-card">
                       <DialogHeader className="text-right sm:text-right space-y-2">
                         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary w-fit">
                           <Package className="h-3.5 w-3.5" />
@@ -982,28 +980,28 @@ export default function AdminPage() {
                     <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
                       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">اسم المنتج</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">اسم المنتج</label>
                           <Input
                             placeholder="مثال: عباية سودانية فاخرة"
                             value={form.name}
                             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/30"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">الاسم بالإنجليزي</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">الاسم بالإنجليزي</label>
                           <Input
                             placeholder="مثال: Sudanese Abaya"
                             value={form.nameEn}
                             onChange={(e) => setForm((prev) => ({ ...prev, nameEn: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/30"
                             dir="ltr"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">القسم / التصنيف</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">القسم / التصنيف</label>
                           <Select value={form.category} onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}>
-                            <SelectTrigger className="text-right h-11 rounded-xl border-gray-200">
+                            <SelectTrigger className="text-right h-11 rounded-xl border-border">
                               <SelectValue placeholder="اختر القسم" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
@@ -1016,23 +1014,23 @@ export default function AdminPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">سعر العرض (الحالي)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">سعر العرض (الحالي)</label>
                           <Input
                             type="number"
                             placeholder="مثال: 5000"
                             value={form.price}
                             onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-emerald-200 bg-emerald-50/30 focus:border-emerald-500 font-black"
+                            className="text-right h-11 rounded-xl border-emerald-500/30 bg-emerald-500/10 focus:border-emerald-500 font-black"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">السعر الأصلي (قبل الخصم - اختياري)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">السعر الأصلي (قبل الخصم - اختياري)</label>
                           <Input
                             type="number"
                             placeholder="مثال: 7500"
                             value={form.originalPrice}
                             onChange={(e) => setForm((prev) => ({ ...prev, originalPrice: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/30"
                           />
                           {form.originalPrice && Number(form.originalPrice) > Number(form.price) && (
                             <div className="text-[10px] font-bold text-emerald-600 animate-in fade-in slide-in-from-top-1">
@@ -1041,25 +1039,25 @@ export default function AdminPage() {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">الكمية المتوفرة (المخزون)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">الكمية المتوفرة (المخزون)</label>
                           <Input
                             type="number"
                             min="0"
                             placeholder="0"
                             value={form.stock}
                             onChange={(e) => setForm((prev) => ({ ...prev, stock: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/50"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/50"
                           />
                         </div>
                         
                         <div className="md:col-span-2 space-y-3">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">صورة المنتج</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">صورة المنتج</label>
                           <div className="flex flex-col sm:flex-row gap-3">
                             <Input
                               placeholder="رابط الصورة المباشر"
                               value={form.image}
                               onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
-                              className="text-right h-11 rounded-xl border-gray-200 flex-1"
+                              className="text-right h-11 rounded-xl border-border flex-1"
                               dir="ltr"
                             />
                             <div className="relative shrink-0">
@@ -1097,44 +1095,44 @@ export default function AdminPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">المقاسات المتاحة (اختياري)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">المقاسات المتاحة (اختياري)</label>
                           <Input
                             placeholder="مثال: S, M, L, XL"
                             value={form.sizes}
                             onChange={(e) => setForm((prev) => ({ ...prev, sizes: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/30"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">الحجم / الوزن (اختياري)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">الحجم / الوزن (اختياري)</label>
                           <Input
                             placeholder="مثال: 1kg, 500g, 250g"
                             value={form.measurements}
                             onChange={(e) => setForm((prev) => ({ ...prev, measurements: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200 focus:border-primary/30"
+                            className="text-right h-11 rounded-xl border-border focus:border-primary/30"
                           />
                         </div>
 
                         <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">شارة المنتج (اختياري)</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">شارة المنتج (اختياري)</label>
                           <Input
                             placeholder="مثال: خصم 20%، قطعة واحدة، الأكثر مبيعاً"
                             value={form.badge}
                             onChange={(e) => setForm((prev) => ({ ...prev, badge: e.target.value }))}
-                            className="text-right h-11 rounded-xl border-gray-200"
+                            className="text-right h-11 rounded-xl border-border"
                           />
                         </div>
                         <div className="md:col-span-2 space-y-2">
-                          <label className="text-sm font-bold text-gray-700 block pr-1">وصف المنتج</label>
+                          <label className="text-sm font-bold text-foreground/80 block pr-1">وصف المنتج</label>
                           <Textarea
                             placeholder="اكتب تفاصيل المنتج المميزة لجذب المشترين..."
                             value={form.description}
                             onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                            className="min-h-32 text-right rounded-2xl border-gray-200 focus:border-primary/30 py-3"
+                            className="min-h-32 text-right rounded-2xl border-border focus:border-primary/30 py-3"
                           />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
-                          <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-emerald-50 px-5 py-3 shadow-inner">
+                          <div className="flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-emerald-500/10 px-5 py-3 shadow-inner">
                             <div className="text-right">
                               <p className="text-sm font-black text-emerald-900">حالة المخزون</p>
                               <p className="text-[10px] text-emerald-700/80">هل المنتج متوفر للشراء؟</p>
@@ -1153,7 +1151,7 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="p-6 border-t border-border/40 bg-gray-50/80 backdrop-blur-sm">
+                    <div className="p-6 border-t border-border/40 bg-muted/50/80 backdrop-blur-sm">
                       <DialogFooter className="flex flex-row-reverse sm:justify-start gap-3 w-full">
                         <Button
                           onClick={() => saveProductMutation.mutate()}
@@ -1166,7 +1164,7 @@ export default function AdminPage() {
                             <><ShieldCheck className="ml-2 h-5 w-5" /> {form.id ? "حفظ التعديلات" : "إضافة المنتج الآن"}</>
                           )}
                         </Button>
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none h-12 rounded-xl font-bold text-muted-foreground hover:bg-gray-200/50">
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1 sm:flex-none h-12 rounded-xl font-bold text-muted-foreground hover:bg-muted/50">
                           إلغاء
                         </Button>
                       </DialogFooter>
@@ -1183,7 +1181,7 @@ export default function AdminPage() {
                   اختبار الصوت
                 </Button>
 
-                <Button variant="outline" className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-rose-200 text-rose-600 hover:bg-rose-50 whitespace-nowrap" onClick={() => logoutMutation.mutate()}>
+                <Button variant="outline" className="flex-[1_0_30%] sm:flex-none h-11 md:h-12 rounded-full px-4 md:px-6 font-bold text-sm md:text-base border-destructive/30 text-destructive hover:bg-destructive/5 whitespace-nowrap" onClick={() => logoutMutation.mutate()}>
                   تسجيل الخروج
                 </Button>
               </div>
@@ -1191,9 +1189,9 @@ export default function AdminPage() {
           </div>
         </section>
 
-        <Tabs defaultValue="overview" className="w-full space-y-6 md:space-y-8">
+        <Tabs defaultValue="overview" dir="rtl" className="w-full space-y-6 md:space-y-8">
           <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide md:mx-0 md:px-0">
-            <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-9 h-auto p-1 bg-white/60 backdrop-blur-md rounded-2xl gap-1 border border-white/40 shadow-sm">
+            <TabsList className="flex items-center w-max min-w-full md:grid md:grid-cols-9 h-auto p-1 bg-card/60 backdrop-blur-md rounded-2xl gap-1 border border-border shadow-sm">
               <TabsTrigger value="overview" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px]">الرئيسية</TabsTrigger>
               <TabsTrigger value="orders" className="rounded-xl px-4 md:px-6 py-2.5 md:py-3 text-sm md:text-lg font-bold min-w-[90px] md:min-w-[100px] flex items-center justify-center gap-2">
                 الطلبات
@@ -1219,19 +1217,19 @@ export default function AdminPage() {
           </div>
 
           <TabsContent value="overview" className="space-y-8">
-            <section className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] md:col-span-2 xl:col-span-2">
+            <section className="mb-8 grid grid-cols-2 gap-3 md:gap-5 md:grid-cols-4 xl:grid-cols-6">
+              <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] col-span-2 md:col-span-4 xl:col-span-2">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br from-orange-500/15 to-orange-500/5 p-6 flex flex-col h-full">
+                  <div className="rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 p-4 md:p-6 flex flex-col h-full">
                     <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="rounded-2xl bg-white/80 p-3 shadow-sm text-orange-700">
+                        <div className="rounded-2xl bg-card/80 p-3 shadow-sm text-primary">
                           <CreditCard className="h-5 w-5" />
                         </div>
-                        <p className="font-bold text-gray-800">إجمالي المبيعات</p>
+                        <p className="font-bold text-foreground">إجمالي المبيعات</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex bg-white/60 rounded-lg p-1">
+                        <div className="flex bg-card/60 rounded-lg p-1">
                           {[
                             { id: 'today', label: 'اليوم' },
                             { id: 'week', label: 'الأسبوع' },
@@ -1241,7 +1239,7 @@ export default function AdminPage() {
                              <button 
                                key={f.id} 
                                onClick={() => setRevenueFilter(f.id as any)}
-                               className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-900")}
+                               className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", revenueFilter === f.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground")}
                              >
                                 {f.label}
                              </button>
@@ -1249,13 +1247,13 @@ export default function AdminPage() {
                         </div>
                         <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                           <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-white/40 text-orange-700 hover:bg-white hover:text-orange-900 border border-white/50 shadow-sm transition-all" title="تصفير الإيرادات">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg bg-card/40 text-primary hover:bg-card hover:text-primary border border-border shadow-sm transition-all" title="تصفير الإيرادات">
                               <RotateCcw className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-[400px] w-[95%] rounded-[1.5rem] md:rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
+                          <DialogContent className="max-w-[400px] w-[95%] rounded-[1.5rem] md:rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-card/95">
                             <DialogHeader className="text-right sm:text-right space-y-2">
-                              <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700 w-fit">
+                              <div className="inline-flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1 text-xs font-bold text-destructive w-fit">
                                 <AlertTriangle className="h-3.5 w-3.5" />
                                 إجراء حساس
                               </div>
@@ -1266,19 +1264,19 @@ export default function AdminPage() {
                             </DialogHeader>
                             <div className="py-6 space-y-5">
                               <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700 block pr-1">الرمز السري</label>
+                                <label className="text-sm font-bold text-foreground/80 block pr-1">الرمز السري</label>
                                 <Input 
                                   type="password" 
                                   placeholder="أدخل رمز التصفير" 
                                   value={resetCode} 
                                   onChange={(e) => setResetCode(e.target.value)}
-                                  className="text-center h-12 rounded-xl border-gray-200 focus:border-orange-300 text-lg tracking-widest"
+                                  className="text-center h-12 rounded-xl border-border focus:border-destructive/40 text-lg tracking-widest"
                                 />
                               </div>
                               <Button 
                                 onClick={() => resetRevenueMutation.mutate(resetCode)} 
                                 disabled={resetRevenueMutation.isPending || !resetCode}
-                                className="w-full h-12 rounded-xl font-black text-lg shadow-lg bg-orange-600 hover:bg-orange-700 shadow-orange-200 transition-all hover:scale-[1.02]"
+                                className="w-full h-12 rounded-xl font-black text-lg shadow-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-destructive/20 transition-all"
                               >
                                 {resetRevenueMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "تأكيد وبدء دورة جديدة"}
                               </Button>
@@ -1287,18 +1285,18 @@ export default function AdminPage() {
                         </Dialog>
                       </div>
                     </div>
-                    <p className="text-3xl md:text-4xl font-black tracking-tight text-orange-950 mb-6">{formatPrice(revenueData.total)}</p>
+                    <p className="text-3xl md:text-4xl font-black tracking-tight text-foreground mb-6">{formatPrice(revenueData.total)}</p>
                     
-                    <div className="mt-auto flex items-end justify-between gap-2 h-24 pt-4 border-t border-orange-500/10">
+                    <div className="mt-auto flex items-end justify-between gap-2 h-24 pt-4 border-t border-primary/10">
                       {revenueData.chartData.map((d, i) => {
                          const maxVal = Math.max(...revenueData.chartData.map(c => c.value), 1);
                          return (
                           <div key={i} className="flex flex-col items-center flex-1 gap-2 group">
-                              <div className="w-full relative h-[60px] flex items-end justify-center rounded overflow-hidden bg-orange-500/10 transition-all group-hover:bg-orange-500/20">
-                                  <div className="w-full bg-orange-500 rounded-t-sm transition-all duration-500 ease-out min-h-[4px]" style={{ height: `${(d.value / maxVal) * 100}%` }}></div>
+                              <div className="w-full relative h-[60px] flex items-end justify-center rounded overflow-hidden bg-primary/10 transition-all group-hover:bg-primary/20">
+                                  <div className="w-full bg-primary rounded-t-sm transition-all duration-500 ease-out min-h-[4px]" style={{ height: `${(d.value / maxVal) * 100}%` }}></div>
                                   <div className="absolute opacity-0 group-hover:opacity-100 bottom-full mb-1 bg-gray-900 text-white text-[10px] p-1 rounded font-bold whitespace-nowrap z-10 pointer-events-none transition-opacity">{formatPrice(d.value)}</div>
                               </div>
-                              <span className="text-[10px] text-gray-600 font-bold">{d.label}</span>
+                              <span className="text-[9px] md:text-[10px] text-muted-foreground font-bold whitespace-nowrap">{d.label}</span>
                           </div>
                          );
                       })}
@@ -1308,73 +1306,73 @@ export default function AdminPage() {
               </Card>
 
               {/* Card 2 */}
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-teal-500/15 to-teal-500/5 text-teal-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-card/80 p-3 shadow-sm">
                         <ShoppingBag className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-teal-800/60">الطلبات الكلية</p>
-                      <p className="text-3xl font-black tracking-tight text-teal-900">{(data.stats.orders?.all ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">الطلبات الكلية</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.orders?.all ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Card 3 */}
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-amber-500/15 to-amber-500/5 text-amber-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-card/80 p-3 shadow-sm">
                         <Clock3 className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-amber-800/60">طلبات معلقة</p>
-                      <p className="text-3xl font-black tracking-tight text-amber-900">{(data.stats.pendingOrders ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">طلبات معلقة</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.pendingOrders ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Card 4 */}
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-sky-500/15 to-sky-500/5 text-sky-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-card/80 p-3 shadow-sm">
                         <Package className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-sky-800/60">أنواع المنتجات</p>
-                      <p className="text-3xl font-black tracking-tight text-sky-900">{(data.stats.products ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">أنواع المنتجات</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">{(data.stats.products ?? 0).toLocaleString("ar-EG-u-nu-latn")}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Card 5 */}
-              <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+              <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
                 <CardContent className="p-0 h-full">
-                  <div className="rounded-xl bg-gradient-to-br p-6 from-indigo-500/15 to-indigo-500/5 text-indigo-700 h-full flex flex-col justify-between">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div className="rounded-2xl bg-white/80 p-3 shadow-sm">
+                  <div className="rounded-xl bg-gradient-to-br p-4 md:p-6 from-primary/10 to-transparent text-primary h-full flex flex-col justify-between">
+                    <div className="mb-4 md:mb-8 flex items-center justify-between">
+                      <div className="rounded-2xl bg-card/80 p-3 shadow-sm">
                         <Boxes className="h-5 w-5" />
                       </div>
                       <BarChart3 className="h-5 w-5 opacity-40" />
                     </div>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-indigo-800/60">إجمالي المخزون</p>
-                      <p className="text-3xl font-black tracking-tight text-indigo-900">
-                        {((data.products || []).reduce((sum, p) => sum + (p.stock || 0), 0)).toLocaleString("ar-EG")}
+                      <p className="mb-1 text-xs md:text-sm font-medium text-muted-foreground">إجمالي المخزون</p>
+                      <p className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
+                        {((data.products || []).reduce((sum, p) => sum + (p.stock || 0), 0)).toLocaleString("ar-EG-u-nu-latn")}
                       </p>
                     </div>
                   </div>
@@ -1383,7 +1381,7 @@ export default function AdminPage() {
             </section>
 
         <section className="grid grid-cols-1 gap-6">
-          <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+          <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Boxes className="h-5 w-5 text-primary" />
@@ -1409,7 +1407,7 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <Badge variant="outline" className="rounded-full">
-                      {(category.productCount ?? 0).toLocaleString("ar-EG")}
+                      {(category.productCount ?? 0).toLocaleString("ar-EG-u-nu-latn")}
                     </Badge>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -1426,7 +1424,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="products" className="space-y-8">
-          <Card className="border-white/60 bg-white/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
+          <Card className="border-border bg-card/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 md:p-8">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1462,7 +1460,7 @@ export default function AdminPage() {
                   onClick={() => setActiveCategory(null)}
                   className={cn(
                     "rounded-full px-4 h-8 text-xs font-black shrink-0 transition-all",
-                    !activeCategory ? "shadow-md shadow-primary/20" : "bg-white"
+                    !activeCategory ? "shadow-md shadow-primary/20" : "bg-card"
                   )}
                 >
                   الكل
@@ -1475,7 +1473,7 @@ export default function AdminPage() {
                     onClick={() => setActiveCategory(cat.id)}
                     className={cn(
                       "rounded-full px-4 h-8 text-xs font-bold shrink-0 whitespace-nowrap transition-all flex items-center gap-1.5",
-                      activeCategory === cat.id ? "shadow-md shadow-primary/20" : "bg-white"
+                      activeCategory === cat.id ? "shadow-md shadow-primary/20" : "bg-card"
                     )}
                   >
                     <CategoryIcon icon={cat.icon} className="h-3 w-3" imgClassName="p-0" />
@@ -1491,7 +1489,7 @@ export default function AdminPage() {
                   .map(([catId, products]) => (
                   <div key={catId} className="space-y-4">
                     <div className="flex items-center justify-between px-1">
-                      <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+                      <h3 className="text-lg font-black text-foreground flex items-center gap-2">
                         <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary/10 text-base overflow-hidden">
                            <CategoryIcon icon={data.topCategories.find(c => c.id === catId)?.icon} className="h-4 w-4 text-primary" />
                         </div>
@@ -1504,10 +1502,10 @@ export default function AdminPage() {
                       {products.map((product) => (
                         <div
                           key={product.id}
-                          className="group min-w-[160px] md:min-w-[300px] snap-start rounded-3xl border border-border/60 bg-white/80 backdrop-blur-sm p-3 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/5 relative flex flex-col"
+                          className="group min-w-[160px] md:min-w-[300px] snap-start rounded-3xl border border-border/60 bg-card/80 backdrop-blur-sm p-3 hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-primary/5 relative flex flex-col"
                         >
                           <div className="flex flex-col gap-3">
-                            <div className="h-28 md:h-48 w-full rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-white p-1 mb-1">
+                            <div className="h-28 md:h-48 w-full rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-card p-1 mb-1">
                               <img 
                                 src={product.image || "/images/product-spices.png"} 
                                 alt={product.name} 
@@ -1525,10 +1523,10 @@ export default function AdminPage() {
                               </div>
                                 
                               <div className="flex flex-wrap items-center gap-1">
-                                 <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 bg-emerald-50 text-emerald-700 border-emerald-100 font-bold">
+                                 <Badge variant={product.inStock ? "secondary" : "outline"} className="rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 bg-emerald-500/10 text-emerald-700 border-emerald-500/20 font-bold">
                                    {product.inStock ? "متوفر" : "غير متوفر"}
                                  </Badge>
-                                 <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-200 text-rose-600 bg-rose-50" : "border-orange-200 text-orange-600 bg-orange-50")}>
+                                 <Badge variant="outline" className={cn("rounded-full text-[7px] md:text-xs h-4 md:h-6 px-1.5 md:px-3 font-black", (product.stock || 0) <= 5 ? "border-rose-500/30 text-rose-600 bg-rose-500/10" : "border-primary/20 text-primary bg-primary/5")}>
                                    {product.stock || 0}
                                  </Badge>
                                  {!product.isVisible && (
@@ -1538,7 +1536,7 @@ export default function AdminPage() {
                                  )}
                               </div>
                               
-                              <div className="text-sm md:text-2xl font-black text-slate-800 pt-1">
+                              <div className="text-sm md:text-2xl font-black text-foreground pt-1">
                                 {formatPrice(product.price)}
                               </div>
                             </div>
@@ -1554,7 +1552,7 @@ export default function AdminPage() {
                             </Button>
                             <Button 
                               variant="ghost" 
-                              className="h-8 md:h-11 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 gap-1 text-[10px] md:text-sm font-bold transition-all"
+                              className="h-8 md:h-11 rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500/15 gap-1 text-[10px] md:text-sm font-bold transition-all"
                               onClick={() => {
                                 if (confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
                                    deleteProductMutation.mutate(product.id);
@@ -1591,7 +1589,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-8">
-          <Card className="border-white/60 bg-white/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
+          <Card className="border-border bg-card/90 shadow-[0_20px_60px_rgba(69,44,16,0.08)] rounded-[2rem] overflow-hidden">
             <CardHeader className="p-6 md:p-8 border-b border-border/40">
               <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -1604,7 +1602,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Orders Stats Summary Card */}
-                <div className="flex bg-white/60 p-1.5 rounded-2xl border border-white/40 shadow-sm backdrop-blur-sm">
+                <div className="flex bg-card/60 p-1.5 rounded-2xl border border-border shadow-sm backdrop-blur-sm">
                   {[
                     { id: 'today', label: 'اليوم', count: orderStats.today },
                     { id: 'week', label: 'الأسبوع', count: orderStats.week },
@@ -1617,12 +1615,12 @@ export default function AdminPage() {
                       className={cn(
                         "flex flex-col items-center px-4 py-2 rounded-xl transition-all duration-300 min-w-[70px]",
                         orderTimeFilter === f.id 
-                          ? "bg-white text-primary shadow-md border-b-2 border-primary" 
-                          : "text-muted-foreground hover:bg-white/40 opacity-70 hover:opacity-100"
+                          ? "bg-card text-primary shadow-md border-b-2 border-primary" 
+                          : "text-muted-foreground hover:bg-card/40 opacity-70 hover:opacity-100"
                       )}
                     >
                       <span className="text-[10px] font-bold mb-1">{f.label}</span>
-                      <span className="text-sm font-black">{f.count.toLocaleString("ar-EG")}</span>
+                      <span className="text-sm font-black">{f.count.toLocaleString("ar-EG-u-nu-latn")}</span>
                     </button>
                   ))}
                 </div>
@@ -1676,7 +1674,7 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell className="text-right py-4">
                           <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusClasses[order.status] || "border-slate-200 bg-slate-100 text-slate-700"}`}
+                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${statusClasses[order.status] || "border-border bg-muted text-foreground/80"}`}
                           >
                             {statusLabels[order.status] || order.status}
                           </span>
@@ -1707,7 +1705,7 @@ export default function AdminPage() {
                                 <SelectItem value="processing" className="text-xs">جارٍ التجهيز</SelectItem>
                                 <SelectItem value="completed" className="text-xs">تم التوصيل</SelectItem>
                                 <SelectItem value="cancelled" className="text-xs text-red-500">إلغاء الطلب</SelectItem>
-                                <SelectItem value="archived" className="text-xs text-gray-500">أرشفة</SelectItem>
+                                <SelectItem value="archived" className="text-xs text-muted-foreground">أرشفة</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1721,7 +1719,7 @@ export default function AdminPage() {
               {/* Mobile View Cards (Timo Style) */}
               <div className="md:hidden p-4 space-y-4">
                 {filteredOrders.map((order) => (
-                  <div key={order.id} className="rounded-3xl border border-border/40 bg-white p-5 shadow-sm active:scale-[0.98] transition-transform">
+                  <div key={order.id} className="rounded-3xl border border-border/40 bg-card p-5 shadow-sm active:scale-[0.98] transition-transform">
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -1770,7 +1768,7 @@ export default function AdminPage() {
                           <SelectItem value="processing">جارٍ التجهيز</SelectItem>
                           <SelectItem value="completed">تم التوصيل</SelectItem>
                           <SelectItem value="cancelled" className="text-red-500">إلغاء</SelectItem>
-                          <SelectItem value="archived" className="text-gray-500">أرشفة</SelectItem>
+                          <SelectItem value="archived" className="text-muted-foreground">أرشفة</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1792,7 +1790,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="customers" className="space-y-8">
-          <Card className="border-white/60 bg-white/90 shadow-xl">
+          <Card className="border-border bg-card/90 shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UsersIcon className="h-5 w-5 text-primary" />
@@ -1855,7 +1853,7 @@ export default function AdminPage() {
                     <div 
                       key={customer.id} 
                       className={cn(
-                        "rounded-xl border border-border/40 bg-white shadow-sm overflow-hidden transition-all duration-300",
+                        "rounded-xl border border-border/40 bg-card shadow-sm overflow-hidden transition-all duration-300",
                         isExpanded ? "ring-1 ring-primary/20 shadow-md" : "hover:border-primary/20"
                       )}
                     >
@@ -1876,27 +1874,27 @@ export default function AdminPage() {
                             {isActive ? (
                                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></span>
                             ) : (
-                               <span className="flex h-2.5 w-2.5 rounded-full bg-slate-200"></span>
+                               <span className="flex h-2.5 w-2.5 rounded-full bg-muted"></span>
                             )}
                          </div>
                       </button>
                       
                       {isExpanded && (
                          <div className="px-3 pb-3 animate-in slide-in-from-top-2 fade-in duration-200">
-                            <div className="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                            <div className="space-y-2 bg-muted/50 p-2.5 rounded-lg border border-border">
                                {customer.email && (
-                                  <div className="flex items-center gap-2 text-xs text-slate-700">
+                                  <div className="flex items-center gap-2 text-xs text-foreground/80">
                                      <Mail className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                                      <span className="truncate flex-1 font-medium" dir="ltr">{customer.email}</span>
                                   </div>
                                )}
                                {customer.phone && (
-                                  <div className="flex items-center gap-2 text-xs text-slate-700">
+                                  <div className="flex items-center gap-2 text-xs text-foreground/80">
                                      <Phone className="h-3.5 w-3.5 shrink-0 text-primary/60" />
                                      <span dir="ltr" className="font-mono font-bold tracking-wide">{customer.phone}</span>
                                   </div>
                                )}
-                               <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-1.5 border-t border-slate-200/60 mt-1.5">
+                               <div className="flex items-center gap-2 text-[10px] text-muted-foreground pt-1.5 border-t border-border/60 mt-1.5">
                                   <Clock3 className="h-3 w-3 shrink-0" />
                                   <span>تاريخ آخر نشاط: {formatAdminDate(customer.lastActive) || "غير معروف"}</span>
                                </div>
@@ -1907,9 +1905,9 @@ export default function AdminPage() {
                   );
                 })}
                 {(!customersQuery.data || customersQuery.data.length === 0) && (
-                  <div className="p-10 text-center bg-white rounded-3xl border border-dashed border-slate-200">
-                    <UsersIcon className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                    <p className="text-slate-500 font-bold">لا يوجد عملاء مسجلون حالياً</p>
+                  <div className="p-10 text-center bg-card rounded-3xl border border-dashed border-border">
+                    <UsersIcon className="h-12 w-12 text-muted-foreground/70 mx-auto mb-3" />
+                    <p className="text-muted-foreground font-bold">لا يوجد عملاء مسجلون حالياً</p>
                   </div>
                 )}
               </div>
@@ -1919,7 +1917,7 @@ export default function AdminPage() {
 
         <TabsContent value="payments" className="space-y-8">
           <div className="grid gap-8 md:grid-cols-2">
-            <Card className="border-white/60 bg-white/90 shadow-xl">
+            <Card className="border-border bg-card/90 shadow-xl">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Landmark className="h-5 w-5 text-primary" />
@@ -1960,7 +1958,7 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/60 bg-white/90 shadow-xl">
+            <Card className="border-border bg-card/90 shadow-xl">
               <CardHeader>
                 <CardTitle>الحسابات المضافة</CardTitle>
                 <CardDescription>قائمة الحسابات البنكية المتاحة للعملاء.</CardDescription>
@@ -1997,7 +1995,7 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="messages" className="space-y-8">
-          <Card className="border-white/60 bg-white/90 shadow-xl overflow-hidden">
+          <Card className="border-border bg-card/90 shadow-xl overflow-hidden">
             <CardHeader className="bg-primary/5 border-b">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-right">
@@ -2045,7 +2043,7 @@ export default function AdminPage() {
                     const isArchived = m.isArchived || (msg.isRead && (new Date().getTime() - new Date(msg.createdAt).getTime() > 24 * 60 * 60 * 1000));
                     return messageFilter === "archived" ? isArchived : !isArchived;
                   }).map((msg) => (
-                    <TableRow key={msg.id} className={msg.isRead ? "opacity-70" : "bg-green-50/30"}>
+                    <TableRow key={msg.id} className={msg.isRead ? "opacity-70" : "bg-green-500/10"}>
                       <TableCell className="text-right">
                         {!msg.isRead ? (
                           <Badge className="bg-green-500 hover:bg-green-600">جديد</Badge>
@@ -2054,7 +2052,7 @@ export default function AdminPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right text-xs">
-                        {new Date(msg.createdAt).toLocaleDateString("ar-EG")}
+                        {new Date(msg.createdAt).toLocaleDateString("ar-EG-u-nu-latn", { day: "numeric", month: "short", year: "numeric" })}
                       </TableCell>
                       <TableCell className="text-right font-bold">{msg.name}</TableCell>
                       <TableCell className="text-right">
@@ -2086,7 +2084,7 @@ export default function AdminPage() {
                             <DialogContent className="max-w-md">
                               <DialogHeader>
                                 <DialogTitle>رسالة من: {msg.name}</DialogTitle>
-                                <DialogDescription>بتاريخ: {new Date(msg.createdAt).toLocaleString("ar-EG")}</DialogDescription>
+                                <DialogDescription>بتاريخ: {new Date(msg.createdAt).toLocaleString("ar-EG-u-nu-latn", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" })}</DialogDescription>
                               </DialogHeader>
                               <div className="mt-4 space-y-4">
                                 <div className="rounded-xl bg-muted p-4 text-right whitespace-pre-wrap leading-relaxed">
@@ -2123,7 +2121,7 @@ export default function AdminPage() {
         </TabsContent>
 
           <TabsContent value="settings" className="space-y-8">
-            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] max-w-2xl mx-auto">
+            <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] max-w-2xl mx-auto">
               <CardHeader>
                 <CardTitle>إعدادات الحساب والإشعارات</CardTitle>
                 <CardDescription>
@@ -2285,7 +2283,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-6">
-            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
+            <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)]">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5 text-primary" />
@@ -2345,7 +2343,7 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {categoriesQuery.data?.map((category) => (
-                    <div key={category.id} className="flex items-center justify-between p-3 rounded-2xl border border-border bg-white shadow-sm hover:shadow-md transition-all group">
+                    <div key={category.id} className="flex items-center justify-between p-3 rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all group">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-xl overflow-hidden bg-primary/5 flex items-center justify-center text-primary font-bold border border-primary/10">
                           <CategoryIcon 
@@ -2363,7 +2361,7 @@ export default function AdminPage() {
                         <Button 
                           variant="secondary" 
                           size="icon" 
-                          className="h-8 w-8 text-blue-600 hover:text-blue-700 bg-blue-50/50 hover:bg-blue-50 rounded-lg"
+                          className="h-8 w-8 text-blue-600 hover:text-blue-700 bg-blue-500/10 hover:bg-blue-500/10 rounded-lg"
                           onClick={() => {
                             setEditingCategory(category);
                             setIsCategoryEditDialogOpen(true);
@@ -2374,7 +2372,7 @@ export default function AdminPage() {
                         <Button 
                           variant="secondary" 
                           size="icon" 
-                          className="h-8 w-8 text-rose-600 hover:text-rose-700 bg-rose-50/50 hover:bg-rose-50 rounded-lg"
+                          className="h-8 w-8 text-rose-600 hover:text-rose-700 bg-rose-500/10 hover:bg-rose-500/10 rounded-lg"
                           onClick={() => {
                             if (confirm(`هل أنت متأكد من حذف قسم "${category.name}"؟ سيتم الاحتفاظ بالمنتجات ولكنها قد لا تظهر بشكل صحيح.`)) {
                               deleteCategoryMutation.mutate(category.id);
@@ -2391,9 +2389,9 @@ export default function AdminPage() {
 
                 {/* Edit Category Dialog */}
                 <Dialog open={isCategoryEditDialogOpen} onOpenChange={setIsCategoryEditDialogOpen}>
-                  <DialogContent className="max-w-[400px] w-[95%] rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-white/95">
+                  <DialogContent className="max-w-[400px] w-[95%] rounded-[2rem] p-6 text-right border-primary/10 shadow-2xl backdrop-blur-xl bg-card/95">
                     <DialogHeader className="text-right sm:text-right space-y-2">
-                       <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 w-fit">
+                       <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-bold text-blue-700 w-fit">
                         <Pencil className="h-3.5 w-3.5" />
                         تعديل بيانات القسم
                       </div>
@@ -2462,9 +2460,9 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-8">
-            <Card className="border-white/60 bg-white/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] max-w-2xl mx-auto">
+            <Card className="border-border bg-card/90 shadow-[0_12px_40px_rgba(69,44,16,0.06)] max-w-2xl mx-auto">
               <CardHeader className="text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700">
                   <ShieldCheck className="h-7 w-7" />
                 </div>
                 <CardTitle>تعديل بيانات الدخول والأمان</CardTitle>
@@ -2534,7 +2532,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="border-t border-dashed pt-4">
-                    <div className="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="space-y-2 bg-muted/50 p-4 rounded-xl border border-border">
                       <label className="text-sm font-black block text-right text-primary">كلمة المرور الحالية (مطلوب للتأكيد)</label>
                       <Input
                         name="current_password"
@@ -2567,7 +2565,7 @@ export default function AdminPage() {
 
       {/* Detailed Order Dialog */}
       <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-md">
+        <DialogContent className="max-w-2xl bg-card/95 backdrop-blur-md">
           <DialogHeader className="text-right">
             <DialogTitle className="flex items-center gap-2 justify-end">
               <FileText className="h-5 w-5 text-primary" />

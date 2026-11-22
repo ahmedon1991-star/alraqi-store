@@ -80,7 +80,7 @@ export function MobileNav() {
                     }`}
                 />
                 {item.count !== undefined && item.count > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-br from-primary to-primary-foreground text-black text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-primary text-primary-foreground  text-[10px] border-2 border-background animate-in zoom-in duration-300 font-black">
                     {item.count}
                   </Badge>
                 )}

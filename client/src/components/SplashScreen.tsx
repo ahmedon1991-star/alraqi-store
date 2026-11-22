@@ -18,7 +18,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#faf7f0] transition-opacity duration-700 ${
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background transition-opacity duration-700 ${
         fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
@@ -35,7 +35,7 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
         style={{ animationDuration: "700ms" }}
       >
         <img
-          src="/logo.png"
+          src="/logo-mark.png"
           alt="الراقي"
           className="w-52 h-auto object-contain drop-shadow-xl"
         />

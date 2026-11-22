@@ -93,7 +93,7 @@ export default function Home() {
             </div>
             
             <a href="/api/download-app" download="Al-Raqi-Store.apk" className="shrink-0">
-              <Button size="sm" className="h-8 md:h-11 px-3 md:px-6 rounded-xl bg-white text-primary hover:bg-gray-100 font-bold shadow-sm transition-transform active:scale-95 text-[10px] md:text-sm flex gap-1.5 md:gap-2">
+              <Button size="sm" className="h-8 md:h-11 px-3 md:px-6 rounded-xl bg-card text-primary hover:bg-muted font-bold shadow-sm transition-transform active:scale-95 text-[10px] md:text-sm flex gap-1.5 md:gap-2">
                 <Download className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">تحميل التطبيق</span>
                 <span className="sm:hidden">تحميل</span>
@@ -103,7 +103,7 @@ export default function Home() {
         </section>
 
         {productsLoading ? (
-          <section className="py-20">
+          <section className="py-10 md:py-20">
             <div className="container mx-auto px-4 space-y-20">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-8">
@@ -172,7 +172,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <section className="py-20 container mx-auto px-4">
+        <section className="py-10 md:py-20 container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <FeatureItem icon={<ShieldCheck className="h-10 w-10 md:h-16 md:w-16" />} title="جودة استثنائية" desc="منتجات مختارة بعناية فائقة تليق بذائقتكم" color="text-primary" />
             <FeatureItem icon={<Truck className="h-10 w-10 md:h-16 md:w-16" />} title="توصيل ملكي" desc="خدمة توصيل سريعة وآمنة إلى باب المنزل" color="text-primary" />

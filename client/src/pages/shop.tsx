@@ -119,11 +119,11 @@ export default function Shop() {
 
       <div className="space-y-4">
         <div
-          className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${showWishlistOnly ? "bg-red-50 border-red-200 text-red-700" : "bg-white border-border hover:border-primary/50"}`}
+          className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${showWishlistOnly ? "bg-red-500/10 border-red-500/30 text-red-700" : "bg-card border-border hover:border-primary/50"}`}
           onClick={() => setShowWishlistOnly(!showWishlistOnly)}
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${showWishlistOnly ? "bg-red-100" : "bg-gray-100"}`}>
-            <Heart className={`h-4 w-4 ${showWishlistOnly ? "fill-red-600 text-red-600" : "text-gray-500"}`} />
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${showWishlistOnly ? "bg-red-500/15" : "bg-muted"}`}>
+            <Heart className={`h-4 w-4 ${showWishlistOnly ? "fill-red-600 text-red-600" : "text-muted-foreground"}`} />
           </div>
           <div className="flex-1 font-bold text-sm">
             المفضلة فقط
@@ -131,11 +131,11 @@ export default function Shop() {
         </div>
 
         <div
-          className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${showOffersOnly ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-white border-border hover:border-primary/50"}`}
+          className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${showOffersOnly ? "bg-amber-500/10 border-amber-500/30 text-amber-700" : "bg-card border-border hover:border-primary/50"}`}
           onClick={() => setShowOffersOnly(!showOffersOnly)}
         >
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${showOffersOnly ? "bg-amber-100" : "bg-gray-100"}`}>
-            <Sparkles className={`h-4 w-4 ${showOffersOnly ? "text-amber-600" : "text-gray-500"}`} />
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${showOffersOnly ? "bg-amber-500/15" : "bg-muted"}`}>
+            <Sparkles className={`h-4 w-4 ${showOffersOnly ? "text-amber-600" : "text-muted-foreground"}`} />
           </div>
           <div className="flex-1 font-bold text-sm">
             العروض المتاحة فقط
@@ -175,11 +175,10 @@ export default function Shop() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <div className="bg-secondary/90 text-white py-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/texture-pattern.png')] bg-repeat opacity-20"></div>
+      <div className="bg-gradient-to-b from-secondary/10 to-transparent border-b border-border py-8 md:py-12 relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <h1 className="text-4xl font-black mb-4">المتجر</h1>
-          <p className="text-secondary-foreground/80 max-w-xl mx-auto text-lg">
+          <h1 className="text-3xl md:text-4xl font-black mb-2 md:mb-4 text-foreground">المتجر</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto text-base md:text-lg">
             تصفح مجموعتنا الكاملة من المنتجات السودانية الأصيلة
           </p>
         </div>
@@ -200,7 +199,7 @@ export default function Shop() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="bottom" className="rounded-t-[2.5rem] h-[85vh] p-0 overflow-hidden">
-                <div className="h-1.5 w-12 bg-gray-300 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
+                <div className="h-1.5 w-12 bg-muted-foreground/30 rounded-full mx-auto mt-3 mb-1 shrink-0"></div>
                 <div className="py-6 px-6 overflow-y-auto h-full pb-20 no-scrollbar">
                   <h2 className="text-2xl font-black mb-6">تصفية النتائج</h2>
                   {filterContent}
@@ -218,7 +217,7 @@ export default function Shop() {
                 onClick={() => setSelectedCategories([])}
                 className={cn(
                   "rounded-full px-6 h-10 font-bold shrink-0 transition-all",
-                  selectedCategories.length === 0 ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
+                  selectedCategories.length === 0 ? "shadow-md shadow-primary/20" : "bg-card border-border/60"
                 )}
               >
                 الكل
@@ -231,7 +230,7 @@ export default function Shop() {
                   onClick={() => toggleCategory(String(cat.id))}
                   className={cn(
                     "rounded-full px-6 h-10 font-bold shrink-0 whitespace-nowrap transition-all",
-                    selectedCategories.includes(String(cat.id)) ? "shadow-md shadow-primary/20" : "bg-white border-border/60"
+                    selectedCategories.includes(String(cat.id)) ? "shadow-md shadow-primary/20" : "bg-card border-border/60"
                   )}
                 >
                   {cat.name}
@@ -252,7 +251,7 @@ export default function Shop() {
                     setShowWishlistOnly(false);
                     setShowOffersOnly(false);
                   }}
-                  className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-2 font-bold"
+                  className="text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 gap-2 font-bold"
                 >
                   <X className="h-4 w-4" />
                   إلغاء التصفية
@@ -268,7 +267,7 @@ export default function Shop() {
               <div className="text-center py-20 bg-muted/20 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10 mx-auto max-w-lg mt-8">
                 {showWishlistOnly ? (
                   <div className="space-y-4 px-6">
-                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Heart className="h-10 w-10 text-red-200" />
                     </div>
                     <h3 className="text-xl font-black text-foreground">قائمة المفضلة فارغة</h3>
@@ -283,8 +282,8 @@ export default function Shop() {
                   </div>
                 ) : (
                   <div className="space-y-4 px-6">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Search className="h-10 w-10 text-gray-200" />
+                    <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="h-10 w-10 text-muted-foreground/40" />
                     </div>
                     <p className="text-xl font-bold">لا توجد منتجات مطابقة للبحث</p>
                     <Button 

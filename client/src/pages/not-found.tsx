@@ -7,7 +7,7 @@ export default function NotFound() {
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[linear-gradient(135deg,_#fff_0%,_#f8f4ee_100%)] p-4 text-right" dir="rtl">
       <div className="relative mb-8">
         <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-        <img src="/logo.png" alt="الراقي" className="h-24 md:h-32 w-auto relative z-10 opacity-40 grayscale" />
+        <img src="/logo-mark.png" alt="الراقي" className="h-24 md:h-32 w-auto relative z-10 opacity-40 grayscale" />
       </div>
       
       <div className="max-w-md w-full text-center space-y-6">
@@ -16,7 +16,7 @@ export default function NotFound() {
             <Sparkles className="h-4 w-4" />
             خطأ 404
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-800">عذراً، الصفحة غير موجودة!</h1>
+          <h1 className="text-4xl md:text-5xl font-black text-foreground">عذراً، الصفحة غير موجودة!</h1>
         </div>
         
         <p className="text-lg text-muted-foreground font-medium leading-relaxed">

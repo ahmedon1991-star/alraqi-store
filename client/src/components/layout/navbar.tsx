@@ -68,9 +68,9 @@ export function Navbar() {
               <div className="group relative flex items-center cursor-pointer">
                 <div className="absolute -inset-2 rounded-xl bg-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100 blur-md" />
                 <img
-                  src="/logo.png"
+                  src="/logo-mark.png"
                   alt="متجر الراقي"
-                  className="h-12 md:h-22 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px] brightness-110 contrast-110"
+                  className="h-14 md:h-20 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px]"
                   onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
                 />
               </div>
@@ -106,17 +106,17 @@ export function Navbar() {
              <div className="md:hidden">
                <Sheet>
                  <SheetTrigger asChild>
-                   <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-700 bg-gray-50/50 border border-gray-100 rounded-2xl">
+                   <Button variant="ghost" size="icon" className="h-10 w-10 text-foreground/80 bg-muted/50/50 border border-border rounded-2xl">
                      <Menu className="h-5 w-5" />
                    </Button>
                  </SheetTrigger>
                  <SheetContent side="right" className="w-[80%] rounded-l-3xl p-6 text-right">
                    <div className="flex flex-col gap-6 mt-12">
-                     <Link href="/" className="text-xl font-black text-gray-800">الرئيسية</Link>
-                     <Link href="/shop" className="text-xl font-black text-gray-800 border-t pt-4">المتجر</Link>
+                     <Link href="/" className="text-xl font-black text-foreground">الرئيسية</Link>
+                     <Link href="/shop" className="text-xl font-black text-foreground border-t pt-4">المتجر</Link>
                      <Link href="/shop?offers=true" className="text-xl font-black text-primary border-t pt-4">العروض الحصرية</Link>
                      <div className="mt-auto border-t pt-8">
-                       <p className="text-sm font-bold text-gray-400 mb-4">متجر الراقي للمنتجات السودانية</p>
+                       <p className="text-sm font-bold text-muted-foreground/70 mb-4">متجر الراقي للمنتجات السودانية</p>
                        {user ? (
                          <div className="flex items-center gap-3 p-4 rounded-2xl bg-primary/5">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -154,7 +154,7 @@ export function Navbar() {
               <div className="relative h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-2xl bg-card border border-primary/20 hover:border-primary/60 hover:shadow-[0_0_15px_rgba(200,150,62,0.15)] transition-all cursor-pointer group">
                 <ShoppingCart className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
                 {cartCount > 0 && (
-                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-gradient-to-br from-primary to-primary-foreground p-0 text-[10px] border-2 border-background shadow-md font-black animate-in zoom-in text-black">
+                  <Badge className="absolute -left-1 -top-1 flex h-5 w-5 items-center justify-center bg-primary text-primary-foreground p-0 text-[10px] border-2 border-background shadow-md font-black animate-in zoom-in ">
                     {cartCount}
                   </Badge>
                 )}
@@ -173,7 +173,7 @@ export function Navbar() {
 
             {getAdminToken() && (
               <Link href="/admin">
-                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-orange-600 hover:bg-orange-50 rounded-2xl border border-orange-100 animate-pulse">
+                <Button variant="ghost" size="icon" className="h-10 w-10 md:h-12 md:w-12 text-primary hover:bg-primary/5 rounded-2xl border border-primary/20">
                   <Shield className="h-5 w-5" />
                 </Button>
               </Link>
@@ -188,11 +188,11 @@ export function Navbar() {
                 <Input
                   autoFocus
                   placeholder="ابحث عن المنتجات..."
-                  className="rounded-xl border-none bg-slate-50 focus:bg-white h-10 pr-9 text-right shadow-inner ring-1 ring-slate-200 focus:ring-2 focus:ring-primary/40 transition-all font-bold"
+                  className="rounded-xl border-none bg-muted/50 focus:bg-card h-10 pr-9 text-right shadow-inner ring-1 ring-slate-200 focus:ring-2 focus:ring-primary/40 transition-all font-bold"
                   value={mobileSearchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
-                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70 group-focus-within:text-primary transition-colors" />
              </div>
           </div>
         )}

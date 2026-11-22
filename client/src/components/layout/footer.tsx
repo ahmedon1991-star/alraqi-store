@@ -27,11 +27,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1 flex flex-col gap-6 items-center md:items-start text-center md:text-right">
             <div className="flex flex-col">
-              <img src="/logo.png" alt="الراقي" className="h-28 w-auto object-contain mb-2 hidden md:block brightness-110 contrast-110" />
-              <div className="md:hidden">
-                <span className="font-display text-5xl md:text-6xl font-black bg-gradient-to-l from-primary to-primary-foreground bg-clip-text text-transparent">الراقي</span>
-                <p className="font-heading text-[10px] md:text-sm font-black text-primary/60 tracking-[0.3em] -mt-1 uppercase">تميز وفخامة</p>
-              </div>
+              <img src="/logo-mark.png" alt="الراقي" className="h-24 md:h-28 w-auto object-contain mb-2" />
             </div>
             <p className="text-muted-foreground leading-relaxed text-sm md:text-lg font-medium max-w-sm">
               بوابتك الفاخرة لتجربة أجود المحاصيل السودانية الأصيلة. التزامنا بالجودة يبدأ من المصدر وينتهي برضاكم التام.
@@ -133,7 +129,7 @@ export function Footer() {
       {/* Bottom Bar */}
       <div className="border-t border-primary/10 py-8 bg-background/50 relative z-10">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-sm md:text-base font-bold text-muted-foreground/60">
-          <p className="font-heading">© 2024 متجر الراقي الفاخر. v1.1 - النسخة المحدثة</p>
+          <p className="font-heading">© {new Date().getFullYear()} متجر الراقي. جميع الحقوق محفوظة.</p>
           <div className="flex items-center gap-8">
             <a href="#" className="hover:text-primary transition-colors">سياسة الخصوصية</a>
             <span className="text-primary/20">|</span>

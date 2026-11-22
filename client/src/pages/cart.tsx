@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
+import { useCategoryName } from "@/hooks/use-categories";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,14 +137,14 @@ export default function Cart() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item: any) => (
-                <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-white border border-border/50 items-center" data-testid={`card-cart-item-${item.id}`}>
-                  <div className="w-24 h-24 bg-white border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1">
+                <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-card border border-border/50 items-center" data-testid={`card-cart-item-${item.id}`}>
+                  <div className="w-24 h-24 bg-card border border-border/30 rounded-xl overflow-hidden shrink-0 flex items-center justify-center p-1">
                     <img src={item.image || item.product.image || ""} alt={item.product.name} className="w-full h-full object-contain" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg truncate">{item.product.name}</h3>
-                    <p className="text-muted-foreground text-sm mb-1">{item.product.category}</p>
+                    <p className="text-muted-foreground text-sm mb-1"><CategoryName id={item.product.category} /></p>
                     {(item.size || item.measurement) && (
                       <div className="flex flex-wrap items-center gap-2 mb-2 text-xs md:text-sm font-bold w-fit">
                         {item.size && <span className="bg-primary/10 text-primary px-3 py-1 rounded-lg shadow-sm border border-primary/20">المقاس: {item.size}</span>}
@@ -187,7 +188,7 @@ export default function Cart() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white p-6 rounded-3xl border border-border/50 sticky top-24 shadow-sm">
+              <div className="bg-card p-6 rounded-3xl border border-border/50 sticky top-24 shadow-sm">
                 <h2 className="font-bold text-xl mb-6">ملخص الطلب</h2>
 
                 <div className="space-y-3 mb-6">
@@ -198,7 +199,7 @@ export default function Cart() {
                   <div className="flex justify-between text-muted-foreground items-center">
                     <span>
                       {isThresholdMet ? (
-                        <span className="text-green-600 font-bold text-xs bg-green-50 px-2 py-0.5 rounded-full border border-green-200">تهانينا! شحن مجاني 🎉</span>
+                        <span className="text-green-600 font-bold text-xs bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/30">تهانينا! شحن مجاني 🎉</span>
                       ) : (
                         isFreeShipping ? <span className="text-green-600 font-bold">مجاني</span> : <span className="font-mono">{shipping.toLocaleString()}</span>
                       )}
@@ -318,7 +319,7 @@ export default function Cart() {
                                     <>
                                       <p className="text-xs text-muted-foreground font-bold">بيانات الحساب:</p>
                                       <p className="text-sm font-black text-primary">{banks.find(b => b.id === checkoutData.bankId).accountName}</p>
-                                      <p className="font-mono text-base font-bold bg-white/50 px-2 py-1 rounded-md border border-primary/10 inline-block mt-1">{banks.find(b => b.id === checkoutData.bankId).accountNumber}</p>
+                                      <p className="font-mono text-base font-bold bg-card/50 px-2 py-1 rounded-md border border-primary/10 inline-block mt-1">{banks.find(b => b.id === checkoutData.bankId).accountNumber}</p>
                                       <p className="text-xs text-primary font-bold mt-2 flex items-center gap-1">
                                         💡 يرجى إرفاق إشعار التحويل في الواتساب عند الطلب.
                                       </p>
@@ -368,4 +369,8 @@ export default function Cart() {
       <Footer />
     </div>
   );
+}
+
+function CategoryName({ id }: { id: string }) {
+  return <>{useCategoryName(id)}</>;
 }

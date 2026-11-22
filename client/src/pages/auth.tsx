@@ -234,20 +234,20 @@ export default function AuthPage() {
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-4">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(27,112,92,0.12),_transparent_30%),linear-gradient(180deg,_rgba(255,250,244,1),_rgba(247,244,238,1))]" />
         
-        <Card className="w-full max-w-xl border-white/70 bg-white/85 shadow-[0_24px_80px_rgba(69,44,16,0.12)] backdrop-blur">
+        <Card className="w-full max-w-xl border-white/70 bg-card/85 shadow-[0_24px_80px_rgba(69,44,16,0.12)] backdrop-blur">
           <CardHeader className="space-y-3 text-center">
             <div className="flex justify-center">
-              <img src="/logo.png" alt="الراقي" className="h-24 w-auto object-contain" />
+              <img src="/logo-mark.png" alt="الراقي" className="h-24 w-auto object-contain" />
             </div>
             <CardTitle className="text-2xl font-black text-primary">تسجيل الدخول / إنشاء حساب</CardTitle>
             <CardDescription className="text-base font-medium">ابدأ تجربة تسوق فريدة للمنتجات السودانية الأصيلة</CardDescription>
           </CardHeader>
 
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-8 grid w-full grid-cols-2 h-12 bg-gray-100 p-1 rounded-xl">
-                <TabsTrigger value="login" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">تسجيل الدخول</TabsTrigger>
-                <TabsTrigger value="register" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">حساب جديد</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl" className="w-full">
+              <TabsList className="mb-8 grid w-full grid-cols-2 h-12 bg-muted p-1 rounded-xl">
+                <TabsTrigger value="login" className="rounded-lg font-bold data-[state=active]:bg-card data-[state=active]:shadow-sm">تسجيل الدخول</TabsTrigger>
+                <TabsTrigger value="register" className="rounded-lg font-bold data-[state=active]:bg-card data-[state=active]:shadow-sm">حساب جديد</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
@@ -258,8 +258,8 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-gray-700">البريد الإلكتروني</FormLabel>
-                          <FormControl><Input placeholder="name@example.com" {...field} className="h-12 bg-white text-right rounded-xl border-gray-200" dir="ltr" /></FormControl>
+                          <FormLabel className="font-bold text-foreground/80">البريد الإلكتروني</FormLabel>
+                          <FormControl><Input placeholder="name@example.com" {...field} className="h-12 bg-card text-right rounded-xl border-border" dir="ltr" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -269,8 +269,8 @@ export default function AuthPage() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-gray-700">كلمة المرور</FormLabel>
-                          <FormControl><Input type="password" placeholder="••••••••" {...field} className="h-12 bg-white text-right rounded-xl border-gray-200" /></FormControl>
+                          <FormLabel className="font-bold text-foreground/80">كلمة المرور</FormLabel>
+                          <FormControl><Input type="password" placeholder="••••••••" {...field} className="h-12 bg-card text-right rounded-xl border-border" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -289,12 +289,12 @@ export default function AuthPage() {
                                 id="remember" 
                                 checked={field.value} 
                                 onCheckedChange={field.onChange}
-                                className="h-5 w-5 rounded-md border-2 border-gray-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:border-primary/50"
+                                className="h-5 w-5 rounded-md border-2 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all group-hover:border-primary/50"
                               />
                             </div>
-                            <span className="text-sm font-black text-gray-600 group-hover:text-gray-900 transition-colors">تذكرني على هذا الجهاز</span>
+                            <span className="text-sm font-black text-muted-foreground group-hover:text-foreground transition-colors">تذكرني على هذا الجهاز</span>
                           </label>
-                          <Button variant="link" className="h-auto px-0 text-gray-500 hover:text-primary font-bold text-sm" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
+                          <Button variant="link" className="h-auto px-0 text-muted-foreground hover:text-primary font-bold text-sm" type="button" onClick={() => setIsForgotPasswordOpen(true)}>نسيت كلمة المرور؟</Button>
                         </div>
                       )}
                     />
@@ -305,17 +305,17 @@ export default function AuthPage() {
 
                     <div className="relative my-6">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-gray-200" />
+                        <span className="w-full border-t border-border" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-3 font-bold text-gray-500">أو الدخول عبر</span>
+                        <span className="bg-card px-3 font-bold text-muted-foreground">أو الدخول عبر</span>
                       </div>
                     </div>
 
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="h-12 w-full text-base font-bold rounded-xl border-2 border-gray-100 hover:bg-gray-50 gap-2"
+                      className="h-12 w-full text-base font-bold rounded-xl border-2 border-border hover:bg-muted/50 gap-2"
                       onClick={() => handleBiometricLogin()}
                     >
                       <Fingerprint className="h-5 w-5 text-primary" />
@@ -333,8 +333,8 @@ export default function AuthPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-gray-700">الاسم الكامل</FormLabel>
-                          <FormControl><Input placeholder="اسمك الكامل" {...field} className="h-11 bg-white text-right rounded-xl" /></FormControl>
+                          <FormLabel className="font-bold text-foreground/80">الاسم الكامل</FormLabel>
+                          <FormControl><Input placeholder="اسمك الكامل" {...field} className="h-11 bg-card text-right rounded-xl" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -344,8 +344,8 @@ export default function AuthPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-gray-700">البريد الإلكتروني</FormLabel>
-                          <FormControl><Input placeholder="name@example.com" {...field} className="h-11 bg-white text-right rounded-xl" dir="ltr" /></FormControl>
+                          <FormLabel className="font-bold text-foreground/80">البريد الإلكتروني</FormLabel>
+                          <FormControl><Input placeholder="name@example.com" {...field} className="h-11 bg-card text-right rounded-xl" dir="ltr" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -355,8 +355,8 @@ export default function AuthPage() {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="font-bold text-gray-700">رقم الهاتف</FormLabel>
-                          <FormControl><Input placeholder="0912345678" type="tel" {...field} className="h-11 bg-white text-right rounded-xl" dir="ltr" /></FormControl>
+                          <FormLabel className="font-bold text-foreground/80">رقم الهاتف</FormLabel>
+                          <FormControl><Input placeholder="0912345678" type="tel" {...field} className="h-11 bg-card text-right rounded-xl" dir="ltr" /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -367,8 +367,8 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-bold text-gray-700">كلمة المرور</FormLabel>
-                            <FormControl><Input type="password" {...field} className="h-11 bg-white text-right rounded-xl" /></FormControl>
+                            <FormLabel className="font-bold text-foreground/80">كلمة المرور</FormLabel>
+                            <FormControl><Input type="password" {...field} className="h-11 bg-card text-right rounded-xl" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -378,8 +378,8 @@ export default function AuthPage() {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-bold text-gray-700">تأكيد المرور</FormLabel>
-                            <FormControl><Input type="password" {...field} className="h-11 bg-white text-right rounded-xl" /></FormControl>
+                            <FormLabel className="font-bold text-foreground/80">تأكيد المرور</FormLabel>
+                            <FormControl><Input type="password" {...field} className="h-11 bg-card text-right rounded-xl" /></FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -394,8 +394,8 @@ export default function AuthPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-center border-t border-gray-100 pt-4 pb-4">
-            <Link href="/admin-login" className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-primary transition-colors">
+          <CardFooter className="flex justify-center border-t border-border pt-4 pb-4">
+            <Link href="/admin-login" className="flex items-center gap-2 text-xs font-bold text-muted-foreground/70 hover:text-primary transition-colors">
               <Shield className="h-4 w-4" />
               أنا صاحب المتجر
             </Link>

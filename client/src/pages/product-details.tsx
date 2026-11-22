@@ -117,7 +117,7 @@ export default function ProductDetails() {
       <main className="flex-1 container mx-auto px-4 py-4 md:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-20">
           <div className="space-y-4">
-            <div className="aspect-square rounded-3xl overflow-hidden bg-white flex items-center justify-center p-1 relative shadow-sm border border-border/50">
+            <div className="aspect-square rounded-3xl overflow-hidden bg-card flex items-center justify-center p-1 relative shadow-sm border border-border/50">
               {product.badge && (
                 <Badge className="absolute top-4 right-4 z-10 bg-primary text-lg px-4 py-1 shadow-sm">
                   {product.badge}
@@ -144,21 +144,27 @@ export default function ProductDetails() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-black text-primary uppercase tracking-wider">{getCategoryName(product.category)}</span>
                 <span className="text-border">|</span>
-                <div className="flex items-center text-amber-400">
-                  <Star className="h-4 w-4 fill-current" />
-                  <span className="text-foreground font-bold ml-1">{product.rating}</span>
-                  <span className="text-muted-foreground text-xs mr-1">({product.reviews} تقييم)</span>
-                </div>
+                {Number(product.reviews) > 0 ? (
+                  <div className="flex items-center text-amber-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <span className="text-foreground font-bold ml-1">{product.rating}</span>
+                    <span className="text-muted-foreground text-xs mr-1">({product.reviews} تقييم)</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs">لا توجد تقييمات بعد</span>
+                )}
               </div>
               <h1 className="text-2xl md:text-5xl font-black text-foreground mb-1 md:mb-2 leading-tight" data-testid="text-product-name">{product.name}</h1>
               <h2 className="text-lg text-muted-foreground font-medium mb-4 md:mb-6 opacity-80">{product.nameEn}</h2>
 
-              <div className="flex items-end gap-3 mb-4 md:mb-8">
-                <span className="text-3xl md:text-4xl font-black text-primary font-mono" data-testid="text-product-price">{Number(activePrice).toLocaleString()}</span>
-                <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
+              <div className="flex items-baseline gap-3 mb-4 md:mb-8">
+                <div className="flex items-baseline gap-1.5 text-primary">
+                  <span className="text-3xl md:text-4xl font-black font-mono" data-testid="text-product-price">{Number(activePrice).toLocaleString()}</span>
+                  <span className="text-lg md:text-xl font-bold">ج.س</span>
+                </div>
                 {activeOriginalPrice && Number(activeOriginalPrice) > Number(activePrice) && (
-                  <span className="text-xl text-muted-foreground/50 line-through mb-2 mr-2">
-                    {Number(activeOriginalPrice).toLocaleString()}
+                  <span className="text-base md:text-lg text-muted-foreground/70 line-through font-medium">
+                    {Number(activeOriginalPrice).toLocaleString()} ج.س
                   </span>
                 )}
               </div>
@@ -174,7 +180,7 @@ export default function ProductDetails() {
                         "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all",
                         selectedVariantIndex === -1 
                         ? "border-primary bg-primary/10 text-primary" 
-                        : "border-border bg-white text-muted-foreground hover:border-border/80"
+                        : "border-border bg-card text-muted-foreground hover:border-border/80"
                       )}
                     >
                       الأساسي
@@ -187,7 +193,7 @@ export default function ProductDetails() {
                           "px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all",
                           selectedVariantIndex === idx 
                           ? "border-primary bg-primary/10 text-primary" 
-                          : "border-border bg-white text-muted-foreground hover:border-border/80"
+                          : "border-border bg-card text-muted-foreground hover:border-border/80"
                         )}
                       >
                         {v.name}
@@ -198,7 +204,7 @@ export default function ProductDetails() {
               )}
 
               {product.inStock && product.stock !== undefined && product.stock !== null && product.stock > 0 && product.stock <= 5 && (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 border border-orange-200 rounded-2xl text-orange-700 animate-pulse mb-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-2xl text-orange-700 animate-pulse mb-4">
                   <Package className="h-5 w-5" />
                   <span className="font-bold">سارع بالطلب! المتبقي {product.stock} فقط في المخزون</span>
                 </div>
@@ -255,7 +261,7 @@ export default function ProductDetails() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t mt-auto">
-              <div className="flex items-center justify-between bg-white border border-border rounded-full px-4 h-14 w-full sm:w-40">
+              <div className="flex items-center justify-between bg-card border border-border rounded-full px-4 h-14 w-full sm:w-40">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:text-foreground"
@@ -298,7 +304,7 @@ export default function ProductDetails() {
                 <Button
                   size="icon"
                   variant="outline"
-                  className={`h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-200 hover:bg-red-50 ${isInWishlist(product.id) ? "text-red-500 bg-red-50 border-red-200" : ""}`}
+                  className={`h-14 w-14 rounded-full border-border hover:text-red-500 hover:border-red-500/30 hover:bg-red-500/10 ${isInWishlist(product.id) ? "text-red-500 bg-red-500/10 border-red-500/30" : ""}`}
                   onClick={() => toggleItem(product.id, product.name)}
                   title="أضف للمفضلة"
                 >
