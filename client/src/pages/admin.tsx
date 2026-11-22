@@ -854,7 +854,7 @@ export default function AdminPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <Navbar />
         <div className="flex flex-1 flex-col items-center justify-center gap-6">
-          <img src="/logo.png" alt="الراقي" className="h-24 w-auto animate-pulse object-contain" />
+          <img src="/logo-mark.png" alt="الراقي" className="h-24 w-auto animate-pulse object-contain" />
           <div className="flex items-center gap-3">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <span className="text-lg font-bold text-muted-foreground">جاري تحميل لوحة التحكم...</span>
@@ -926,7 +926,7 @@ export default function AdminPage() {
         <section className="mb-6 md:mb-10 overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border border-white/60 bg-white/40 p-4 md:p-8 shadow-[0_20px_80px_rgba(69,44,16,0.06)] backdrop-blur-md">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-right gap-4 md:gap-6">
-              <img src="/logo.png" alt="الراقي" className="h-20 md:h-24 w-auto object-contain drop-shadow-md" />
+              <img src="/logo-mark.png" alt="الراقي" className="h-20 md:h-24 w-auto object-contain drop-shadow-md" />
               <div>
                 <div className="mb-2 md:mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-sm font-bold text-primary">
                   <Sparkles className="h-4 w-4" />

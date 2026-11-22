@@ -68,9 +68,9 @@ export function Navbar() {
               <div className="group relative flex items-center cursor-pointer">
                 <div className="absolute -inset-2 rounded-xl bg-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-300 scale-95 group-hover:scale-100 blur-md" />
                 <img
-                  src="/logo.png"
+                  src="/logo-mark.png"
                   alt="متجر الراقي"
-                  className="h-12 md:h-22 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px] brightness-110 contrast-110"
+                  className="h-14 md:h-20 w-auto object-contain relative z-10 transition-transform duration-300 group-hover:translate-y-[-2px]"
                   onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}
                 />
               </div>

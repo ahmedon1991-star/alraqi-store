@@ -144,21 +144,27 @@ export default function ProductDetails() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-sm font-black text-primary uppercase tracking-wider">{getCategoryName(product.category)}</span>
                 <span className="text-border">|</span>
-                <div className="flex items-center text-amber-400">
-                  <Star className="h-4 w-4 fill-current" />
-                  <span className="text-foreground font-bold ml-1">{product.rating}</span>
-                  <span className="text-muted-foreground text-xs mr-1">({product.reviews} تقييم)</span>
-                </div>
+                {Number(product.reviews) > 0 ? (
+                  <div className="flex items-center text-amber-400">
+                    <Star className="h-4 w-4 fill-current" />
+                    <span className="text-foreground font-bold ml-1">{product.rating}</span>
+                    <span className="text-muted-foreground text-xs mr-1">({product.reviews} تقييم)</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-xs">لا توجد تقييمات بعد</span>
+                )}
               </div>
               <h1 className="text-2xl md:text-5xl font-black text-foreground mb-1 md:mb-2 leading-tight" data-testid="text-product-name">{product.name}</h1>
               <h2 className="text-lg text-muted-foreground font-medium mb-4 md:mb-6 opacity-80">{product.nameEn}</h2>
 
-              <div className="flex items-end gap-3 mb-4 md:mb-8">
-                <span className="text-3xl md:text-4xl font-black text-primary font-mono" data-testid="text-product-price">{Number(activePrice).toLocaleString()}</span>
-                <span className="text-xl font-bold text-muted-foreground mb-2">ج.س</span>
+              <div className="flex items-baseline gap-3 mb-4 md:mb-8">
+                <div className="flex items-baseline gap-1.5 text-primary">
+                  <span className="text-3xl md:text-4xl font-black font-mono" data-testid="text-product-price">{Number(activePrice).toLocaleString()}</span>
+                  <span className="text-lg md:text-xl font-bold">ج.س</span>
+                </div>
                 {activeOriginalPrice && Number(activeOriginalPrice) > Number(activePrice) && (
-                  <span className="text-xl text-muted-foreground/50 line-through mb-2 mr-2">
-                    {Number(activeOriginalPrice).toLocaleString()}
+                  <span className="text-base md:text-lg text-muted-foreground/70 line-through font-medium">
+                    {Number(activeOriginalPrice).toLocaleString()} ج.س
                   </span>
                 )}
               </div>

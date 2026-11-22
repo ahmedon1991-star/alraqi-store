@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
             <CardHeader className="space-y-6 pt-12 pb-8 text-center relative">
               <div className="mx-auto relative group">
                 <div className="absolute -inset-4 bg-primary/5 rounded-full scale-0 group-hover:scale-100 transition-transform duration-500 blur-xl" />
-                <img src="/logo.png" alt="الراقي" className="h-28 w-auto object-contain relative transition-transform duration-500 group-hover:scale-105" />
+                <img src="/logo-mark.png" alt="الراقي" className="h-28 w-auto object-contain relative transition-transform duration-500 group-hover:scale-105" />
               </div>
               
               <div className="space-y-2">

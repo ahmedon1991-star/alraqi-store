@@ -103,7 +103,7 @@ export default function Home() {
         </section>
 
         {productsLoading ? (
-          <section className="py-20">
+          <section className="py-10 md:py-20">
             <div className="container mx-auto px-4 space-y-20">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="space-y-8">
@@ -172,7 +172,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <section className="py-20 container mx-auto px-4">
+        <section className="py-10 md:py-20 container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <FeatureItem icon={<ShieldCheck className="h-10 w-10 md:h-16 md:w-16" />} title="جودة استثنائية" desc="منتجات مختارة بعناية فائقة تليق بذائقتكم" color="text-primary" />
             <FeatureItem icon={<Truck className="h-10 w-10 md:h-16 md:w-16" />} title="توصيل ملكي" desc="خدمة توصيل سريعة وآمنة إلى باب المنزل" color="text-primary" />

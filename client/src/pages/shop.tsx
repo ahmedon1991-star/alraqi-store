@@ -175,11 +175,10 @@ export default function Shop() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      <div className="bg-secondary/90 text-white py-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/images/texture-pattern.png')] bg-repeat opacity-20"></div>
+      <div className="bg-gradient-to-b from-secondary/10 to-transparent border-b border-border py-8 md:py-12 relative overflow-hidden">
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <h1 className="text-4xl font-black mb-4">المتجر</h1>
-          <p className="text-secondary-foreground/80 max-w-xl mx-auto text-lg">
+          <h1 className="text-3xl md:text-4xl font-black mb-2 md:mb-4 text-foreground">المتجر</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto text-base md:text-lg">
             تصفح مجموعتنا الكاملة من المنتجات السودانية الأصيلة
           </p>
         </div>

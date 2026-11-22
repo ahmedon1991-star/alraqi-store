@@ -7,6 +7,7 @@ import { Link, useLocation } from "wouter";
 import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlist } from "@/hooks/use-wishlist";
+import { useCategoryName } from "@/hooks/use-categories";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
@@ -33,6 +34,7 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
   const [, setLocation] = useLocation();
   const { isInWishlist, toggleItem } = useWishlist();
   const queryClient = useQueryClient();
+  const categoryName = useCategoryName(category);
 
   const handlePrefetchProduct = () => {
     if (!id) return;
@@ -115,14 +117,10 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         {/* Status Badges */}
         {(discountBadge || badge) && (
           <div className={cn(
-            "absolute top-0 right-0 z-30 text-[9px] md:text-sm font-black px-3 py-1 md:px-5 md:py-2 rounded-bl-[1.5rem] md:rounded-bl-[3.5rem] shadow-xl flex flex-col items-center transition-all duration-300",
-            discountBadge 
-              ? "bg-gradient-to-br from-red-600 via-rose-500 to-red-700 text-white animate-pulse shadow-red-500/40" 
-              : "bg-gradient-to-br from-primary to-primary-foreground text-black shadow-primary/20"
+            "absolute top-2 right-2 md:top-4 md:right-4 z-30 rounded-full px-2 py-0.5 md:px-3 md:py-1 text-[10px] md:text-sm font-bold leading-tight shadow-sm",
+            discountBadge ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
           )}>
-            {discountBadge && <span className="leading-none text-[11px] md:text-lg">{discountBadge}</span>}
-            {discountBadge && <span className="text-[7px] md:text-[11px] leading-tight uppercase font-black">خصم</span>}
-            {!discountBadge && badge && <span className="py-1">{badge}</span>}
+            {discountBadge ? `خصم ${discountBadge}` : badge}
           </div>
         )}
         
@@ -136,9 +134,9 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
       {/* Content Area */}
       <CardContent className="p-2 md:p-4 text-right flex flex-col flex-1 space-y-1 relative">
         <div className="flex items-center justify-between">
-           <span className="text-[7px] md:text-xs font-bold text-muted-foreground uppercase opacity-60 tracking-wider font-mono">{category}</span>
-           {rating && rating > 0 && (
-             <div className="flex items-center gap-0.5 text-amber-500 text-[8px] md:text-xs font-black">
+           <span className="text-[10px] md:text-sm font-medium text-muted-foreground line-clamp-1">{categoryName}</span>
+           {!!rating && rating > 0 && (
+             <div className="flex items-center gap-0.5 text-amber-500 text-[10px] md:text-sm font-bold shrink-0">
                <span>{rating}</span>
                <Star className="h-2 w-2 md:h-3.5 md:w-3.5 fill-current" />
              </div>
@@ -163,13 +161,13 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         <div className="mt-auto pt-2 flex items-end justify-between">
           <div>
             {originalPrice && originalPrice > price && (
-              <div className="text-[9px] md:text-base text-muted-foreground/40 line-through font-bold mb-[-3px] flex items-center gap-1">
+              <div className="text-[10px] md:text-base text-muted-foreground/60 line-through font-medium flex items-center gap-1">
                 <span>{originalPrice.toLocaleString()}</span>
                 <span className="text-[7px] md:text-xs">ج.س</span>
               </div>
             )}
             <div className="font-black text-[17px] md:text-3xl text-primary flex items-baseline gap-1">
-              <span className="font-mono tracking-tighter">{price.toLocaleString()}</span>
+              <span className="font-mono">{price.toLocaleString()}</span>
               <span className="text-[11px] md:text-lg font-bold opacity-80">ج.س</span>
             </div>
           </div>

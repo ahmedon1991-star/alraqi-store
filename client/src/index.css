@@ -7,7 +7,7 @@
  * They are valid Tailwind v4 syntax and compile correctly.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+/* Fonts (Tajawal + Outfit) are loaded once in client/index.html */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -38,9 +38,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: 'Cairo', 'Tajawal', sans-serif;
-  --font-display: 'Amiri', serif;
-  --font-heading: 'Tajawal', sans-serif;
+  /* One type family for the whole store: Tajawal (Arabic) + Outfit (Latin letters & numbers).
+     font-mono is mapped to it too so prices/phone numbers no longer switch to a typewriter font. */
+  --font-sans: 'Tajawal', 'Outfit', sans-serif;
+  --font-display: 'Tajawal', 'Outfit', sans-serif;
+  --font-heading: 'Tajawal', 'Outfit', sans-serif;
+  --font-mono: 'Outfit', 'Tajawal', sans-serif;
   
   --radius: 0.5rem;
 }
@@ -55,8 +58,8 @@
   --popover-foreground: hsl(20 30% 8%);
   --primary: hsl(35 85% 35%);
   --primary-foreground: hsl(45 40% 98%);
-  --secondary: hsl(155 45% 25%);
-  --secondary-foreground: hsl(155 25% 96%);
+  --secondary: hsl(124 34% 32%); /* logo green */
+  --secondary-foreground: hsl(124 25% 97%);
   --muted: hsl(45 20% 95%);
   --muted-foreground: hsl(25 10% 45%);
   --accent: hsl(38 70% 97%);
@@ -78,8 +81,8 @@
   --popover-foreground: hsl(40 25% 90%);
   --primary: hsl(38 52% 51%);
   --primary-foreground: hsl(38 100% 5%);
-  --secondary: hsl(150 40% 30%);
-  --secondary-foreground: hsl(150 20% 95%);
+  --secondary: hsl(124 30% 36%); /* logo green */
+  --secondary-foreground: hsl(124 20% 96%);
   --muted: hsl(30 10% 12%);
   --muted-foreground: hsl(40 10% 65%);
   --accent: hsl(38 30% 15%);
@@ -109,6 +112,11 @@
   }
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
+  }
+  /* Numbers line up in prices and totals */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
   }
 }
 
