@@ -23,7 +23,7 @@ jobs:
           POSTGRES_DB: alraqi_test
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U test"
+          --health-cmd "pg_isready -U test -d alraqi_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -32,8 +32,8 @@ jobs:
       DATABASE_URL: postgresql://test:test@localhost:5432/alraqi_test
       DATABASE_SSL: "false"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
