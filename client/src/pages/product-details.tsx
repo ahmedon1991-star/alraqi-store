@@ -11,7 +11,7 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useWishlist } from "@/hooks/use-wishlist";
-import { cn } from "@/lib/utils";
+import { cn, optimizedImage } from "@/lib/utils";
 
 export default function ProductDetails() {
   const [, params] = useRoute("/product/:id");
@@ -131,7 +131,7 @@ export default function ProductDetails() {
                 </div>
               )}
               <img
-                src={activeImage}
+                src={optimizedImage(activeImage, 900)}
                 alt={product.name}
                 className="w-full h-full object-contain transition-all duration-500"
                 onError={(e) => { (e.target as HTMLImageElement).src = "/images/category-spices.png"; }}

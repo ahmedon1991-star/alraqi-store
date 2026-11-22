@@ -54,7 +54,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest, clearAdminToken, getAdminToken } from "@/lib/api";
-import { cn, formatCategoryLabel, formatPrice } from "@/lib/utils";
+import { cn, formatCategoryLabel, formatPrice, optimizedImage } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -915,7 +915,6 @@ export default function AdminPage() {
     <div className="flex min-h-screen flex-col relative overflow-hidden bg-background">
       {/* Branded Background Background */}
       <div className="absolute inset-0 -z-10">
-        <img src="/images/hero-main.png" alt="الخلفية" className="w-full h-full object-cover opacity-[0.03]" />
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-card" />
       </div>
 
@@ -1507,7 +1506,8 @@ export default function AdminPage() {
                           <div className="flex flex-col gap-3">
                             <div className="h-28 md:h-48 w-full rounded-2xl overflow-hidden border border-primary/5 shadow-sm bg-card p-1 mb-1">
                               <img 
-                                src={product.image || "/images/product-spices.png"} 
+                                src={optimizedImage(product.image, 300) || "/images/product-spices.png"} 
+                                loading="lazy"
                                 alt={product.name} 
                                 className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110" 
                                 onError={(e) => (e.target as HTMLImageElement).src = "/images/category-spices.png"} 

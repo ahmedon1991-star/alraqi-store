@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   LucideIcon 
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, optimizedImage } from "@/lib/utils";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Sparkles,
@@ -39,8 +39,9 @@ export function CategoryIcon({ icon, className, imgClassName }: CategoryIconProp
   if (isImage) {
     return (
       <img 
-        src={icon} 
+        src={optimizedImage(icon, 200)} 
         alt="Category" 
+        loading="lazy"
         className={cn("w-full h-full object-cover", imgClassName)} 
         onError={(e) => {
           (e.target as HTMLImageElement).style.display = 'none';

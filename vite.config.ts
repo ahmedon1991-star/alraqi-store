@@ -19,30 +19,36 @@ export default defineConfig({
         name: "الراقي للمنتجات الغذائية",
         short_name: "الراقي",
         description: "متجرك الأول للمنتجات الغذائية الأصيلة من قلب المزارع مباشرة",
-        theme_color: "#1B705C",
+        theme_color: "#366E39", // logo green
         background_color: "#FDFBF7",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
         icons: [
-          {
-            src: "/logo.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "any"
-          },
-          {
-            src: "/logo.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
-          }
+          { src: "/logo-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "/logo-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+          { src: "/logo-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" }
         ]
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico}"],
+        // Pre-download only the app code and a few small icons. Images (product photos,
+        // category pictures) are cached the first time they are actually shown, instead of
+        // forcing every visitor to download all of them on first open.
+        globPatterns: ["**/*.{js,css,html,ico,woff2}", "logo-mark.png", "logo-192.png", "favicon.png"],
         cleanupOutdatedCaches: true,
-        navigateFallback: "index.html"
+        navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images",
+              expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       }
     }),
     ...(process.env.NODE_ENV !== "production" &&

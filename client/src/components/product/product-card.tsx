@@ -8,7 +8,7 @@ import { useAddToCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { useCategoryName } from "@/hooks/use-categories";
-import { cn } from "@/lib/utils";
+import { cn, optimizedImage } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 
@@ -92,9 +92,10 @@ export function ProductCard({ id, name, price, image, category, rating, badge, s
         <Link href={`/product/${id}`}>
           <div onMouseEnter={handlePrefetchProduct}>
             <img
-              src={image || "/images/product-spices.png"}
+              src={optimizedImage(image, 400) || "/images/product-spices.png"}
               alt={name}
               loading="lazy"
+              decoding="async"
               className="w-full h-full object-contain p-2 md:p-4 transition-transform duration-500 group-hover:scale-105 cursor-pointer"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/images/category-spices.png";
