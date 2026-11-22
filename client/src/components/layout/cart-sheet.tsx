@@ -1,11 +1,12 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, ArrowRight, Wallet, MapPin, Phone, User, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
+import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ShoppingCart, Trash2, Minus, Plus, ArrowLeft, ArrowRight, Wallet, MapPin, Phone, User, CheckCircle2, ChevronRight, Loader2, X } from "lucide-react";
 import { useCart, useUpdateCartQuantity, useRemoveFromCart } from "@/hooks/use-cart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { cn, optimizedImage } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -25,6 +26,40 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
   const removeItem = useRemoveFromCart();
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"cart" | "checkout">("cart");
+  const isMobile = useIsMobile();
+
+  // The phone's Back button should close the cart instead of leaving the page:
+  // opening adds a history entry, Back (popstate) closes the sheet.
+  const historyEntryRef = useRef(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    window.history.pushState({ ...(window.history.state || {}), cartSheet: true }, "");
+    historyEntryRef.current = true;
+    const onPopState = () => {
+      historyEntryRef.current = false;
+      setIsOpen(false);
+      setStep("cart");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [isOpen]);
+
+  /** Close the cart (X, overlay, buttons). Optionally go to another page afterwards. */
+  const closeSheet = (navigateTo?: string) => {
+    setIsOpen(false);
+    setStep("cart");
+    if (historyEntryRef.current) {
+      historyEntryRef.current = false;
+      if (navigateTo) {
+        // Replace the cart's history entry with the destination page
+        setLocation(navigateTo, { replace: true });
+      } else {
+        window.history.back();
+      }
+    } else if (navigateTo) {
+      setLocation(navigateTo);
+    }
+  };
 
   const cartItems = data?.items || [];
   const subtotal = cartItems.reduce((acc: number, item: any) => acc + (item.price || item.product.price) * item.quantity, 0);
@@ -69,9 +104,6 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
       queryClient.invalidateQueries({ queryKey: ["/api/cart/count"] });
       
-      setIsOpen(false);
-      setStep("cart");
-      
       toast({
         title: "تم الطلب بنجاح",
         description: "جاري تحويلك للواتساب لإتمام عملية الشراء...",
@@ -80,7 +112,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
       if (orderResponse.whatsappUrl) {
         window.open(orderResponse.whatsappUrl, "_blank");
       }
-      setLocation("/");
+      closeSheet("/");
     },
     onError: (error: Error) => {
       toast({
@@ -100,25 +132,43 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(val) => { setIsOpen(val); if (!val) setStep("cart"); }}>
+    <Sheet open={isOpen} onOpenChange={(val) => { if (val) setIsOpen(true); else closeSheet(); }}>
       <SheetTrigger asChild>
         {children}
       </SheetTrigger>
-      <SheetContent side="top" className="h-[95vh] md:h-[85vh] rounded-b-[2.5rem] p-0 flex flex-col border-primary/20 bg-background/98 backdrop-blur-2xl overflow-hidden shadow-2xl">
-        <SheetHeader className="p-6 border-b border-primary/10 bg-card/50">
-          <SheetTitle className="text-right font-display text-2xl md:text-3xl text-primary flex items-center justify-end gap-3">
+      {/* Phone: sheet sliding up from the bottom. Desktop: side panel. The built-in corner X
+          is hidden ([&>button]:hidden) because the header below has its own, clearly placed one. */}
+      <SheetContent
+        side={isMobile ? "bottom" : "left"}
+        className={cn(
+          "p-0 flex flex-col gap-0 border-border bg-background overflow-hidden shadow-2xl [&>button]:hidden",
+          isMobile ? "h-[88dvh] rounded-t-[1.75rem]" : "h-full w-full sm:max-w-lg",
+        )}
+      >
+        {isMobile && <div className="mx-auto mt-2.5 h-1.5 w-12 shrink-0 rounded-full bg-muted-foreground/30" aria-hidden />}
+        <SheetHeader className="flex-row items-center justify-between gap-3 space-y-0 border-b border-border px-5 py-4">
+          <SheetTitle className="flex items-center gap-2 text-right text-xl font-black text-foreground">
             {step === "cart" ? (
               <>
+                <ShoppingCart className="h-5 w-5 text-primary" />
                 سلة المشتريات
-                <ShoppingCart className="h-6 w-6" />
               </>
             ) : (
               <>
+                <CheckCircle2 className="h-5 w-5 text-primary" />
                 إتمام الطلب
-                <CheckCircle2 className="h-6 w-6" />
               </>
             )}
           </SheetTitle>
+          <SheetClose asChild>
+            <button
+              type="button"
+              aria-label="إغلاق السلة"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition-colors hover:bg-muted-foreground/20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </SheetClose>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
@@ -129,7 +179,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                   <ShoppingCart className="h-12 w-12 text-primary/20" />
                 </div>
                 <p className="text-xl font-bold text-muted-foreground">السلة فارغة حالياً</p>
-                <Button onClick={() => setIsOpen(false)} variant="outline" className="rounded-full px-8">تصفح المتجر</Button>
+                <Button onClick={() => closeSheet()} variant="outline" className="rounded-full px-8">تصفح المتجر</Button>
               </div>
             ) : (
               <div className="space-y-4 max-w-3xl mx-auto">
@@ -292,8 +342,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                   <Button 
                     onClick={() => {
                       if (!user) {
-                        setIsOpen(false);
-                        setLocation("/login");
+                        closeSheet("/login");
                         return;
                       }
                       setStep("checkout");
@@ -303,7 +352,7 @@ export function CartSheet({ children }: { children: React.ReactNode }) {
                     {user ? "إتمام الطلب الآن" : "سجل دخول للطلب"}
                     <ChevronRight className="mr-2 h-5 w-5 group-hover:translate-x-[-4px] transition-transform" />
                   </Button>
-                  <Button onClick={() => setIsOpen(false)} variant="outline" className="flex-1 h-14 md:h-16 rounded-[1.5rem] md:rounded-3xl font-black border-primary/20 hover:bg-primary/5">
+                  <Button onClick={() => closeSheet()} variant="outline" className="flex-1 h-14 md:h-16 rounded-[1.5rem] md:rounded-3xl font-black border-primary/20 hover:bg-primary/5">
                     العودة للمتجر
                   </Button>
                 </>

@@ -18,7 +18,7 @@ export function AnnouncementBar() {
   ];
 
   return (
-    <div className="bg-[#1a1a1a] text-white py-2.5 relative overflow-hidden border-b border-white/5 select-none z-[60]">
+    <div className="bg-[#1a1a1a] text-white py-2.5 relative overflow-hidden border-b border-white/5 select-none z-40">
       <div className="flex whitespace-nowrap animate-marquee items-center gap-10 md:gap-20 px-4">
         {[...items, ...items].map((item, idx) => (
           <div key={idx} className="flex items-center gap-3 shrink-0">
