@@ -30,12 +30,41 @@ import {
   messages,
   type Message,
   type InsertMessage,
+  productRatings,
 } from "@shared/schema";
-import { and, eq, sql, asc, gte } from "drizzle-orm";
+import { and, eq, sql, asc, desc, gte, or, ilike, isNull, ne } from "drizzle-orm";
+import {
+  ADMIN_SESSION_TTL_MS,
+  CUSTOMER_SESSION_TTL_MS,
+  createToken,
+  getEnvAdminCredentials,
+  hashPassword,
+  isSessionExpired,
+} from "./security";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 
 type CartItemWithProduct = CartItem & { product: Product };
+
+export type RateProductResult = { product?: Product; alreadyRated: boolean };
+export type AdminCounts = { orders: number; messages: number; pendingOrders: number };
+export type OrderFilter = { status?: string; search?: string };
+
+function sessionTtl(userId: string) {
+  return userId.startsWith("admin-") ? ADMIN_SESSION_TTL_MS : CUSTOMER_SESSION_TTL_MS;
+}
+
+/** Initial admin record: env password if configured, otherwise an unusable random password. */
+function initialAdminCredentials() {
+  const env = getEnvAdminCredentials();
+  if (!env) {
+    console.warn("⚠️  STORAGE: ADMIN_PASSWORD is not set (or is the old default). Admin login is disabled until it is set.");
+  }
+  return {
+    username: env?.username || (process.env.ADMIN_USERNAME || "admin").trim(),
+    password: hashPassword(env?.password || createToken(32)),
+  };
+}
 
 function createId() {
   return crypto.randomUUID();
@@ -102,13 +131,14 @@ export interface IStorage {
   updateUserLastActive(id: string): Promise<void>;
 
   getProducts(limit?: number): Promise<Product[]>;
+  getVisibleProducts(limit?: number, category?: string): Promise<Product[]>;
   getProductById(id: string): Promise<Product | undefined>;
   getProductsByCategory(category: string, limit?: number): Promise<Product[]>;
   countProducts(): Promise<number>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<Product | undefined>;
-  rateProduct(id: string, rating: number): Promise<Product | undefined>;
+  rateProduct(id: string, userId: string, rating: number): Promise<RateProductResult>;
   reorderProducts(ids: string[]): Promise<void>;
   decrementProductStock(id: string, quantity: number): Promise<void>;
 
@@ -119,8 +149,8 @@ export interface IStorage {
 
   getCartItems(sessionId: string): Promise<CartItemWithProduct[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
-  updateCartItemQuantity(id: string, quantity: number): Promise<CartItem | undefined>;
-  removeFromCart(id: string): Promise<void>;
+  updateCartItemQuantity(id: string, sessionId: string, quantity: number): Promise<CartItem | undefined>;
+  removeFromCart(id: string, sessionId: string): Promise<void>;
   clearCart(sessionId: string): Promise<void>;
   getCartCount(sessionId: string): Promise<number>;
 
@@ -128,6 +158,9 @@ export interface IStorage {
   getOrders(sessionId: string): Promise<Order[]>;
   getOrderById(id: string): Promise<Order | undefined>;
   getAllOrders(): Promise<Order[]>;
+  getFilteredOrders(filter: OrderFilter): Promise<Order[]>;
+  getOrdersForCustomer(userId: string, sessionId?: string): Promise<Order[]>;
+  getAdminCounts(): Promise<AdminCounts>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
   incrementProductStock(id: string, quantity: number): Promise<void>;
 
@@ -142,6 +175,7 @@ export interface IStorage {
   createSession(session: InsertSession): Promise<Session>;
   getSession(token: string): Promise<Session | undefined>;
   deleteSession(token: string): Promise<void>;
+  deleteSessionsForUser(userId: string, exceptToken?: string): Promise<void>;
 
   getMessageCountInLast24Hours(userId: string): Promise<number>;
   getMessages(): Promise<Message[]>;
@@ -231,6 +265,14 @@ export class DatabaseStorage implements IStorage {
     return query;
   }
 
+  async getVisibleProducts(limit?: number, category?: string): Promise<Product[]> {
+    if (!db) return [];
+    const visible = or(eq(products.isVisible, true), isNull(products.isVisible));
+    const where = category ? and(visible, eq(products.category, category)) : visible;
+    const query = db.select().from(products).where(where).orderBy(asc(products.sortOrder));
+    return limit ? query.limit(limit) : query;
+  }
+
   async getProductById(id: string): Promise<Product | undefined> {
     if (!db) {
       return undefined;
@@ -285,22 +327,30 @@ export class DatabaseStorage implements IStorage {
     return deleted;
   }
 
-  async rateProduct(id: string, rating: number): Promise<Product | undefined> {
-    if (!db) return undefined;
+  async rateProduct(id: string, userId: string, rating: number): Promise<RateProductResult> {
+    if (!db) return { alreadyRated: false };
 
     const product = await this.getProductById(id);
-    if (!product) return undefined;
+    if (!product) return { alreadyRated: false };
 
-    const currentRating = Number(product.rating) || 0;
-    const currentReviews = Number(product.reviews) || 0;
+    // One rating per customer per product (enforced by a unique index)
+    const inserted = await db.insert(productRatings)
+      .values({ userId, productId: id, rating })
+      .onConflictDoNothing()
+      .returning();
+    if (inserted.length === 0) {
+      return { product, alreadyRated: true };
+    }
 
-    const newReviews = currentReviews + 1;
-    // Calculate new average
-    const newRating = ((currentRating * currentReviews) + rating) / newReviews;
-    const roundedRating = Math.round(newRating * 10) / 10; // Keep 1 decimal
-
-    const [updated] = await db.update(products).set({ rating: roundedRating, reviews: newReviews }).where(eq(products.id, id)).returning();
-    return updated;
+    // Atomic running-average update (1 decimal)
+    const [updated] = await db.update(products)
+      .set({
+        rating: sql`round(((coalesce(${products.rating}, 0) * coalesce(${products.reviews}, 0) + ${rating}) / (coalesce(${products.reviews}, 0) + 1))::numeric, 1)`,
+        reviews: sql`coalesce(${products.reviews}, 0) + 1`,
+      })
+      .where(eq(products.id, id))
+      .returning();
+    return { product: updated, alreadyRated: false };
   }
 
   async reorderProducts(ids: string[]): Promise<void> {
@@ -312,18 +362,14 @@ export class DatabaseStorage implements IStorage {
 
   async decrementProductStock(id: string, dx: number): Promise<void> {
     if (!db) return;
-    const product = await this.getProductById(id);
-    if (!product) return;
-    
-    const newStock = Math.max(0, (product.stock || 0) - dx);
-    console.log(`📦 DB_STORAGE: Decrementing stock for "${product.name}" (${id}): ${product.stock} -> ${newStock}`);
+    // Single atomic UPDATE so concurrent orders cannot both read the same stock value.
+    // (Right-hand side expressions use the row's values from before the update.)
     await db.update(products)
-      .set({ 
-        stock: newStock,
-        inStock: newStock > 0 
+      .set({
+        stock: sql`greatest(coalesce(${products.stock}, 0) - ${dx}, 0)`,
+        inStock: sql`(coalesce(${products.stock}, 0) - ${dx}) > 0`,
       })
       .where(eq(products.id, id));
-    console.log(`✅ DB_STORAGE: Stock updated for "${product.name}"`);
   }
 
   async getCategories(): Promise<Category[]> {
@@ -409,21 +455,24 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
-  async updateCartItemQuantity(id: string, quantity: number): Promise<CartItem | undefined> {
+  async updateCartItemQuantity(id: string, sessionId: string, quantity: number): Promise<CartItem | undefined> {
     if (!db) {
       return undefined;
     }
 
-    const [updated] = await db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id)).returning();
+    const [updated] = await db.update(cartItems)
+      .set({ quantity })
+      .where(and(eq(cartItems.id, id), eq(cartItems.sessionId, sessionId)))
+      .returning();
     return updated;
   }
 
-  async removeFromCart(id: string): Promise<void> {
+  async removeFromCart(id: string, sessionId: string): Promise<void> {
     if (!db) {
       return;
     }
 
-    await db.delete(cartItems).where(eq(cartItems.id, id));
+    await db.delete(cartItems).where(and(eq(cartItems.id, id), eq(cartItems.sessionId, sessionId)));
   }
 
   async clearCart(sessionId: string): Promise<void> {
@@ -477,17 +526,50 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(orders);
   }
 
+  async getFilteredOrders(filter: OrderFilter): Promise<Order[]> {
+    if (!db) return [];
+    const conditions = [];
+    if (filter.status && filter.status !== "all") {
+      conditions.push(eq(orders.status, filter.status));
+    }
+    const search = filter.search?.trim();
+    if (search) {
+      const pattern = `%${search.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conditions.push(or(ilike(orders.name, pattern), ilike(orders.phone, pattern), ilike(orders.id, pattern))!);
+    }
+    const query = db.select().from(orders);
+    const filtered = conditions.length ? query.where(and(...conditions)) : query;
+    return filtered.orderBy(desc(orders.createdAt));
+  }
+
+  async getOrdersForCustomer(userId: string, sessionId?: string): Promise<Order[]> {
+    if (!db) return [];
+    const where = sessionId
+      ? or(eq(orders.userId, userId), and(isNull(orders.userId), eq(orders.sessionId, sessionId)))
+      : eq(orders.userId, userId);
+    return db.select().from(orders).where(where).orderBy(desc(orders.createdAt));
+  }
+
+  async getAdminCounts(): Promise<AdminCounts> {
+    if (!db) return { orders: 0, messages: 0, pendingOrders: 0 };
+    const [orderCounts] = await db.select({
+      total: sql<number>`count(*)`,
+      pending: sql<number>`count(*) filter (where ${orders.status} = 'pending')`,
+    }).from(orders);
+    const [messageCounts] = await db.select({ total: sql<number>`count(*)` }).from(messages);
+    return {
+      orders: Number(orderCounts?.total || 0),
+      pendingOrders: Number(orderCounts?.pending || 0),
+      messages: Number(messageCounts?.total || 0),
+    };
+  }
+
   async incrementProductStock(id: string, dx: number): Promise<void> {
     if (!db) return;
-    const product = await this.getProductById(id);
-    if (!product) return;
-    
-    const newStock = (product.stock || 0) + dx;
-    console.log(`📦 DB_STORAGE: Restoring stock for "${product.name}" (${id}): ${product.stock} -> ${newStock}`);
     await db.update(products)
-      .set({ 
-        stock: newStock,
-        inStock: newStock > 0 
+      .set({
+        stock: sql`coalesce(${products.stock}, 0) + ${dx}`,
+        inStock: sql`(coalesce(${products.stock}, 0) + ${dx}) > 0`,
       })
       .where(eq(products.id, id));
   }
@@ -564,37 +646,24 @@ export class DatabaseStorage implements IStorage {
     if (!db) return undefined;
     try {
       const [settings] = await db.select().from(adminSettings).where(eq(adminSettings.id, 1));
-      
-      const envUser = process.env.ADMIN_USERNAME || "admin";
-      const envPass = process.env.ADMIN_PASSWORD || "admin12345";
-      const envEmail = process.env.SMTP_USER || "admin@example.com";
-      const envPhone = process.env.ADMIN_PHONE || "+249912345678";
-
-      if (!settings) {
-        console.log("🛠️  STORAGE: Creating initial admin settings record from environment variables...");
-        const [created] = await db.insert(adminSettings).values({ 
-          id: 1,
-          username: envUser,
-          password: envPass,
-          email: envEmail,
-          phone: envPhone,
-        }).returning();
-        return created;
+      if (settings) {
+        return settings;
       }
 
-      // 🔍 CRITICAL SYNC: If .env values changed, update DB to match
-      // This is a safety measure to prevent lockout if user updates .env
-      const needsUpdate = settings.username !== envUser || settings.password !== envPass;
-      if (needsUpdate) {
-        console.log("🔄 STORAGE: Detected .env credential changes. Syncing database record...");
-        const [updated] = await db.update(adminSettings)
-          .set({ username: envUser, password: envPass })
-          .where(eq(adminSettings.id, 1))
-          .returning();
-        return updated;
-      }
-
-      return settings;
+      // First run: create the settings row. The password is always stored hashed.
+      // (Credentials are NOT re-synced from env on every call any more — that silently
+      // reverted password changes made from the admin panel. The env password still works
+      // as a master login, see /api/admin/login.)
+      console.log("🛠️  STORAGE: Creating initial admin settings record...");
+      const [created] = await db.insert(adminSettings).values({
+        id: 1,
+        ...initialAdminCredentials(),
+        email: process.env.SMTP_USER || "admin@example.com",
+        phone: process.env.ADMIN_PHONE || "+249912345678",
+      }).onConflictDoNothing().returning();
+      if (created) return created;
+      const [existing] = await db.select().from(adminSettings).where(eq(adminSettings.id, 1));
+      return existing;
     } catch (err) {
       console.error("❌ STORAGE: Error fetching admin settings:", err);
       return undefined;
@@ -609,11 +678,10 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       // Should handle via getAdminSettings, but as fallback
-      const [created] = await db.insert(adminSettings).values({ 
-        id: 1, 
-        username: process.env.ADMIN_USERNAME || "admin",
-        password: process.env.ADMIN_PASSWORD || "admin12345",
-        ...settings 
+      const [created] = await db.insert(adminSettings).values({
+        id: 1,
+        ...initialAdminCredentials(),
+        ...settings
       }).returning();
       return created;
     }
@@ -649,12 +717,24 @@ export class DatabaseStorage implements IStorage {
   async getSession(token: string): Promise<Session | undefined> {
     if (!db) return undefined;
     const [session] = await db.select().from(sessions).where(eq(sessions.token, token));
+    if (session && isSessionExpired(session.createdAt, sessionTtl(session.userId))) {
+      await db.delete(sessions).where(eq(sessions.token, token));
+      return undefined;
+    }
     return session;
   }
 
   async deleteSession(token: string): Promise<void> {
     if (!db) return;
     await db.delete(sessions).where(eq(sessions.token, token));
+  }
+
+  async deleteSessionsForUser(userId: string, exceptToken?: string): Promise<void> {
+    if (!db) return;
+    const where = exceptToken
+      ? and(eq(sessions.userId, userId), ne(sessions.token, exceptToken))
+      : eq(sessions.userId, userId);
+    await db.delete(sessions).where(where);
   }
 
   async getMessages(): Promise<Message[]> {
@@ -700,6 +780,7 @@ export class MemoryStorage implements IStorage {
   private banks = new Map<string, Bank>();
   private sessions = new Map<string, Session>();
   private messages = new Map<string, Message>();
+  private ratings = new Set<string>();
   private adminSettings: AdminSettings | null = null;
 
   async getUser(id: string): Promise<User | undefined> {
@@ -731,6 +812,8 @@ export class MemoryStorage implements IStorage {
       authProvider: user.authProvider ?? "local",
       biometricEnabled: user.biometricEnabled ?? false,
       biometricToken: user.biometricToken ?? null,
+      resetTokenHash: user.resetTokenHash ?? null,
+      resetTokenExpires: user.resetTokenExpires ?? null,
       createdAt: new Date(),
       lastActive: new Date(),
     };
@@ -747,6 +830,8 @@ export class MemoryStorage implements IStorage {
     const updated: User = {
       ...existing,
       ...user,
+      resetTokenHash: user.resetTokenHash === undefined ? existing.resetTokenHash : user.resetTokenHash,
+      resetTokenExpires: user.resetTokenExpires === undefined ? existing.resetTokenExpires : user.resetTokenExpires,
       name: user.name ?? existing.name,
       email: user.email ?? existing.email,
       phone: user.phone ?? existing.phone,
@@ -776,6 +861,12 @@ export class MemoryStorage implements IStorage {
 
   async getProducts(limit?: number): Promise<Product[]> {
     const all = Array.from(this.products.values()).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return limit ? all.slice(0, limit) : all;
+  }
+
+  async getVisibleProducts(limit?: number, category?: string): Promise<Product[]> {
+    const all = (await this.getProducts())
+      .filter((p) => p.isVisible !== false && (!category || p.category === category));
     return limit ? all.slice(0, limit) : all;
   }
 
@@ -860,9 +951,12 @@ export class MemoryStorage implements IStorage {
     return existing;
   }
 
-  async rateProduct(id: string, rating: number): Promise<Product | undefined> {
+  async rateProduct(id: string, userId: string, rating: number): Promise<RateProductResult> {
     const existing = this.products.get(id);
-    if (!existing) return undefined;
+    if (!existing) return { alreadyRated: false };
+    const key = `${userId}:${id}`;
+    if (this.ratings.has(key)) return { product: existing, alreadyRated: true };
+    this.ratings.add(key);
 
     const currentRating = Number(existing.rating) || 0;
     const currentReviews = Number(existing.reviews) || 0;
@@ -872,7 +966,7 @@ export class MemoryStorage implements IStorage {
 
     const updated = { ...existing, rating: roundedRating, reviews: newReviews };
     this.products.set(id, updated);
-    return updated;
+    return { product: updated, alreadyRated: false };
   }
 
   async getCategories(): Promise<Category[]> {
@@ -943,9 +1037,9 @@ export class MemoryStorage implements IStorage {
     return created;
   }
 
-  async updateCartItemQuantity(id: string, quantity: number): Promise<CartItem | undefined> {
+  async updateCartItemQuantity(id: string, sessionId: string, quantity: number): Promise<CartItem | undefined> {
     const existing = this.cartItems.get(id);
-    if (!existing) {
+    if (!existing || existing.sessionId !== sessionId) {
       return undefined;
     }
 
@@ -954,8 +1048,11 @@ export class MemoryStorage implements IStorage {
     return updated;
   }
 
-  async removeFromCart(id: string): Promise<void> {
-    this.cartItems.delete(id);
+  async removeFromCart(id: string, sessionId: string): Promise<void> {
+    const existing = this.cartItems.get(id);
+    if (existing && existing.sessionId === sessionId) {
+      this.cartItems.delete(id);
+    }
   }
 
   async clearCart(sessionId: string): Promise<void> {
@@ -1005,6 +1102,33 @@ export class MemoryStorage implements IStorage {
 
   async getAllOrders(): Promise<Order[]> {
     return Array.from(this.orders.values());
+  }
+
+  private sortNewestFirst(list: Order[]) {
+    return list.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async getFilteredOrders(filter: OrderFilter): Promise<Order[]> {
+    const s = filter.search?.trim().toLowerCase();
+    return this.sortNewestFirst(Array.from(this.orders.values()).filter((o) =>
+      (!filter.status || filter.status === "all" || o.status === filter.status) &&
+      (!s || o.name?.toLowerCase().includes(s) || o.phone?.includes(s) || o.id.includes(s))
+    ));
+  }
+
+  async getOrdersForCustomer(userId: string, sessionId?: string): Promise<Order[]> {
+    return this.sortNewestFirst(Array.from(this.orders.values()).filter((o) =>
+      o.userId === userId || (!!sessionId && !o.userId && o.sessionId === sessionId)
+    ));
+  }
+
+  async getAdminCounts(): Promise<AdminCounts> {
+    const all = Array.from(this.orders.values());
+    return {
+      orders: all.length,
+      pendingOrders: all.filter((o) => o.status === "pending").length,
+      messages: this.messages.size,
+    };
   }
 
   async incrementProductStock(id: string, dx: number): Promise<void> {
@@ -1092,8 +1216,7 @@ export class MemoryStorage implements IStorage {
         id: 1,
         email: "admin@example.com",
         phone: "+249 11 558 8350",
-        username: process.env.ADMIN_USERNAME || "admin",
-        password: process.env.ADMIN_PASSWORD || "admin12345",
+        ...initialAdminCredentials(),
         address: "السودان، دنقلا، سوق البرقيق",
         facebook: "https://facebook.com",
         instagram: "https://instagram.com",
@@ -1144,11 +1267,24 @@ export class MemoryStorage implements IStorage {
   }
 
   async getSession(token: string): Promise<Session | undefined> {
-    return this.sessions.get(token);
+    const session = this.sessions.get(token);
+    if (session && isSessionExpired(session.createdAt, sessionTtl(session.userId))) {
+      this.sessions.delete(token);
+      return undefined;
+    }
+    return session;
   }
 
   async deleteSession(token: string): Promise<void> {
     this.sessions.delete(token);
+  }
+
+  async deleteSessionsForUser(userId: string, exceptToken?: string): Promise<void> {
+    for (const [token, session] of Array.from(this.sessions.entries())) {
+      if (session.userId === userId && token !== exceptToken) {
+        this.sessions.delete(token);
+      }
+    }
   }
 
   async getMessages(): Promise<Message[]> {

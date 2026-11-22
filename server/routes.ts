@@ -1,29 +1,50 @@
-import crypto from "node:crypto";
 import type { Express, NextFunction, Request, Response } from "express";
 import { type Server } from "http";
-import { type Category, type InsertProduct, type InsertUser, type Order, type Product, type User, type InsertAdminSettings, type Bank, type InsertBank, insertMessageSchema, type Message, type InsertMessage } from "@shared/schema";
+import { type Category, type InsertProduct, type InsertUser, type Order, type Product, type User, type InsertAdminSettings, type AdminSettings, insertMessageSchema, insertBankSchema } from "@shared/schema";
 import { z } from "zod";
+import rateLimit from "express-rate-limit";
 import { storage, getDbLastError } from "./storage";
 import { sendPasswordResetEmail } from "./email";
+import {
+  KNOWN_DEFAULT_ADMIN_PASSWORD,
+  MIN_ADMIN_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_RESET_TTL_MS,
+  createToken,
+  getEnvAdminCredentials,
+  getPublicBaseUrl,
+  hashPassword,
+  safeEqual,
+  sha256,
+  verifyPassword,
+} from "./security";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import sharp from "sharp"; // Optimization: Resize & Compress programmatic
 import { v2 as cloudinary } from "cloudinary"; // Cloud Storage
 
+// Cloud Storage (Cloudinary) — credentials come ONLY from environment variables.
+// Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET on Render.
+const cloudinaryEnabled = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+if (cloudinaryEnabled) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+} else {
+  console.warn("⚠️  CLOUDINARY: credentials not set — uploaded images will be stored on the local disk only.");
+}
 
-
-// ✅ REQUIREMENT: Cloud Storage Configuration (Cloudinary)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "dz7irtihq",
-  api_key: process.env.CLOUDINARY_API_KEY || "453369147935439",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "R2bfxlQPkHDO8vc92Yxhd58ASns"
-});
-
-// ✅ REQUIREMENT: Permanent Disk Backup (Mount Path for Render)
+// Permanent Disk Backup (Mount Path for Render)
 const uploadDir = path.resolve(process.cwd(), "public", "uploads");
 
-// Initialize directory securely
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -33,18 +54,16 @@ try {
   console.error(`❌ CRITICAL: Directory access failure: ${err}`);
 }
 
-// ✅ REQUIREMENT: Robust File Storage (Memory for pre-processing & Cloud Upload)
 const storageMemory = multer.memoryStorage();
+const ALLOWED_IMAGE_EXT = /^\.(jpe?g|png|webp)$/;
+const ALLOWED_IMAGE_MIME = /^image\/(jpeg|png|webp)$/;
 
-// ✅ REQUIREMENT: Size Validation (Max 2MB)
-const upload = multer({ 
-  storage: storageMemory, 
-  limits: { fileSize: 10 * 1024 * 1024 }, // Increased to 10MB for mobile high-res photos
+const upload = multer({
+  storage: storageMemory,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB for mobile high-res photos
   fileFilter: (_req, file, cb) => {
-    // ✅ REQUIREMENT: File Format Sanitation (Secure extensions only)
-    const allowed = /jpeg|jpg|png|webp/;
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.test(ext)) {
+    if (ALLOWED_IMAGE_EXT.test(ext) && ALLOWED_IMAGE_MIME.test(file.mimetype)) {
       cb(null, true);
     } else {
       cb(new Error("صيغة الملف غير مدعومة. يسمح بـ JPG, PNG, WEBP فقط."));
@@ -52,13 +71,29 @@ const upload = multer({
   }
 });
 
-
-
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin12345";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || "";
+const ADMIN_SESSION_USER_ID = "admin-1";
+const MAX_CART_QUANTITY = 1000;
+const GENERIC_SERVER_ERROR = "حدث خطأ في الخادم، يرجى المحاولة لاحقاً";
 
-// Admin sessions are now persisted in the database table 'sessions'
+// ---------- Rate limiting (per IP) ----------
+// Limits are generous because many customers can share one mobile-carrier IP.
+function limiter(windowMinutes: number, max: number, message: string, skipSuccessfulRequests = false) {
+  return rateLimit({
+    windowMs: windowMinutes * 60 * 1000,
+    limit: max,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    skipSuccessfulRequests,
+    message: { message },
+  });
+}
+
+const loginLimiter = limiter(15, 20, "محاولات دخول كثيرة. يرجى المحاولة بعد 15 دقيقة.", true);
+const adminLoginLimiter = limiter(15, 10, "محاولات دخول كثيرة. يرجى المحاولة بعد 15 دقيقة.", true);
+const registerLimiter = limiter(60, 20, "تم إنشاء حسابات كثيرة من هذا الجهاز. حاول لاحقاً.");
+const passwordResetLimiter = limiter(15, 10, "طلبات كثيرة. يرجى المحاولة بعد 15 دقيقة.");
+const orderLimiter = limiter(15, 30, "طلبات كثيرة. يرجى المحاولة بعد قليل.");
 
 type GoogleTokenInfo = {
   sub?: string;
@@ -69,38 +104,15 @@ type GoogleTokenInfo = {
   aud?: string;
 };
 
-function createToken() {
-  return crypto.randomBytes(24).toString("hex");
-}
-
-function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.scryptSync(password, salt, 64).toString("hex");
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password: string, storedHash: string) {
-  const [salt, hash] = storedHash.split(":");
-  if (!salt || !hash) {
-    return false;
-  }
-
-  const candidate = crypto.scryptSync(password, salt, 64);
-  const original = Buffer.from(hash, "hex");
-  if (candidate.length !== original.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(candidate, original);
-}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function getSessionId(req: Request): string {
   const header = req.headers["x-session-id"];
   let sid = getSingleParam(header);
   if (!sid) {
-    sid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    sid = createToken(12);
   }
-  return sid;
+  return sid.slice(0, 100);
 }
 
 function getSingleParam(value: string | string[] | undefined): string {
@@ -146,15 +158,37 @@ function sanitizeUser(user: User) {
   };
 }
 
+/** Admin settings without secrets (password hash, reset token). */
+function sanitizeAdminSettings(settings: AdminSettings | undefined) {
+  if (!settings) return settings;
+  const { password: _password, passwordToken: _passwordToken, ...safe } = settings;
+  return safe;
+}
+
+function isValidAdminPassword(settings: AdminSettings | undefined, username: string | undefined, password: string) {
+  // 1) Master credentials from environment variables (recovery path)
+  const env = getEnvAdminCredentials();
+  if (env && (username === undefined || safeEqual(username, env.username)) && safeEqual(password, env.password)) {
+    return true;
+  }
+  // 2) Credentials stored (hashed) in the database
+  if (password === KNOWN_DEFAULT_ADMIN_PASSWORD) {
+    return false;
+  }
+  if (settings && (username === undefined || username === settings.username)) {
+    return verifyPassword(password, settings.password);
+  }
+  return false;
+}
+
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const token = getAdminToken(req);
   if (!token) {
     return res.status(401).json({ message: "غير مصرح لك بالوصول إلى لوحة الإدارة" });
   }
 
-  // Check if it's a persistent admin session in DB
+  // Persistent admin session in DB (expires after 7 days)
   const session = await storage.getSession(token);
-  // We use a convention for admin session userId: e.g. "admin-settings-id"
   if (!session || !session.userId.startsWith("admin-")) {
     return res.status(401).json({ message: "انتهت جلسة الإدارة، يرجى تسجيل الدخول مجدداً" });
   }
@@ -165,13 +199,13 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
 async function requireCustomer(req: Request, res: Response, next: NextFunction) {
   const token = getCustomerToken(req);
   const session = token ? await storage.getSession(token) : undefined;
-  if (!token || !session) {
+  if (!token || !session || session.userId.startsWith("admin-")) {
     return res.status(401).json({ message: "يرجى تسجيل الدخول أولًا" });
   }
 
   const user = await storage.getUser(session.userId);
   if (!user) {
-    if (token) await storage.deleteSession(token);
+    await storage.deleteSession(token);
     return res.status(401).json({ message: "الجلسة غير صالحة" });
   }
 
@@ -196,7 +230,6 @@ async function createUniqueUsername(base: string) {
 async function createCustomerSession(user: User) {
   const token = createToken();
   await storage.createSession({ token, userId: user.id });
-  // Update last active
   await storage.updateUserLastActive(user.id);
   return token;
 }
@@ -207,10 +240,50 @@ async function verifyGoogleCredential(credential: string): Promise<GoogleTokenIn
 
   const response = await fetch(url.toString());
   if (!response.ok) {
-    throw new Error("تعذر التحقق من حساب Google");
+    throw Object.assign(new Error("تعذر التحقق من حساب Google"), { status: 401 });
   }
 
   return response.json() as Promise<GoogleTokenInfo>;
+}
+
+type ProductVariant = { name?: string; price?: string | number; originalPrice?: string | number; image?: string; stock?: string | number };
+
+function parseVariants(product: Product): ProductVariant[] {
+  if (!product.variants) return [];
+  try {
+    const parsed = JSON.parse(product.variants);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The price/image for a cart line is ALWAYS decided by the server from the product
+ * (or its selected variant). Prices sent by the browser are ignored.
+ */
+function resolveLine(product: Product, size: string | null) {
+  if (size) {
+    const variant = parseVariants(product).find((v) => (v.name || "").trim() === size.trim());
+    if (variant) {
+      const variantPrice = Number(variant.price);
+      return {
+        price: Number.isFinite(variantPrice) && variantPrice > 0 ? Math.round(variantPrice) : product.price,
+        image: variant.image || null,
+      };
+    }
+  }
+  return { price: product.price, image: null as string | null };
+}
+
+function isProductAvailable(product: Product): boolean {
+  return product.isVisible !== false && product.inStock !== false;
+}
+
+function optionalString(value: unknown, maxLength: number): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : null;
 }
 
 function normalizeProductPayload(body: Record<string, unknown>): Partial<InsertProduct> | null {
@@ -297,95 +370,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
-  // Public Diagnostic route (top of routes for high priority)
-  app.get("/api/public-debug", async (_req, res) => {
-    const rootUploadDir = path.resolve(process.cwd(), "public", "uploads");
-    const clientUploadDir = path.resolve(process.cwd(), "client", "public", "uploads");
-    res.json({
-      timestamp: new Date().toISOString(),
-      cwd: process.cwd(),
-      env: process.env.NODE_ENV,
-      rootUploads: {
-        path: rootUploadDir,
-        exists: fs.existsSync(rootUploadDir),
-        files: fs.existsSync(rootUploadDir) ? fs.readdirSync(rootUploadDir) : []
-      },
-      clientUploads: {
-        path: clientUploadDir,
-        exists: fs.existsSync(clientUploadDir),
-        files: fs.existsSync(clientUploadDir) ? fs.readdirSync(clientUploadDir) : []
-      },
-      cloudinary: {
-        hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
-        hasApiKey: !!process.env.CLOUDINARY_API_KEY,
-        hasApiSecret: !!process.env.CLOUDINARY_API_SECRET
-      }
-    });
-  });
-
-  // --- SEO SITEMAP ---
-  app.get("/sitemap.xml", async (_req, res) => {
-    const products = await storage.getProducts();
-    const categories = await storage.getCategories();
-    const protocol = _req.headers["x-forwarded-proto"] || "https";
-    const baseUrl = `${protocol}://${_req.get('host')}`;
-
-    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-      <url>
-        <loc>${baseUrl}/</loc>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-      </url>
-      <url>
-        <loc>${baseUrl}/shop</loc>
-        <changefreq>daily</changefreq>
-        <priority>0.8</priority>
-      </url>
-      ${categories.map(cat => `
-      <url>
-        <loc>${baseUrl}/shop?category=${cat.id}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.7</priority>
-      </url>`).join('')}
-      ${products.map(product => `
-      <url>
-        <loc>${baseUrl}/product/${product.id}</loc>
-        <changefreq>weekly</changefreq>
-        <priority>0.6</priority>
-        ${product.image ? `
-        <image:image>
-          <image:loc>${product.image.startsWith('http') ? product.image : baseUrl + product.image}</image:loc>
-          <image:title>${product.name}</image:title>
-        </image:image>` : ''}
-      </url>`).join('')}
-    </urlset>`;
-
-    res.header("Content-Type", "application/xml");
-    res.send(sitemap.trim());
-  });
-  // Diagnostic route for storage status
-  app.get("/api/admin/debug-storage", async (_req, res) => {
+  // Diagnostic route for storage status (admin only)
+  app.get("/api/admin/debug-storage", requireAdmin, async (_req, res) => {
     const mode = (storage as any).mode || "unknown";
     const hasEnv = !!process.env.DATABASE_URL;
     const lastError = getDbLastError();
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
 
     res.json({
       mode: mode,
       hasDatabaseUrl: hasEnv,
+      cloudinaryEnabled,
       lastError: lastError || null,
       message: mode === "DATABASE"
         ? "بنجاح! السيرفر متصل بقاعدة البيانات PostgreSQL."
         : (hasEnv ? `يوجد رابط قاعدة بيانات ولكن السيرفر فشل في الاتصال. الخطأ: ${lastError || "غير معروف"}` : "لا يوجد رابط قاعدة بيانات في الإعدادات، السيرفر يعمل في الذاكرة المؤقتة."),
-      cwd: process.cwd(),
-      uploadDir,
       uploadDirExists: fs.existsSync(uploadDir),
-      filesInUploadDir: fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : []
     });
   });
 
-  app.post("/api/auth/register", async (req: Request, res: Response) => {
+  app.post("/api/auth/register", registerLimiter, async (req: Request, res: Response) => {
     const { name, email, password, phone } = req.body as {
       name?: string;
       email?: string;
@@ -393,11 +396,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       phone?: string;
     };
 
-    if (!name || !email || !password || !phone) {
+    if (!name || !email || !password || !phone ||
+        typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || typeof phone !== "string") {
       return res.status(400).json({ message: "الاسم والبريد الإلكتروني ورقم الهاتف وكلمة المرور مطلوبة" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(normalizedEmail) || normalizedEmail.length > 254) {
+      return res.status(400).json({ message: "البريد الإلكتروني غير صالح" });
+    }
+    if (password.length < MIN_PASSWORD_LENGTH || password.length > 200) {
+      return res.status(400).json({ message: `كلمة المرور يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل` });
+    }
+    if (name.trim().length < 2 || name.length > 100 || phone.trim().length > 20) {
+      return res.status(400).json({ message: "يرجى التحقق من الاسم ورقم الهاتف" });
+    }
+
     const existingUser = await storage.getUserByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(409).json({ message: "هذا البريد مسجل بالفعل" });
@@ -424,19 +438,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
+  app.post("/api/auth/login", loginLimiter, async (req: Request, res: Response) => {
     const { email, password } = req.body as {
       email?: string;
       password?: string;
     };
 
-    if (!email || !password) {
+    if (!email || !password || typeof email !== "string" || typeof password !== "string") {
       return res.status(400).json({ message: "البريد الإلكتروني وكلمة المرور مطلوبة" });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-
-    // Try customer login
     const user = await storage.getUserByEmail(normalizedEmail);
 
     if (user && verifyPassword(password, user.password)) {
@@ -451,14 +463,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     return res.status(401).json({ message: "بيانات الدخول غير صحيحة" });
   });
 
-  app.post("/api/auth/google", async (req: Request, res: Response) => {
+  app.post("/api/auth/google", loginLimiter, async (req: Request, res: Response) => {
     const { credential } = req.body as { credential?: string };
 
     if (!GOOGLE_CLIENT_ID) {
       return res.status(503).json({ message: "تسجيل Google غير مفعل بعد" });
     }
 
-    if (!credential) {
+    if (!credential || typeof credential !== "string") {
       return res.status(400).json({ message: "رمز Google مطلوب" });
     }
 
@@ -516,14 +528,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ success: true });
   });
 
-  app.post("/api/auth/change-password", requireCustomer, async (req: Request, res: Response) => {
+  app.post("/api/auth/change-password", requireCustomer, loginLimiter, async (req: Request, res: Response) => {
     const { currentPassword, newPassword } = req.body as {
       currentPassword?: string;
       newPassword?: string;
     };
 
-    if (!currentPassword || !newPassword) {
+    if (!currentPassword || !newPassword || typeof currentPassword !== "string" || typeof newPassword !== "string") {
       return res.status(400).json({ message: "كلمة المرور الحالية والجديدة مطلوبة" });
+    }
+
+    if (newPassword.length < MIN_PASSWORD_LENGTH || newPassword.length > 200) {
+      return res.status(400).json({ message: `كلمة المرور الجديدة يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل` });
     }
 
     const user = res.locals.customer as User;
@@ -534,21 +550,57 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     await storage.updateUser(user.id, {
       password: hashPassword(newPassword),
     });
+    // Log out every other device
+    await storage.deleteSessionsForUser(user.id, res.locals.customerToken as string);
 
     res.json({ success: true, message: "تم تغيير كلمة المرور بنجاح" });
   });
 
   app.patch("/api/auth/me", requireCustomer, async (req: Request, res: Response) => {
-    const { name, phone, email, avatar } = req.body as Partial<User>;
-    const userId = res.locals.customer.id;
+    const { name, phone, email, avatar } = req.body as Record<string, unknown>;
+    const current = res.locals.customer as User;
 
-    // Basic validation could be added here
-    const updatedUser = await storage.updateUser(userId, {
-      name: name || undefined,
-      phone: phone || undefined,
-      email: email || undefined,
-      avatar: avatar || undefined,
-    });
+    const update: Partial<InsertUser> = {};
+
+    if (name !== undefined && name !== null && name !== "") {
+      if (typeof name !== "string" || name.trim().length < 2 || name.length > 100) {
+        return res.status(400).json({ message: "الاسم غير صالح" });
+      }
+      update.name = name.trim();
+    }
+
+    if (phone !== undefined && phone !== null && phone !== "") {
+      if (typeof phone !== "string" || phone.trim().length > 20) {
+        return res.status(400).json({ message: "رقم الهاتف غير صالح" });
+      }
+      update.phone = phone.trim();
+    }
+
+    if (email !== undefined && email !== null && email !== "") {
+      const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+      if (!EMAIL_RE.test(normalizedEmail) || normalizedEmail.length > 254) {
+        return res.status(400).json({ message: "البريد الإلكتروني غير صالح" });
+      }
+      if (normalizedEmail !== current.email) {
+        const owner = await storage.getUserByEmail(normalizedEmail);
+        if (owner && owner.id !== current.id) {
+          return res.status(409).json({ message: "هذا البريد مستخدم في حساب آخر" });
+        }
+      }
+      update.email = normalizedEmail;
+    }
+
+    if (avatar !== undefined && avatar !== null && avatar !== "") {
+      const validAvatar = typeof avatar === "string" &&
+        avatar.length <= 3 * 1024 * 1024 &&
+        (/^https:\/\//i.test(avatar) || /^data:image\/(png|jpe?g|webp|gif);base64,/i.test(avatar) || avatar.startsWith("/uploads/"));
+      if (!validAvatar) {
+        return res.status(400).json({ message: "الصورة الشخصية غير صالحة" });
+      }
+      update.avatar = avatar;
+    }
+
+    const updatedUser = Object.keys(update).length ? await storage.updateUser(current.id, update) : current;
 
     if (!updatedUser) {
       return res.status(404).json({ message: "المستخدم غير موجود" });
@@ -559,135 +611,138 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
-  app.get("/api/download-app", (req: Request, res: Response) => {
-    const apkPath = path.resolve(process.cwd(), "public", "app-release.apk");
-    if (fs.existsSync(apkPath)) {
-      res.setHeader('Content-Disposition', 'attachment; filename="Al-Raqi-Store.apk"');
-      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-      const fileStream = fs.createReadStream(apkPath);
-      fileStream.pipe(res);
-    } else {
-      // Fallback if built
-      const distApkPath = path.resolve(process.cwd(), "dist", "public", "app-release.apk");
-      if (fs.existsSync(distApkPath)) {
-        res.setHeader('Content-Disposition', 'attachment; filename="Al-Raqi-Store.apk"');
-        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-        const fileStream = fs.createReadStream(distApkPath);
-        fileStream.pipe(res);
-      } else {
-        res.status(404).send("App not found");
-      }
+  app.get("/api/download-app", (_req: Request, res: Response) => {
+    const candidates = [
+      path.resolve(process.cwd(), "public", "app-release.apk"),
+      path.resolve(process.cwd(), "dist", "public", "app-release.apk"),
+    ];
+    const apkPath = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!apkPath) {
+      return res.status(404).send("App not found");
     }
+    res.setHeader('Content-Disposition', 'attachment; filename="Al-Raqi-Store.apk"');
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    fs.createReadStream(apkPath).pipe(res);
   });
 
-  app.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+  const RESET_RESPONSE = {
+    success: true,
+    message: "إذا كان البريد مسجلاً لدينا فستصلك رسالة بتعليمات استعادة كلمة المرور (يرجى التحقق من الرسائل المهملة أيضاً).",
+  };
+
+  app.post("/api/auth/forgot-password", passwordResetLimiter, async (req: Request, res: Response) => {
     try {
       const { email } = req.body as { email?: string };
 
-      if (!email) {
+      if (!email || typeof email !== "string") {
         return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
       }
 
       const user = await storage.getUserByEmail(email.trim().toLowerCase());
 
-      // For security, we usually return success even if user not found, 
-      // but for debugging purposes we will check existence here.
-      if (!user) {
-        return res.status(404).json({ message: "لم يتم العثور على حساب بهذا البريد الإلكتروني" });
+      // Same answer whether the account exists or not (prevents email enumeration)
+      if (!user || !user.email) {
+        return res.json(RESET_RESPONSE);
       }
 
-      // Generate a reset token
-      const resetToken = createToken();
-      // In a real app, you would save this token to the database with an expiration time
-      // and send it via email.
+      // Single-use token: only its SHA-256 hash is stored, valid for 1 hour
+      const resetToken = createToken(32);
+      await storage.updateUser(user.id, {
+        resetTokenHash: sha256(resetToken),
+        resetTokenExpires: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+      });
 
-      const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-      const host = req.headers.host || req.get('host');
-      const resetLink = `${protocol}://${host}/reset-password?token=${resetToken}&email=${user.email}`;
+      const requestOrigin = `${req.protocol}://${req.get("host")}`;
+      const resetLink = `${getPublicBaseUrl(requestOrigin)}/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(user.email)}`;
 
-      // Attempt to send real email asynchronously to prevent hanging if SMTP is slow/blocked
-      sendPasswordResetEmail(user.email || email, resetLink, user.name || "مستخدم")
+      // Send in the background so a slow SMTP server does not block the response
+      sendPasswordResetEmail(user.email, resetLink, user.name || "مستخدم")
         .then(emailSent => {
           if (emailSent) {
-            console.log(`✅ Email sent to ${user.email}`);
+            console.log(`✅ Password reset email sent (user ${user.id})`);
+          } else if (process.env.NODE_ENV !== "production") {
+            console.log(`[DEV] Password reset link for ${user.email}: ${resetLink}`);
           } else {
-            console.log(`\n--- [Password Reset Request (Email Not Configured)] ---`);
-            console.log(`User: ${user?.name} (${user?.email})`);
-            console.log(`Token: ${resetToken}`);
-            console.log(`Reset Link: ${resetLink}`);
-            console.log(`---------------------------------\n`);
+            console.warn(`⚠️ Password reset email could not be sent (user ${user.id}). Check SMTP settings.`);
           }
         })
         .catch(err => console.error("Error in background email task:", err));
 
-      res.json({
-        success: true,
-        message: "تم إرسال تعليمات استعادة كلمة المرور إلى بريدك الإلكتروني (يرجى التحقق من الرسائل المهملة أيضاً)."
-      });
+      res.json(RESET_RESPONSE);
     } catch (e: any) {
       console.error("Forgot password API error:", e);
       res.status(500).json({ message: "حدث خطأ غير متوقع أثناء المعالجة" });
     }
   });
 
-  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+  app.post("/api/auth/reset-password", passwordResetLimiter, async (req: Request, res: Response) => {
     const { email, token, password } = req.body as {
       email?: string;
       token?: string;
       password?: string;
     };
 
-    if (!email || !token || !password) {
+    if (!email || !token || !password || typeof email !== "string" || typeof token !== "string" || typeof password !== "string") {
       return res.status(400).json({ message: "جميع الحقول مطلوبة" });
     }
 
-    const user = await storage.getUserByEmail(email.trim().toLowerCase());
-    if (!user) {
-      return res.status(404).json({ message: "المستخدم غير موجود" });
+    if (password.length < MIN_PASSWORD_LENGTH || password.length > 200) {
+      return res.status(400).json({ message: `كلمة المرور يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل` });
     }
 
-    // In a real app, we would verify the token from the DB. 
-    // Since this is mock/dev, we just check if it's there.
+    const invalidLink = { message: "رابط استعادة كلمة المرور غير صالح أو منتهي الصلاحية. يرجى طلب رابط جديد." };
+    const user = await storage.getUserByEmail(email.trim().toLowerCase());
+    if (!user || !user.resetTokenHash || !user.resetTokenExpires) {
+      return res.status(400).json(invalidLink);
+    }
+
+    const expired = new Date(user.resetTokenExpires).getTime() < Date.now();
+    if (expired || !safeEqual(sha256(token), user.resetTokenHash)) {
+      return res.status(400).json(invalidLink);
+    }
+
     const updatedUser = await storage.updateUser(user.id, {
-      password: hashPassword(password)
+      password: hashPassword(password),
+      resetTokenHash: null,
+      resetTokenExpires: null,
     });
 
     if (!updatedUser) {
       return res.status(500).json({ message: "فشل تحديث كلمة المرور" });
     }
 
+    // Log out all devices after a password reset
+    await storage.deleteSessionsForUser(user.id);
+
     res.json({ success: true, message: "تم تحديث كلمة المرور بنجاح" });
   });
 
   app.post("/api/auth/biometric/enable", requireCustomer, async (req: Request, res: Response) => {
     const user = res.locals.customer as User;
-    const { token } = req.body as { token: string };
 
-    if (!token) return res.status(400).json({ message: "الرمز مطلوب" });
-
-    // Store a hash or the token directly for biometric login verification
-    // Here we'll just enable the flag for simplicity in this version
+    // The server generates a strong random device secret. Only its hash is stored;
+    // the client keeps the secret and sends it back on biometric login.
+    const deviceToken = createToken(32);
     const updated = await storage.updateUser(user.id, {
       biometricEnabled: true,
-      biometricToken: token, // This token identifies the device/enrolled state
+      biometricToken: sha256(deviceToken),
     });
 
-    res.json({ success: true, user: sanitizeUser(updated!) });
+    res.json({ success: true, deviceToken, user: sanitizeUser(updated!) });
   });
 
-  app.post("/api/auth/biometric/login", async (req: Request, res: Response) => {
-    const { email, deviceToken } = req.body as { email: string; deviceToken: string };
+  app.post("/api/auth/biometric/login", loginLimiter, async (req: Request, res: Response) => {
+    const { email, deviceToken } = req.body as { email?: string; deviceToken?: string };
 
-    if (!email || !deviceToken) {
+    if (!email || !deviceToken || typeof email !== "string" || typeof deviceToken !== "string") {
       return res.status(400).json({ message: "البريد والرمز مطلوبان" });
     }
 
     const user = await storage.getUserByEmail(email.trim().toLowerCase());
-    if (!user || !user.biometricEnabled || user.biometricToken !== deviceToken) {
-      return res.status(401).json({ message: "فشل التحقق من السمات الحيوية أو الحساب غير منشط." });
+    if (!user || !user.biometricEnabled || !user.biometricToken || !safeEqual(sha256(deviceToken), user.biometricToken)) {
+      return res.status(401).json({ message: "فشل التحقق من البصمة. يرجى تسجيل الدخول بكلمة المرور ثم إعادة تفعيل البصمة من الملف الشخصي." });
     }
 
-    // In a real app, verify deviceToken against a stored key
     const token = await createCustomerSession(user);
     res.json({
       token,
@@ -695,60 +750,32 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     });
   });
 
-  app.post("/api/admin/login", async (req: Request, res: Response) => {
+  app.post("/api/admin/login", adminLoginLimiter, async (req: Request, res: Response) => {
     const { username, password } = req.body as { username?: string; password?: string };
 
-    if (!username || !password) {
+    if (!username || !password || typeof username !== "string" || typeof password !== "string") {
       return res.status(400).json({ message: "اسم المستخدم وكلمة المرور مطلوبة" });
     }
 
-    let authenticated = false;
-
-    // PRIORITY 1: Always check environment variables first (master override)
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      authenticated = true;
-    }
-
-    // PRIORITY 2: Check database credentials if env check failed
-    if (!authenticated) {
-      const settings = await storage.getAdminSettings();
-      const storedUsername = settings?.username;
-      const storedPassword = settings?.password;
-
-      if (storedUsername && storedPassword && username === storedUsername) {
-        if (storedPassword.includes(':')) {
-          // Hashed password
-          if (verifyPassword(password, storedPassword)) {
-            authenticated = true;
-          }
-        } else {
-          // Plaintext password stored in DB
-          if (password === storedPassword) {
-            authenticated = true;
-          }
-        }
-      }
-    }
-
-    if (!authenticated) {
+    const settings = await storage.getAdminSettings();
+    if (!isValidAdminPassword(settings, username.trim(), password)) {
       return res.status(401).json({ message: "بيانات دخول الأدمن غير صحيحة" });
     }
 
-    const settings = await storage.getAdminSettings();
     const token = createToken();
-    await storage.createSession({ token, userId: `admin-${settings?.id || 1}` });
+    await storage.createSession({ token, userId: ADMIN_SESSION_USER_ID });
 
     res.json({
       token,
       user: {
-        username: settings?.username || ADMIN_USERNAME,
+        username: settings?.username || username.trim(),
       },
     });
   });
 
   app.get("/api/admin/settings", requireAdmin, async (_req: Request, res: Response) => {
     const settings = await storage.getAdminSettings();
-    res.json(settings || { email: ADMIN_USERNAME, phone: "+249912345678", username: ADMIN_USERNAME });
+    res.json(sanitizeAdminSettings(settings) || { email: "", phone: "", username: "admin" });
   });
 
   // ✅ REQUIREMENT: Robust Cloud Upload Handler with Optional Local Backup
@@ -773,7 +800,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       console.log(`📸 Processing upload for file: ${req.file.originalname} (${req.file.size} bytes)`);
 
       try {
-        const uniqueId = Date.now() + "-" + Math.round(Math.random() * 1e9);
+        const uniqueId = `${Date.now()}-${createToken(6)}`;
         let finalBuffer = req.file.buffer;
         let fileName = `${uniqueId}.webp`;
         let isOptimized = false;
@@ -804,7 +831,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
           console.error("❌ Local Write Error (non-fatal):", localErr);
         }
 
-        // ✅ REQUIREMENT: Permanent Cloud Upload (Upload to Cloudinary)
+        if (!cloudinaryEnabled) {
+          return res.json({ url: publicUrl, source: "local", optimized: isOptimized });
+        }
+
+        // Permanent Cloud Upload (Upload to Cloudinary)
         try {
           console.log("☁️ Attempting Cloudinary upload...");
           const cloudResult = await new Promise((resolve, reject) => {
@@ -850,9 +881,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       } catch (uploadError: any) {
         console.error("❌ Final Upload Pipeline Error:", uploadError);
-        res.status(500).json({ 
+        res.status(500).json({
           message: "فشل نظام الرفع. يرجى التأكد من جودة اتصال الإنترنت والمحاولة لاحقاً.",
-          details: uploadError.message || "Unknown error"
         });
       }
     });
@@ -889,7 +919,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/admin/banks", requireAdmin, async (req, res) => {
-    const bank = await storage.createBank(req.body);
+    const parsed = insertBankSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "بيانات البنك غير مكتملة" });
+    }
+    const bank = await storage.createBank(parsed.data);
     res.json(bank);
   });
 
@@ -923,19 +957,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       revenueResetCode?: string;
     };
 
+    const toNumber = (value: unknown) => {
+      if (value === undefined || value === null || value === "") return undefined;
+      const n = Number(value);
+      return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+    };
+    const toText = (value: unknown, max = 500) => (typeof value === "string" ? value.slice(0, max) : undefined);
+
     const settings = await storage.updateAdminSettings({
-      email,
-      phone,
-      address,
-      facebook,
-      instagram,
-      twitter,
-      shippingFee,
-      freeShippingThreshold,
-      announcementText,
-      revenueResetCode
+      email: toText(email, 254),
+      phone: toText(phone, 30),
+      address: toText(address),
+      facebook: toText(facebook),
+      instagram: toText(instagram),
+      twitter: toText(twitter),
+      shippingFee: toNumber(shippingFee),
+      freeShippingThreshold: toNumber(freeShippingThreshold),
+      announcementText: toText(announcementText, 1000),
+      revenueResetCode: typeof revenueResetCode === "string" && revenueResetCode.trim() ? revenueResetCode.trim().slice(0, 50) : undefined,
     });
-    res.json(settings);
+    res.json(sanitizeAdminSettings(settings));
   });
 
   app.post("/api/admin/products/reorder", requireAdmin, async (req: Request, res: Response) => {
@@ -974,44 +1015,46 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.sendStatus(200);
   });
 
-  app.post("/api/admin/security", requireAdmin, async (req: Request, res: Response) => {
+  app.post("/api/admin/security", requireAdmin, adminLoginLimiter, async (req: Request, res: Response) => {
     const { username, password, currentPassword } = req.body as {
       username?: string;
       password?: string;
       currentPassword?: string;
     };
 
-    if (!currentPassword) {
+    if (!currentPassword || typeof currentPassword !== "string") {
       return res.status(400).json({ message: "كلمة المرور الحالية مطلوبة لتغيير البيانات" });
     }
 
     const settings = await storage.getAdminSettings();
-    const storedUsername = settings?.username || ADMIN_USERNAME;
-    const storedPassword = settings?.password || ADMIN_PASSWORD;
-
-    // Verify current password
-    let authenticated = false;
-    if (storedPassword.includes(':')) {
-      if (verifyPassword(currentPassword, storedPassword)) authenticated = true;
-    } else {
-      if (currentPassword === storedPassword) authenticated = true;
-    }
-
-    if (!authenticated) {
+    // Accept either the stored admin password or the env master password
+    if (!isValidAdminPassword(settings, undefined, currentPassword)) {
       return res.status(401).json({ message: "كلمة المرور الحالية غير صحيحة" });
     }
 
     const updateData: Partial<InsertAdminSettings> = {};
-    if (username) updateData.username = username;
+    if (username && typeof username === "string" && username.trim()) {
+      updateData.username = username.trim().slice(0, 100);
+    }
     if (password) {
-      // Basic strength check
-      if (password.length < 8) {
-        return res.status(400).json({ message: "كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل" });
+      if (typeof password !== "string" || password.length < MIN_ADMIN_PASSWORD_LENGTH) {
+        return res.status(400).json({ message: `كلمة المرور الجديدة يجب أن تكون ${MIN_ADMIN_PASSWORD_LENGTH} أحرف على الأقل` });
+      }
+      if (password === KNOWN_DEFAULT_ADMIN_PASSWORD) {
+        return res.status(400).json({ message: "لا يمكن استخدام كلمة المرور الافتراضية القديمة" });
       }
       updateData.password = hashPassword(password);
     }
 
-    const updated = await storage.updateAdminSettings(updateData);
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "لا توجد تغييرات للحفظ" });
+    }
+
+    await storage.updateAdminSettings(updateData);
+    if (updateData.password) {
+      // Log out every other admin session
+      await storage.deleteSessionsForUser(ADMIN_SESSION_USER_ID, getAdminToken(req));
+    }
     res.json({ message: "تم تحديث بيانات الأمان بنجاح" });
   });
 
@@ -1019,7 +1062,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const settings = await storage.getAdminSettings();
     res.json({
       user: {
-        username: settings?.email || ADMIN_USERNAME,
+        username: settings?.username || "admin",
       },
     });
   });
@@ -1034,15 +1077,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.get("/api/admin/notifications", requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const allOrders = await storage.getAllOrders();
-      const allMessages = await storage.getMessages();
-      res.json({
-        orders: allOrders.length,
-        messages: allMessages.length,
-        pendingOrders: allOrders.filter(o => o.status === "pending").length,
-      });
+      // Lightweight SQL counts — this endpoint is polled every few seconds by the admin panel
+      res.json(await storage.getAdminCounts());
     } catch (error) {
-      res.status(500).json({ error: String(error) });
+      console.error("❌ Error in /api/admin/notifications:", error);
+      res.status(500).json({ message: GENERIC_SERVER_ERROR });
     }
   });
 
@@ -1124,47 +1163,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       });
     } catch (error) {
       console.error("❌ Error in /api/admin/overview:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "فشل تحميل بيانات لوحة التحقق. قد يكون هناك مشكلة في الاتصال بقاعدة البيانات.",
-        error: String(error)
       });
     }
   });
 
   app.get("/api/admin/orders", requireAdmin, async (req: Request, res: Response) => {
     try {
-      const search = req.query.search as string | undefined;
-      const status = req.query.status as string | undefined;
-      
-      const allOrders = await storage.getAllOrders();
-      let filtered = [...allOrders];
-
-      if (status && status !== "all") {
-        filtered = filtered.filter(o => o.status === status);
-      }
-
-      if (search) {
-        const s = search.toLowerCase();
-        filtered = filtered.filter(o => 
-          (o.name?.toLowerCase().includes(s)) || 
-          (o.phone?.includes(s)) || 
-          (o.id.includes(s))
-        );
-      }
-
-      // Sort newest first
-      filtered.sort((a, b) => {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-
-      res.json(filtered);
+      const search = typeof req.query.search === "string" ? req.query.search.slice(0, 100) : undefined;
+      const status = typeof req.query.status === "string" ? req.query.status : undefined;
+      res.json(await storage.getFilteredOrders({ search, status }));
     } catch (error) {
+      console.error("❌ Error in /api/admin/orders:", error);
       res.status(500).json({ message: "فشل تصفية الطلبات" });
     }
   });
-  
+
   app.patch("/api/admin/orders/:id", requireAdmin, async (req: Request, res: Response) => {
     const orderId = getSingleParam(req.params.id);
     const { status } = req.body as { status?: string };
@@ -1232,7 +1247,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "بيانات غير صالحة", errors: error.errors });
       }
-      res.status(500).json({ message: "Internal Server Error" });
+      console.error("❌ Error creating message:", error);
+      res.status(500).json({ message: GENERIC_SERVER_ERROR });
     }
   });
 
@@ -1287,42 +1303,46 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/products/:id/rate", requireCustomer, async (req: Request, res: Response) => {
     const productId = getSingleParam(req.params.id);
     const { rating } = req.body as { rating?: number };
+    const user = res.locals.customer as User;
 
-    if (!rating || typeof rating !== "number" || rating < 1 || rating > 5) {
+    if (typeof rating !== "number" || !Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(400).json({ message: "التقييم يجب أن يكون رقمًا بين 1 و 5" });
     }
 
-    const updatedProduct = await storage.rateProduct(productId, rating);
-    if (!updatedProduct) {
+    const result = await storage.rateProduct(productId, user.id, rating);
+    if (!result.product) {
       return res.status(404).json({ message: "المنتج غير موجود" });
     }
+    if (result.alreadyRated) {
+      return res.status(409).json({ message: "لقد قمت بتقييم هذا المنتج مسبقاً، شكراً لك!" });
+    }
 
-    res.json(updatedProduct);
+    res.json(result.product);
   });
 
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const category = req.query.category as string | undefined;
-      const limit = req.query.limit ? Number(req.query.limit) : undefined;
-      const result = category ? await storage.getProductsByCategory(category, limit) : await storage.getProducts(limit);
-      res.json(result);
+      const category = typeof req.query.category === "string" ? req.query.category : undefined;
+      const rawLimit = Number(req.query.limit);
+      const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : undefined;
+      // Hidden products are never sent to the public storefront
+      res.json(await storage.getVisibleProducts(limit, category));
     } catch (error) {
       console.error("❌ Database connection error fetching products:", error);
-      // نُرجع مصفوفة فارغة مؤقتاً أو خطأ معالج لمنع انهيار الواجهة
-      res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات. يرجى التأكد من اتصال قاعدة البيانات.", error: String(error) });
+      res.status(500).json({ message: "حدث خطأ أثناء جلب المنتجات. يرجى التأكد من اتصال قاعدة البيانات." });
     }
   });
 
   app.get("/api/products/:id", async (req: Request, res: Response) => {
     try {
       const product = await storage.getProductById(getSingleParam(req.params.id));
-      if (!product) {
+      if (!product || product.isVisible === false) {
         return res.status(404).json({ message: "المنتج غير موجود" });
       }
       res.json(product);
     } catch (error) {
       console.error(`❌ Database connection error fetching product ${req.params.id}:`, error);
-      res.status(500).json({ message: "تعذر جلب تفاصيل المنتج", error: String(error) });
+      res.status(500).json({ message: "تعذر جلب تفاصيل المنتج" });
     }
   });
 
@@ -1332,7 +1352,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.json(result);
     } catch (error) {
       console.error("❌ Database connection error fetching categories:", error);
-      res.status(500).json({ message: "تعذر جلب الأقسام", error: String(error) });
+      res.status(500).json({ message: "تعذر جلب الأقسام" });
     }
   });
 
@@ -1344,14 +1364,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.post("/api/cart", async (req: Request, res: Response) => {
-    const sessionId = req.body.sessionId || getSessionId(req);
-    const { productId, quantity, size, measurement, price, image } = req.body as { productId?: string; quantity?: number; size?: string; measurement?: string; price?: number; image?: string };
+    const bodySessionId = typeof req.body?.sessionId === "string" ? req.body.sessionId.slice(0, 100) : "";
+    const sessionId = bodySessionId || getSessionId(req);
+    const { productId, quantity, size, measurement } = req.body as { productId?: string; quantity?: number; size?: string; measurement?: string };
 
-    if (!productId) {
+    if (!productId || typeof productId !== "string") {
       return res.status(400).json({ message: "معرف المنتج مطلوب" });
     }
 
-    const item = await storage.addToCart({ sessionId, productId, quantity: quantity || 1, size: size || null, measurement: measurement || null, price: price || null, image: image || null });
+    const qty = quantity === undefined ? 1 : Number(quantity);
+    if (!Number.isInteger(qty) || qty < 1 || qty > MAX_CART_QUANTITY) {
+      return res.status(400).json({ message: "الكمية غير صحيحة" });
+    }
+
+    const product = await storage.getProductById(productId);
+    if (!product || !isProductAvailable(product)) {
+      return res.status(404).json({ message: "المنتج غير متوفر حالياً" });
+    }
+
+    const sizeValue = optionalString(size, 100);
+    // Price and image are decided by the server — never trusted from the browser
+    const line = resolveLine(product, sizeValue);
+
+    const item = await storage.addToCart({
+      sessionId,
+      productId,
+      quantity: qty,
+      size: sizeValue,
+      measurement: optionalString(measurement, 100),
+      price: line.price,
+      image: line.image,
+    });
     const count = await storage.getCartCount(sessionId);
     res.json({ item, count, sessionId });
   });
@@ -1359,11 +1402,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.patch("/api/cart/:id", async (req: Request, res: Response) => {
     const { quantity } = req.body as { quantity?: number };
 
-    if (typeof quantity !== "number" || quantity < 1) {
+    if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1 || quantity > MAX_CART_QUANTITY) {
       return res.status(400).json({ message: "الكمية غير صحيحة" });
     }
 
-    const item = await storage.updateCartItemQuantity(getSingleParam(req.params.id), quantity);
+    // Only the owner of the cart (same session id) can change its items
+    const item = await storage.updateCartItemQuantity(getSingleParam(req.params.id), getSessionId(req), quantity);
     if (!item) {
       return res.status(404).json({ message: "العنصر غير موجود" });
     }
@@ -1372,7 +1416,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.delete("/api/cart/:id", async (req: Request, res: Response) => {
-    await storage.removeFromCart(getSingleParam(req.params.id));
+    await storage.removeFromCart(getSingleParam(req.params.id), getSessionId(req));
     res.json({ success: true });
   });
 
@@ -1383,17 +1427,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
   app.get("/api/orders/me", requireCustomer, async (req: Request, res: Response) => {
-    const userId = res.locals.customer.id;
-    // For now we get by sessionId but try to filter by userId if DB supports
-    // In MemoryStorage we might not have a getOrdersByUserId yet. Let's use getOrders then filter
-    // If we have a sessionId stored in cookie we should use it too.
-    const allOrders = await storage.getAllOrders();
-    const userOrders = allOrders.filter(o => o.userId === userId || o.sessionId === getSessionId(req));
-    // Sort newest first
-    const sortedOrders = userOrders.sort((a, b) => {
-      return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
-    });
-    res.json(sortedOrders);
+    const userId = (res.locals.customer as User).id;
+    const sessionHeader = getSingleParam(req.headers["x-session-id"]);
+    // The customer's own orders, plus guest orders placed earlier from this browser
+    res.json(await storage.getOrdersForCustomer(userId, sessionHeader || undefined));
   });
 
   app.post("/api/orders/:id/close", requireCustomer, async (req: Request, res: Response) => {
@@ -1403,6 +1440,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
     if (!order || order.userId !== userId) {
       return res.status(403).json({ message: "ليس لديك صلاحية لإغلاق هذا الطلب" });
+    }
+
+    if (order.status !== "pending") {
+      return res.status(400).json({ message: "لا يمكن إلغاء الطلب بعد بدء تجهيزه. يرجى التواصل مع خدمة العملاء." });
     }
 
     const updated = await storage.updateOrderStatus(orderId, "cancelled");
@@ -1424,7 +1465,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
 
 
-  app.post("/api/orders", async (req: Request, res: Response) => {
+  app.post("/api/orders", orderLimiter, async (req: Request, res: Response) => {
     const { sessionId: bodySessionId, name, phone, address, paymentMethod, bankId } = req.body as {
       sessionId?: string;
       name?: string;
@@ -1434,27 +1475,37 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       bankId?: string;
     };
 
-    const sessionId = bodySessionId || getSessionId(req);
+    const sessionId = (typeof bodySessionId === "string" && bodySessionId.slice(0, 100)) || getSessionId(req);
     const token = getCustomerToken(req);
     const dbSession = token ? await storage.getSession(token) : undefined;
-    const userId = dbSession?.userId;
+    const userId = dbSession && !dbSession.userId.startsWith("admin-") ? dbSession.userId : undefined;
 
-    if (!sessionId || !name || !phone || !address) {
+    if (!sessionId || !name || !phone || !address ||
+        typeof name !== "string" || typeof phone !== "string" || typeof address !== "string") {
       return res.status(400).json({ message: "جميع الحقول مطلوبة" });
     }
 
     // Server-side validation for "Real" data
-    if (name.trim().length < 3) {
+    if (name.trim().length < 3 || name.length > 100) {
       return res.status(400).json({ message: "يرجى إدخال اسم حقيقي (3 أحرف على الأقل)" });
     }
 
     const cleanPhone = phone.replace(/[^0-9]/g, '');
-    if (cleanPhone.length < 9) {
+    if (cleanPhone.length < 9 || phone.length > 30) {
       return res.status(400).json({ message: "يرجى إدخال رقم هاتف صحيح (9 أرقام على الأقل)" });
     }
 
-    if (address.trim().length < 5) {
+    if (address.trim().length < 5 || address.length > 500) {
       return res.status(400).json({ message: "يرجى إدخال عنوان واضح بالتفصيل" });
+    }
+
+    const method = paymentMethod === "bank" ? "bank" : "cod";
+    let selectedBank: Awaited<ReturnType<typeof storage.getBanks>>[number] | undefined;
+    if (method === "bank") {
+      selectedBank = (await storage.getBanks()).find(b => b.id === bankId);
+      if (!selectedBank) {
+        return res.status(400).json({ message: "يرجى اختيار البنك للتحويل" });
+      }
     }
 
     const currentCartItems = await storage.getCartItems(sessionId);
@@ -1462,43 +1513,61 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(400).json({ message: "السلة فارغة" });
     }
 
-    const subtotal = currentCartItems.reduce((sum, item) => sum + (item.price || item.product.price) * item.quantity, 0);
-    
+    // Re-check availability and recompute every price from the current product data.
+    // (Never trust prices stored in the cart — they may have been sent by an old client.)
+    const quantityByProduct = new Map<string, number>();
+    for (const item of currentCartItems) {
+      quantityByProduct.set(item.product.id, (quantityByProduct.get(item.product.id) || 0) + item.quantity);
+    }
+    for (const item of currentCartItems) {
+      if (!isProductAvailable(item.product)) {
+        return res.status(409).json({ message: `المنتج "${item.product.name}" لم يعد متوفراً، يرجى إزالته من السلة` });
+      }
+      const wanted = quantityByProduct.get(item.product.id) || 0;
+      const stock = item.product.stock || 0;
+      if (stock > 0 && wanted > stock) {
+        return res.status(409).json({ message: `الكمية المتوفرة من "${item.product.name}" هي ${stock} فقط` });
+      }
+    }
+
+    const itemsData = currentCartItems.map(item => {
+      const line = resolveLine(item.product, item.size || null);
+      return {
+        id: item.product.id,
+        name: item.product.name,
+        price: line.price,
+        quantity: item.quantity,
+        size: item.size || null,
+      };
+    });
+
+    const subtotal = itemsData.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     // Fetch dynamic shipping settings
     const adminSettings = await storage.getAdminSettings();
     const shippingFeeBase = Number(adminSettings?.shippingFee) || 0;
     const freeShippingThreshold = Number(adminSettings?.freeShippingThreshold) || 0;
-    
+
     // Logic for free shipping (matches cart.tsx)
     const isFreeShipping = (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) || shippingFeeBase === 0;
     const shipping = isFreeShipping ? 0 : shippingFeeBase;
-    
-    const itemsData = currentCartItems.map(item => ({
-      id: item.product.id,
-      name: item.product.name,
-      price: item.price || item.product.price,
-      quantity: item.quantity,
-      size: (item as any).size || null
-    }));
 
     const order = await storage.createOrder({
       sessionId,
       userId,
       total: subtotal + shipping,
       status: "pending",
-      name,
-      phone,
-      address,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
       items: JSON.stringify(itemsData),
-      paymentMethod: paymentMethod || "cod",
-      bankId: bankId || null,
+      paymentMethod: method,
+      bankId: selectedBank?.id || null,
     });
     
-    // Decrement stock for each item
-    console.log(`🛒 ORDER: Checking stock for ${currentCartItems.length} items...`);
+    // Decrement stock for each item (atomic SQL update)
     for (const item of currentCartItems) {
       try {
-        console.log(`🛒 ORDER: Processing "${item.product.name}" (ID: ${item.product.id}), Qty: ${item.quantity}`);
         await storage.decrementProductStock(item.product.id, item.quantity);
       } catch (err) {
         console.error(`❌ ORDER: Failed to decrement stock for product ${item.product.id}:`, err);
@@ -1512,15 +1581,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const adminPhoneRaw = adminSettings?.phone || process.env.ADMIN_PHONE || "249912345678";
     const sanitizedAdminPhone = adminPhoneRaw.replace(/[^0-9]/g, '');
 
-    const paymentMethodText = paymentMethod === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام";
-    let bankDetailsText = "";
-    if (paymentMethod === "bank" && bankId) {
-      const allBanks = await storage.getBanks();
-      const selectedBank = allBanks.find(b => b.id === bankId);
-      if (selectedBank) {
-        bankDetailsText = `%0A🏦 *بيانات التحويل:*%0A   - البنك: ${selectedBank.bankName}%0A   - الاسم: ${selectedBank.accountName}%0A   - الحساب: ${selectedBank.accountNumber}%0A`;
-      }
-    }
+    const paymentMethodText = method === "bank" ? "تحويل بنكي" : "الدفع عند الاستلام";
+    const bankDetailsText = selectedBank
+      ? `\n🏦 *بيانات التحويل:*\n   - البنك: ${selectedBank.bankName}\n   - الاسم: ${selectedBank.accountName}\n   - الحساب: ${selectedBank.accountNumber}\n`
+      : "";
 
     const itemsText = itemsData.map((item, idx) =>
       `*${idx + 1}. ${item.name}${item.size ? ` (${item.size})` : ''}*\n   - الكمية: ${item.quantity}\n   - السعر: ${(item.price).toLocaleString()} ج.س`
@@ -1536,9 +1600,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       `📅 التاريخ: ${new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}\n` +
       `══════════════════\n\n` +
       `👤 *بيانات العميل:*\n` +
-      `   الاسم: *${name}*\n` +
-      `   الهاتف: ${phone}\n` +
-      `   العنوان: ${address}\n\n` +
+      `   الاسم: *${name.trim()}*\n` +
+      `   الهاتف: ${phone.trim()}\n` +
+      `   العنوان: ${address.trim()}\n\n` +
       `💳 *طريقة الدفع:* ${paymentMethodText}${bankDetailsText}\n` +
       `══════════════════\n` +
       `📦 *المنتجات المطلوبة:*\n\n${itemsText}\n\n` +
@@ -1548,14 +1612,15 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       `🌟 *الإجمالي النهائي: ${(subtotal + shipping).toLocaleString()} ج.س*\n` +
       `══════════════════\n\n` +
       `🙏 شكراً لتسوقكم معنا! سيتم التواصل معكم لتأكيد الطلب.\n` +
-      `https://alraqi-store.onrender.com`;
+      getPublicBaseUrl();
 
     const whatsappUrl = `https://wa.me/${sanitizedAdminPhone}?text=${encodeURIComponent(rawMessage)}`;
 
     res.json({ ...order, whatsappUrl });
   });
 
-  app.post("/api/seed", async (req: Request, res: Response) => {
+  // Demo data — admin only (it can wipe the catalogue with ?force=true)
+  app.post("/api/seed", requireAdmin, async (req: Request, res: Response) => {
     const force = req.query.force === "true";
     const productCount = await storage.countProducts();
     
@@ -1672,17 +1737,6 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   });
 
 
-
-  // App Download Route
-  app.get("/api/download-app", (_req, res) => {
-    const apkPath = path.resolve(process.cwd(), "public", "apps", "Al-Raqi-Store.apk");
-    // In a real scenario, check if file exists, then send it
-    // For now, return friendly error or placeholder
-    res.status(404).json({ 
-      message: "نعتذر، رابط التحميل المباشر غير متوفر حالياً. يرجى التواصل مع الدعم الفني عبر واتساب للحصول على نسخة التطبيق.",
-      whatsapp_contact: "https://wa.me/249912345678"
-    });
-  });
 
   return httpServer;
 }

@@ -62,7 +62,7 @@ type AdminOverview = {
   stats: {
     products: number;
     categories: number;
-    orders: number;
+    orders: { today: number; week: number; month: number; all: number };
     pendingOrders: number;
     messages: number;
     unreadMessages: number;
@@ -950,7 +950,7 @@ export default function AdminPage() {
                 <div className="text-center md:text-right border-r md:border-r-0 border-border/40">
                   <p className="text-xs md:text-sm text-muted-foreground">نسبة المعلق</p>
                   <p className="mt-1 text-lg md:text-2xl font-black">
-                  {!data?.stats?.orders || data.stats.orders === 0 ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders) * 100)}%`}
+                  {!data?.stats?.orders?.all ? "0%" : `${Math.round((data.stats.pendingOrders / data.stats.orders.all) * 100)}%`}
                   </p>
                 </div>
               </div>
@@ -1319,7 +1319,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="mb-1 text-sm font-medium text-teal-800/60">الطلبات الكلية</p>
-                      <p className="text-3xl font-black tracking-tight text-teal-900">{(data.stats.orders ?? 0).toLocaleString("ar-EG")}</p>
+                      <p className="text-3xl font-black tracking-tight text-teal-900">{(data.stats.orders?.all ?? 0).toLocaleString("ar-EG")}</p>
                     </div>
                   </div>
                 </CardContent>

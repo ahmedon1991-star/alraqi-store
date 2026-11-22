@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, real, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, real, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -14,7 +14,9 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   authProvider: text("auth_provider").notNull().default("local"),
   biometricEnabled: boolean("biometric_enabled").default(false),
-  biometricToken: text("biometric_token"),
+  biometricToken: text("biometric_token"), // SHA-256 hash of the device token
+  resetTokenHash: text("reset_token_hash"), // SHA-256 hash of the password-reset token
+  resetTokenExpires: timestamp("reset_token_expires"),
   createdAt: timestamp("created_at").defaultNow(),
   lastActive: timestamp("last_active").defaultNow(),
 });
@@ -30,6 +32,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
   authProvider: true,
   biometricEnabled: true,
   biometricToken: true,
+  resetTokenHash: true,
+  resetTokenExpires: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -163,6 +167,18 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
   isArchived: boolean("is_archived").default(false),
 });
+
+export const productRatings = pgTable("product_ratings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  productId: varchar("product_id").notNull(),
+  rating: integer("rating").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("product_ratings_user_product_idx").on(table.userId, table.productId),
+]);
+
+export type ProductRating = typeof productRatings.$inferSelect;
 
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, isRead: true, createdAt: true, isArchived: true });
 export type InsertMessage = z.infer<typeof insertMessageSchema>;

@@ -1,4 +1,4 @@
-import { storage } from "./server/storage";
+import { storage } from "../../server/storage";
 import crypto from "node:crypto";
 
 function hashPassword(password: string) {

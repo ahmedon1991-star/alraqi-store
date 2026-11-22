@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Truck, ShieldCheck, Loader2, Send, ShoppingBag, Smartphone, Download } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest, seedDatabase } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/components/ui/category-icon";
 
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
@@ -25,12 +25,6 @@ export default function Home() {
     queryFn: () => apiRequest("/api/categories"),
     staleTime: 10 * 60 * 1000, // 10 minutes cache
   });
-
-  useEffect(() => {
-    if (productsData && productsData.length === 0 && !productsLoading) {
-      seedDatabase().catch(() => {});
-    }
-  }, [productsData, productsLoading]);
 
   const featuredProducts = useMemo(() => (productsData || []).filter((p: any) => p.isVisible !== false), [productsData]);
   const cats = useMemo(() => categoriesData || [], [categoriesData]);
