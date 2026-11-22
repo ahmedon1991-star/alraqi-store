@@ -9,6 +9,14 @@ export const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
 export const MIN_PASSWORD_LENGTH = 6;
 export const MIN_ADMIN_PASSWORD_LENGTH = 8;
 
+/**
+ * TLS options for PostgreSQL. Hosted databases (Neon, Render…) require TLS, so it stays on by
+ * default; set DATABASE_SSL=false only for a local/CI database without TLS.
+ */
+export function databaseSsl() {
+  return process.env.DATABASE_SSL === "false" ? false : { rejectUnauthorized: false };
+}
+
 export function createToken(bytes = 24) {
   return crypto.randomBytes(bytes).toString("hex");
 }

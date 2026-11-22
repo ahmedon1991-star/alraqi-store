@@ -1,0 +1,19 @@
+name: Keep store awake (daytime)
+
+# Render's free plan puts the server to sleep after 15 minutes without visitors, and the
+# next visitor then waits 30–60 seconds. This pings the store every 10 minutes between
+# 07:00 and 23:59 Sudan time (UTC+2) only, which stays within the free plan's monthly hours.
+on:
+  schedule:
+    - cron: "*/10 5-21 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Ping the store
+        run: curl -fsS --max-time 90 -o /dev/null https://alraqi-store.onrender.com/api/categories || echo "The store did not answer this time"

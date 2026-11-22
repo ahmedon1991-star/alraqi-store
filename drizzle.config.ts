@@ -9,6 +9,7 @@ export default defineConfig({
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL!,
-    ssl: "require",
+    // Hosted databases need TLS; DATABASE_SSL=false is only for a local/CI database
+    ssl: process.env.DATABASE_SSL === "false" ? false : "require",
   },
 });

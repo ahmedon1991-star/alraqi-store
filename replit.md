@@ -24,6 +24,18 @@ Preferred communication style: Simple, everyday language. The user communicates 
 
 Security notes: prices are always computed on the server; password-reset and biometric tokens are stored only as SHA-256 hashes; sessions expire (customers 30 days, admin 7 days); login/reset/order endpoints are rate-limited. `npm run db:push` no longer uses `--force`, so it refuses schema changes that would delete data. Emergency admin reset: `ADMIN_PASSWORD="..." npx tsx scripts/reset-admin.ts`.
 
+# Testing
+
+End-to-end security/functional tests live in `tests/e2e.mjs` (50 checks: price tampering, password reset, admin auth, cart ownership, sessions, rate limits, link previews…). They run automatically on GitHub (`.github/workflows/ci.yml`) for every push and pull request. To run locally against an EMPTY test database (never the real store):
+
+```
+npm run build
+DATABASE_URL=postgres://… DATABASE_SSL=false npx drizzle-kit push
+DATABASE_URL=postgres://… DATABASE_SSL=false npm test
+```
+
+`.github/workflows/keep-alive.yml` pings the store every 10 minutes during the day (07:00–24:00 Sudan time) so customers don't hit Render's free-plan cold start.
+
 # System Architecture
 
 ## Frontend Architecture

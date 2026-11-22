@@ -35,6 +35,7 @@ import {
 import { and, eq, sql, asc, desc, gte, or, ilike, isNull, ne } from "drizzle-orm";
 import {
   ADMIN_SESSION_TTL_MS,
+  databaseSsl,
   CUSTOMER_SESSION_TTL_MS,
   createToken,
   getEnvAdminCredentials,
@@ -84,7 +85,7 @@ function createDatabase() {
     console.log("🚀 STORAGE: DATABASE_URL detected. Initializing PostgreSQL pool...");
     const pool = new pg.Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
+      ssl: databaseSsl(),
       max: 20, // Limit connections to prevent exhaustion on Render
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,

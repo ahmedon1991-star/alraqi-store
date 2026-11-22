@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import pg from "pg";
-import { KNOWN_DEFAULT_ADMIN_PASSWORD, MIN_ADMIN_PASSWORD_LENGTH, hashPassword } from "../server/security";
+import { KNOWN_DEFAULT_ADMIN_PASSWORD, MIN_ADMIN_PASSWORD_LENGTH, databaseSsl, hashPassword } from "../server/security";
 
 async function resetAdminPassword() {
   const DATABASE_URL = process.env.DATABASE_URL;
@@ -26,7 +26,7 @@ async function resetAdminPassword() {
     process.exit(1);
   }
 
-  const pool = new pg.Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  const pool = new pg.Pool({ connectionString: DATABASE_URL, ssl: databaseSsl() });
 
   try {
     await pool.query(
