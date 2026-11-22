@@ -3,11 +3,10 @@ import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/home/hero";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Truck, ShieldCheck, Loader2, Send, ShoppingBag, Smartphone, Download } from "lucide-react";
+import { ArrowLeft, Truck, ShieldCheck, Loader2, Headphones, ShoppingBag, Smartphone, Download, type LucideIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { CategoryIcon } from "@/components/ui/category-icon";
 
 import { useMemo } from "react";
@@ -172,11 +171,12 @@ export default function Home() {
           </Link>
         </div>
 
-        <section className="py-10 md:py-20 container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-            <FeatureItem icon={<ShieldCheck className="h-10 w-10 md:h-16 md:w-16" />} title="جودة استثنائية" desc="منتجات مختارة بعناية فائقة تليق بذائقتكم" color="text-primary" />
-            <FeatureItem icon={<Truck className="h-10 w-10 md:h-16 md:w-16" />} title="توصيل ملكي" desc="خدمة توصيل سريعة وآمنة إلى باب المنزل" color="text-primary" />
-            <FeatureItem icon={<Send className="h-10 w-10 md:h-16 md:w-16" />} title="خدمة النخبة" desc="دعم فني مخصص لضمان رضاكم التام" color="text-primary" />
+        {/* Why us — one compact strip instead of three full-screen cards */}
+        <section className="container mx-auto px-4 pb-8 md:pb-16">
+          <div className="grid grid-cols-3 rounded-3xl border border-border bg-card shadow-sm">
+            <FeatureItem icon={ShieldCheck} title="جودة مضمونة" desc="منتجات مختارة بعناية" />
+            <FeatureItem icon={Truck} title="توصيل سريع" desc="حتى باب منزلك" className="border-x border-border" />
+            <FeatureItem icon={Headphones} title="دعم مباشر" desc="نرد عليك عبر واتساب" />
           </div>
         </section>
       </main>
@@ -186,14 +186,16 @@ export default function Home() {
   );
 }
 
-function FeatureItem({ icon, title, desc, color }: { icon: any, title: string, desc: string, color: string }) {
+function FeatureItem({ icon: Icon, title, desc, className = "" }: { icon: LucideIcon; title: string; desc: string; className?: string }) {
   return (
-    <div className="flex flex-col items-center text-center p-8 rounded-[3rem] bg-card border border-primary/10 shadow-lg hover:border-primary/40 transition-all duration-500 group">
-      <div className={cn("mb-6 bg-primary/5 p-6 rounded-full group-hover:scale-110 transition-transform", color)}>
-        {icon}
+    <div className={`flex flex-col items-center gap-2 px-2 py-4 text-center md:flex-row md:gap-4 md:px-6 md:py-6 md:text-right ${className}`}>
+      <span className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <Icon className="h-5 w-5 md:h-6 md:w-6" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-[13px] md:text-base font-black leading-tight text-foreground">{title}</h3>
+        <p className="mt-0.5 text-[11px] md:text-sm leading-snug text-muted-foreground">{desc}</p>
       </div>
-      <h3 className="font-heading text-2xl md:text-3xl font-black text-foreground mb-4">{title}</h3>
-      <p className="text-sm md:text-lg text-muted-foreground font-medium leading-relaxed">{desc}</p>
     </div>
   );
 }
