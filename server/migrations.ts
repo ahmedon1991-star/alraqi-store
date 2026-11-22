@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import pg from "pg";
-import { KNOWN_DEFAULT_ADMIN_PASSWORD, createToken, getEnvAdminCredentials, hashPassword, isHashedPassword } from "./security";
+import { KNOWN_DEFAULT_ADMIN_PASSWORD, createToken, databaseSsl, getEnvAdminCredentials, hashPassword, isHashedPassword } from "./security";
 
 const { Pool } = pg;
 
@@ -85,7 +85,7 @@ export async function runMigrations() {
 
   const pool = new Pool({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: databaseSsl()
   });
 
   try {
